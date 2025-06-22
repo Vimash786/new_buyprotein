@@ -46,20 +46,19 @@
       @include('partials.footer')
     </div>
   </div>
-  
-  <!-- General JS Scripts -->
+    <!-- General JS Scripts -->
   <script src="{{ asset('assets/js/app.min.js') }}"></script>
   
   <!-- JS Libraries -->
   <script src="{{ asset('assets/bundles/echart/echarts.js') }}"></script>
   <script src="{{ asset('assets/bundles/chartjs/chart.min.js') }}"></script>
   
-  <!-- Page Specific JS File -->
-  <script src="{{ asset('assets/js/page/index.js') }}"></script>
-  
   <!-- Template JS File -->
   <script src="{{ asset('assets/js/scripts.js') }}"></script>
   <script src="{{ asset('assets/js/custom.js') }}"></script>
+  
+  <!-- Page Specific JS File -->
+  <script src="{{ asset('assets/js/page/index.js') }}"></script>
   
   <!-- Additional JS -->
   @stack('scripts')

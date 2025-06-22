@@ -487,7 +487,10 @@
           </div>
         </div>
       </div>
-    </div>
-  </div>
+    </div>  </div>
 </section>
+
+@push('scripts')
+<script src="{{ asset('assets/js/dashboard-init.js') }}"></script>
+@endpush
 @endsection
