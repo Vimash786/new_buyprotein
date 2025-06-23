@@ -12,6 +12,7 @@ class OrdersSeeder extends Seeder
      */
     public function run(): void
     {
-        //
+        // Orders are created through SellersSeeder to maintain relationships
+        // This seeder is kept for individual order seeding if needed
     }
 }

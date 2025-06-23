@@ -12,6 +12,7 @@ class ProductsSeeder extends Seeder
      */
     public function run(): void
     {
-        //
+        // Products are created through SellersSeeder to maintain relationships
+        // This seeder is kept for individual product seeding if needed
     }
 }

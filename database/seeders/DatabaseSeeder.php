@@ -13,11 +13,17 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // Create some base users first
+        User::factory(20)->create();
 
         User::factory()->create([
             'name' => 'Test User',
             'email' => 'test@example.com',
+        ]);
+
+        // Run the sellers seeder which will create the complete hierarchy
+        $this->call([
+            SellersSeeder::class,
         ]);
     }
 }

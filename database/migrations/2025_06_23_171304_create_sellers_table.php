@@ -13,6 +13,12 @@ return new class extends Migration
     {
         Schema::create('sellers', function (Blueprint $table) {
             $table->id();
+            $table->string('company_name');
+            $table->string('gst_number')->unique();
+            $table->string('product_category');
+            $table->string('contact_person');
+            $table->string('brand_certificate')->nullable();
+            $table->enum('status', ['approved', 'not_approved'])->default('not_approved');
             $table->timestamps();
         });
     }
