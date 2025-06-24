@@ -32,7 +32,9 @@ new class extends Component
         'contact_person' => 'required|string|max:255',
         'brand_certificate_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,gif|max:2048',
         'status' => 'required|in:approved,not_approved',
-    ];public function with()
+    ];
+
+    public function with()
     {
         $query = Seller::query();
 
@@ -68,7 +70,9 @@ new class extends Component
     {
         $this->showModal = false;
         $this->resetForm();
-    }    public function resetForm()
+    }    
+    
+    public function resetForm()
     {
         $this->sellerId = null;
         $this->company_name = '';
@@ -79,7 +83,9 @@ new class extends Component
         $this->brand_certificate_file = null;
         $this->status = 'not_approved';
         $this->resetValidation();
-    }    public function save()
+    }    
+    
+    public function save()
     {
         $rules = $this->rules;
         
@@ -113,7 +119,9 @@ new class extends Component
         }
 
         $this->closeModal();
-    }    public function edit($id)
+    }   
+    
+    public function edit($id)
     {
         $seller = Seller::findOrFail($id);
         
@@ -128,7 +136,8 @@ new class extends Component
         
         $this->editMode = true;
         $this->showModal = true;
-    }public function delete($id)
+    }
+    public function delete($id)
     {
         Seller::findOrFail($id)->delete();
         session()->flash('message', 'Seller deleted successfully!');
