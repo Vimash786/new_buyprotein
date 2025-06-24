@@ -2,11 +2,13 @@
 
 use App\Models\Seller;
 use Livewire\WithPagination;
+use Livewire\WithFileUploads;
 use Livewire\Volt\Component;
+use Illuminate\Support\Facades\Storage;
 
 new class extends Component
 {
-    use WithPagination;
+    use WithPagination, WithFileUploads;
 
     public $search = '';
     public $statusFilter = '';
@@ -20,6 +22,7 @@ new class extends Component
     public $product_category = '';
     public $contact_person = '';
     public $brand_certificate = '';
+    public $brand_certificate_file = null;
     public $status = 'not_approved';
 
     protected $rules = [
@@ -27,9 +30,9 @@ new class extends Component
         'gst_number' => 'required|string|max:255|unique:sellers,gst_number',
         'product_category' => 'required|string|max:255',
         'contact_person' => 'required|string|max:255',
-        'brand_certificate' => 'nullable|string|max:255',
+        'brand_certificate_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,gif|max:2048',
         'status' => 'required|in:approved,not_approved',
-    ];    public function with()
+    ];public function with()
     {
         $query = Seller::query();
 
@@ -65,9 +68,7 @@ new class extends Component
     {
         $this->showModal = false;
         $this->resetForm();
-    }
-
-    public function resetForm()
+    }    public function resetForm()
     {
         $this->sellerId = null;
         $this->company_name = '';
@@ -75,11 +76,10 @@ new class extends Component
         $this->product_category = '';
         $this->contact_person = '';
         $this->brand_certificate = '';
+        $this->brand_certificate_file = null;
         $this->status = 'not_approved';
         $this->resetValidation();
-    }
-
-    public function save()
+    }    public function save()
     {
         $rules = $this->rules;
         
@@ -94,9 +94,17 @@ new class extends Component
             'gst_number' => $this->gst_number,
             'product_category' => $this->product_category,
             'contact_person' => $this->contact_person,
-            'brand_certificate' => $this->brand_certificate,
             'status' => $this->status,
-        ];        if ($this->editMode) {
+        ];
+
+        // Handle file upload
+        if ($this->brand_certificate_file) {
+            $fileName = time() . '_' . $this->brand_certificate_file->getClientOriginalName();
+            $filePath = $this->brand_certificate_file->storeAs('brand_certificates', $fileName, 'public');
+            $data['brand_certificate'] = $filePath;
+        } elseif (!$this->editMode) {
+            $data['brand_certificate'] = null;
+        }if ($this->editMode) {
             Seller::findOrFail($this->sellerId)->update($data);
             session()->flash('message', 'Seller updated successfully!');
         } else {
@@ -115,11 +123,12 @@ new class extends Component
         $this->product_category = $seller->product_category;
         $this->contact_person = $seller->contact_person;
         $this->brand_certificate = $seller->brand_certificate;
+        $this->brand_certificate_file = null; // Reset file input for edit
         $this->status = $seller->status;
         
         $this->editMode = true;
         $this->showModal = true;
-    }    public function delete($id)
+    }public function delete($id)
     {
         Seller::findOrFail($id)->delete();
         session()->flash('message', 'Seller deleted successfully!');
@@ -264,12 +273,21 @@ new class extends Component
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
                         @forelse($sellers as $seller)
-                            <tr class="hover:bg-gray-50">
-                                <td class="px-6 py-4 whitespace-nowrap">
+                            <tr class="hover:bg-gray-50">                                <td class="px-6 py-4 whitespace-nowrap">
                                     <div>
                                         <div class="text-sm font-medium text-gray-900">{{ $seller->company_name }}</div>
                                         @if($seller->brand_certificate)
-                                            <div class="text-sm text-gray-500">{{ $seller->brand_certificate }}</div>
+                                            <div class="text-sm text-gray-500">
+                                                <a href="{{ Storage::url($seller->brand_certificate) }}" 
+                                                   target="_blank" 
+                                                   class="text-blue-600 hover:text-blue-800 flex items-center gap-1">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.586-6.586a2 2 0 00-2.828-2.828z" />
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m0 0l4-4M9 12l4-4" />
+                                                    </svg>
+                                                    Certificate
+                                                </a>
+                                            </div>
                                         @endif
                                     </div>
                                 </td>
@@ -406,18 +424,42 @@ new class extends Component
                                 placeholder="Enter contact person name"
                             >
                             @error('contact_person') <span class="text-red-500 text-sm">{{ $errors->first('contact_person') }}</span> @enderror
-                        </div>
-
-                        <!-- Brand Certificate -->
+                        </div>                        <!-- Brand Certificate -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Brand Certificate</label>
+                            
+                            @if($editMode && $brand_certificate)
+                                <div class="mb-3 p-3 bg-gray-50 rounded-lg">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-2">
+                                            <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                            </svg>
+                                            <span class="text-sm text-gray-700">Current file uploaded</span>
+                                        </div>
+                                        <a href="{{ Storage::url($brand_certificate) }}" target="_blank" class="text-blue-600 hover:text-blue-800 text-sm">
+                                            View File
+                                        </a>
+                                    </div>
+                                </div>
+                            @endif
+                            
                             <input 
-                                type="text" 
-                                wire:model="brand_certificate"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                placeholder="Enter brand certificate (optional)"
+                                type="file" 
+                                wire:model="brand_certificate_file"
+                                accept=".pdf,.jpg,.jpeg,.png,.gif"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                             >
-                            @error('brand_certificate') <span class="text-red-500 text-sm">{{ $errors->first('brand_certificate') }}</span> @enderror
+                            <p class="text-xs text-gray-500 mt-1">Upload PDF, JPG, JPEG, PNG, or GIF files (max 2MB)</p>
+                            
+                            @if($brand_certificate_file)
+                                <div class="mt-2 p-2 bg-green-50 border border-green-200 rounded text-sm text-green-700">
+                                    File selected: {{ $brand_certificate_file->getClientOriginalName() }}
+                                </div>
+                            @endif
+                              @error('brand_certificate_file') 
+                                <span class="text-red-500 text-sm">{{ $errors->first('brand_certificate_file') }}</span> 
+                            @enderror
                         </div>
 
                         <!-- Status -->
