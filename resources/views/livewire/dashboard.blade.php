@@ -47,30 +47,32 @@ new class extends Component
                                 <p class="text-sm text-gray-600">Add, edit, and approve sellers</p>
                             </div>
                         </a>
-
-                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 flex items-center space-x-3">
-                            <div class="bg-gray-400 p-2 rounded-lg">
+                        
+                        <a href="{{ route('products.manage') }}" wire:navigate 
+                           class="bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-lg p-4 flex items-center space-x-3 transition-colors">
+                            <div class="bg-purple-500 p-2 rounded-lg">
                                 <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                                 </svg>
                             </div>
                             <div>
-                                <h3 class="font-semibold text-gray-500">Manage Products</h3>
-                                <p class="text-sm text-gray-400">Coming soon</p>
+                                <h3 class="font-semibold text-gray-900">Manage Products</h3>
+                                <p class="text-sm text-gray-600">Add, edit, and manage products</p>
                             </div>
-                        </div>
+                        </a>
 
-                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 flex items-center space-x-3">
-                            <div class="bg-gray-400 p-2 rounded-lg">
+                        <a href="{{ route('orders.manage') }}" wire:navigate 
+                           class="bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg p-4 flex items-center space-x-3 transition-colors">
+                            <div class="bg-indigo-500 p-2 rounded-lg">
                                 <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                                 </svg>
                             </div>
                             <div>
-                                <h3 class="font-semibold text-gray-500">Manage Orders</h3>
-                                <p class="text-sm text-gray-400">Coming soon</p>
+                                <h3 class="font-semibold text-gray-900">Manage Orders</h3>
+                                <p class="text-sm text-gray-600">View, edit, and manage orders</p>
                             </div>
-                        </div>
+                        </a>
                     </div>
                 </div>
             </div>
