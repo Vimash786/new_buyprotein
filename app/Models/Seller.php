@@ -12,6 +12,8 @@ class Seller extends Model
     /** @use HasFactory<\Database\Factories\SellersFactory> */
     use HasFactory;
 
+    protected $table = 'sellers';
+
     protected $fillable = [
         'company_name',
         'gst_number',

@@ -34,7 +34,7 @@ class products extends Model
      */
     public function seller(): BelongsTo
     {
-        return $this->belongsTo(sellers::class, 'seller_id');
+        return $this->belongsTo(Seller::class, 'seller_id');
     }
 
     /**
