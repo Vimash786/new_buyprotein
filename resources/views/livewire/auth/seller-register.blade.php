@@ -2,8 +2,6 @@
 
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
@@ -37,8 +35,8 @@ new #[Layout('components.layouts.auth')] class extends Component {
         event(new Registered(($user = User::create($validated))));
 
         Auth::login($user);
-
-        $this->redirectIntended(route('dashboard', absolute: false), navigate: true);
+        $this->redirect(route('extra.info', ['role' => 'Seller'], absolute: false), navigate: true);
+        //$this->redirectIntended(route('dashboard', absolute: false), navigate: true);
     }
 }; ?>
 
@@ -70,35 +68,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
             placeholder="business@example.com"
         />
 
-        <!-- Select Business Type -->
-        <flux:select wire:model="industry" label="Business Type" placeholder="Choose your business type..." required>
-            <flux:select.option value="Gym Owner/Trainer/Influencer">Gym Owner/Trainer/Influencer</flux:select.option>
-            <flux:select.option value="Shop Owner">Shop Owner</flux:select.option>
-        </flux:select>
-
-        <!-- Document proof -->
-        <flux:input 
-            type="file" 
-            wire:model="document_proof" 
-            label="Business Document Proof" 
-            multiple 
-            accept="image/*,application/pdf"
-            required
-            :description="__('Upload business registration, license, or ID proof')"
-        />
-
-        <!-- Business Images -->
-        <flux:input 
-            type="file" 
-            wire:model="business_images" 
-            label="Business Photos" 
-            accept="image/*"
-            required
-            multiple 
-            :description="__('Upload at least 3 photos of your business/products')"
-        />
         
-
         <!-- Password -->
         <flux:input
             wire:model="password"

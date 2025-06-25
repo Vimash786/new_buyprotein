@@ -30,8 +30,8 @@ new #[Layout('components.layouts.auth')] class extends Component {
         event(new Registered(($user = User::create($validated))));
 
         Auth::login($user);
-
-        $this->redirectIntended(route('dashboard', absolute: false), navigate: true);
+        $this->redirect(route('extra.info', ['role' => 'User'], absolute: false), navigate: true);
+        //$this->redirectIntended(route('dashboard', absolute: false), navigate: true);
     }
 }; ?>
 
@@ -62,36 +62,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
             autocomplete="email"
             placeholder="email@example.com"
         />
-        <!--slelect role-->
-        <flux:select wire:model="industry" placeholder="Choose industry...">
-            <flux:select.option>User</flux:select.option>
-            <flux:select.option>Gym Owner/Trainer/Influencer</flux:select.option>
-            <flux:select.option>Shop Owner</flux:select.option>
-        </flux:select>
-
-        <!-- Document proof -->
-        <flux:input 
-        type="file" 
-        wire:model="attachments" 
-        label="Document proof" 
-        multiple 
-        accept="image/*,application/pdf"
-        required
-        :description="__('Upload at least one document proof')"
-
-        />
-        <!-- Add three image -->
-        <flux:input 
-        type="file" 
-        wire:model="attachments" 
-        label="Add three images" 
-        accept="image/*"
-        required
-        multiple 
-        :description="__('Upload at least three images')"
-        />
-        
-
+       
         <!-- Password -->
         <flux:input
             wire:model="password"
