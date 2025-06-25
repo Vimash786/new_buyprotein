@@ -11,9 +11,6 @@ Route::middleware('guest')->group(function () {
     Volt::route('register', 'auth.register')
         ->name('register');
 
-    Volt::route('extra-info', 'auth.extra-info')
-        ->name('extra.info');
-
     Volt::route('seller-register', 'auth.seller-register')
         ->name('seller.register');
 
@@ -22,8 +19,12 @@ Route::middleware('guest')->group(function () {
 
     Volt::route('reset-password/{token}', 'auth.reset-password')
         ->name('password.reset');
-
 });
+
+// Extra info route for completing registration (accessible to authenticated users)
+Volt::route('extra-info', 'auth.extra-info')
+    ->middleware('auth')
+    ->name('extra.info');
 
 Route::middleware('auth')->group(function () {
     Volt::route('verify-email', 'auth.verify-email')

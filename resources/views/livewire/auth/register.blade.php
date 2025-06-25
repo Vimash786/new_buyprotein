@@ -26,12 +26,12 @@ new #[Layout('components.layouts.auth')] class extends Component {
         ]);
 
         $validated['password'] = Hash::make($validated['password']);
+        $validated['role'] = 'User'; // Set default role
 
         event(new Registered(($user = User::create($validated))));
 
         Auth::login($user);
-        $this->redirect(route('extra.info', ['role' => 'User'], absolute: false), navigate: true);
-        //$this->redirectIntended(route('dashboard', absolute: false), navigate: true);
+        $this->redirect(route('extra.info', absolute: false), navigate: true);
     }
 }; ?>
 

@@ -3,146 +3,183 @@
 use App\Models\User;
 use App\Models\Sellers;
 use Illuminate\Auth\Events\Registered;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
+use Livewire\WithFileUploads;
 
 new #[Layout('components.layouts.auth')] class extends Component {
-    public string $name = '';
-    public string $email = '';
-    public string $password = '';
-    public string $password_confirmation = '';
-    public string $industry = '';
-    public $document_proof = null;
-    public $business_images = null;
+    use WithFileUploads;
+    
+    public string $role = '';
+    public $attachments = [];    public string $company_name = '';
+    public string $gst_number = '';
+    public string $product_category = '';
+    public string $contact_person = '';
+    public $brand_certificate = null;
+
+    public function mount()
+    {
+        $this->role = request()->get('role', 'User');
+    }
 
     /**
-     * Handle an incoming seller registration request. 
+     * Handle completion of user/seller registration process
      */
-    public function register(): void
+    public function completeRegistration(): void
     {
-        $validated = $this->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
-            'password' => ['required', 'string', 'confirmed', Rules\Password::defaults()],
-            'industry' => ['required', 'string', 'in:Gym Owner/Trainer/Influencer,Shop Owner'],
-            'document_proof' => ['required'],
-            'business_images' => ['required'],
-        ]);
-
-        $validated['password'] = Hash::make($validated['password']);
-        $validated['role'] = 'seller'; // Add seller role
-
-        event(new Registered(($user = User::create($validated))));
-
-        Auth::login($user);
+        $user = Auth::user();
+        
+        
+        if ($this->role != 'User') {
+            $validated = $this->validate([
+                'role' => ['required', 'string', 'in:User,Gym Owner/Trainer/Influencer,Shop Owner'],
+                'attachments' => ['required_unless:industry,User', 'array'],
+                'attachments.*' => ['file', 'max:10240'], // 10MB max per file
+            ]);
+            
+            // Update user with additional info
+            $user->update([
+                'role' => $validated['role'],
+                'profile_completed' => true,
+            ]);
+            
+            // Handle file uploads if industry is not just 'User'
+            if ($validated['role'] !== 'User' && !empty($validated['attachments'])) {
+                // Store files logic here
+                // You might want to create a separate table for user documents
+            }
+            
+        } elseif ($this->role === 'Seller') {
+            $validated = $this->validate([
+                'company_name' => ['required', 'string', 'max:255'],
+                'gst_number' => ['required', 'string', 'max:50'],
+                'product_category' => ['required', 'string', 'in:Health Supplements,Fitness Equipment,Apparel,Other'],
+                'contact_person' => ['required', 'string', 'max:255'],
+                'brand_certificate' => ['required', 'file', 'max:10240'], // 10MB max
+            ]);
+            
+            // Create seller record
+            Sellers::create([
+                'user_id' => $user->id,
+                'company_name' => $validated['company_name'],
+                'gst_number' => $validated['gst_number'],
+                'product_category' => $validated['product_category'],
+                'contact_person' => $validated['contact_person'],
+                // Store brand certificate path
+                'brand_certificate' => $validated['brand_certificate']->store('seller_certificates', 'public'),
+            ]);
+            
+            // Update user profile completion status
+            $user->update(['profile_completed' => true]);
+        }
 
         $this->redirectIntended(route('dashboard', absolute: false), navigate: true);
     }
 }; ?>
 
 <div class="flex flex-col gap-6">
-    <x-auth-header :title="__('Register as a Seller')" :description="__('Join our marketplace and start selling your products')" />
+    <x-auth-header 
+        :title="$role === 'Seller' ? __('Complete Seller Registration') : __('Complete Your Profile')" 
+        :description="$role === 'Seller' ? __('Provide additional business information to start selling') : __('Tell us more about yourself')" 
+    />
 
     <!-- Session Status -->
     <x-auth-session-status class="text-center" :status="session('status')" />
 
-    <form wire:submit="register" class="flex flex-col gap-6">
-        <!-- Name -->
+    <form wire:submit="completeRegistration" class="flex flex-col gap-6">        <!-- User Additional Info -->
         @if ($role === 'User')
-            <!--slelect role put as check yes and no,if Gym Owner/Trainer/Influencer and Shop Owner selected show document and image input field-->
-            <flux:select wire:model="industry" placeholder="Choose industry...">
-                <flux:select.option>User</flux:select.option>
-                <flux:select.option>Gym Owner/Trainer/Influencer</flux:select.option>
-                <flux:select.option>Shop Owner</flux:select.option>
+            <!-- Industry Selection -->
+            <flux:select wire:model="role" placeholder="Choose your category..." label="I am a...">
+            <flux:select.option value="User">Regular User</flux:select.option>
+            <flux:select.option value="Gym Owner/Trainer/Influencer">Gym Owner/Trainer/Influencer</flux:select.option>
+            <flux:select.option value="Shop Owner">Shop Owner</flux:select.option>
             </flux:select>
-
+            
+            @if ($role === 'Gym Owner/Trainer/Influencer' || $role === 'Shop Owner')
             <!-- Document proof -->
             <flux:input 
-            type="file" 
-            wire:model="attachments" 
-            label="Document proof" 
-            multiple 
-            accept="image/*,application/pdf"
-            required
-            :description="__('Upload at least one document proof')"
-
+                type="file" 
+                wire:model="attachments" 
+                label="Document Proof" 
+                multiple 
+                accept="image/*,application/pdf"
+                required
+                description="Upload at least one document proof (Business license, certification, etc.)"
             />
-            <!-- Add three image -->
+            
+            <!-- Business images -->
             <flux:input 
-            type="file" 
-            wire:model="attachments" 
-            label="Add three images" 
-            accept="image/*"
-            required
-            multiple 
-            :description="__('Upload at least three images')"
+                type="file" 
+                wire:model="attachments" 
+                label="Business Images" 
+                accept="image/*"
+                required
+                multiple 
+                description="Upload at least three images of your business/gym"
             />
+            @endif
         @endif
-         
+        <!-- Seller Additional Info -->
         @if ($role === 'Seller')
-
             <!-- Company Name -->
             <flux:input
-            wire:model="company_name"
-            :label="__('Company Name')"
-            type="text"
-            required
-            :placeholder="__('Enter your company name')"
+                wire:model="company_name"
+                label="Company Name"
+                type="text"
+                required
+                placeholder="Enter your company name"
             />
 
             <!-- GST Number -->
             <flux:input
-            wire:model="gst_number"
-            :label="__('GST Number')"
-            type="text"
-            required
-            :placeholder="__('Enter your GST number')"
+                wire:model="gst_number"
+                label="GST Number"
+                type="text"
+                required
+                placeholder="Enter your GST number"
             />
 
             <!-- Product Category -->
-            <flux:select wire:model="product_category" placeholder="Choose product category...">
-            <flux:select.option>Health Supplements</flux:select.option>
-            <flux:select.option>Fitness Equipment</flux:select.option>
-            <flux:select.option>Apparel</flux:select.option>
-            <flux:select.option>Other</flux:select.option>
+            <flux:select wire:model="product_category" placeholder="Choose product category..." label="Product Category">
+                <flux:select.option value="Health Supplements">Health Supplements</flux:select.option>
+                <flux:select.option value="Fitness Equipment">Fitness Equipment</flux:select.option>
+                <flux:select.option value="Apparel">Apparel</flux:select.option>
+                <flux:select.option value="Other">Other</flux:select.option>
             </flux:select>
 
             <!-- Contact Person -->
             <flux:input
-            wire:model="contact_person"
-            :label="__('Contact Person')"
-            type="text"
-            required
-            :placeholder="__('Enter name of contact person')"
+                wire:model="contact_person"
+                label="Contact Person"
+                type="text"
+                required
+                placeholder="Enter name of contact person"
             />
 
             <!-- Brand Certificate -->
             <flux:input 
-            type="file" 
-            wire:model="brand_certificate" 
-            label="Brand Certificate" 
-            accept="image/*,application/pdf"
-            required
-            :description="__('Upload your brand certificate or related document')"
+                type="file" 
+                wire:model="brand_certificate" 
+                label="Brand Certificate" 
+                accept="image/*,application/pdf"
+                required
+                description="Upload your brand certificate or related business document"
             />
-        @endif
-        
-
+        @endif        
         <div class="flex items-center justify-end">
             <flux:button type="submit" variant="primary" class="w-full">
-                {{ __('Register as Seller') }}
+                {{ $role === 'Seller' ? __('Complete Seller Registration') : __('Complete Profile') }}
             </flux:button>
         </div>
     </form>
 
+    @if ($role === 'User')
     <div class="space-x-1 rtl:space-x-reverse text-center text-sm text-zinc-600 dark:text-zinc-400">
-        {{ __('Already have an account?') }}
-        <flux:link :href="route('login')" wire:navigate>{{ __('Log in') }}</flux:link>
+        {{ __('Want to register as a seller instead?') }}
+        <flux:link href="{{ route('seller.register') }}" wire:navigate>{{ __('Seller Registration') }}</flux:link>
     </div>
-
-    <div class="space-x-1 rtl:space-x-reverse text-center text-sm text-zinc-600 dark:text-zinc-400">
-        {{ __('Want to register as a customer instead?') }}
-        <flux:link :href="route('register')" wire:navigate>{{ __('Customer Registration') }}</flux:link>
-    </div>
+    @endif
 </div>

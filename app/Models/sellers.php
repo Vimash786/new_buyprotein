@@ -13,6 +13,7 @@ class Sellers extends Model
     use HasFactory;
 
     protected $fillable = [
+        'user_id',
         'company_name',
         'gst_number',
         'product_category',
@@ -24,6 +25,14 @@ class Sellers extends Model
     protected $casts = [
         'status' => 'string',
     ];
+
+    /**
+     * Get the user that owns the seller profile.
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 
     /**
      * Get the products for the seller.
