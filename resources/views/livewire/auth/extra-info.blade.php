@@ -33,11 +33,12 @@ new #[Layout('components.layouts.auth')] class extends Component {
         $user = Auth::user();
         
         
-        if ($this->role != 'User') {
+        if ($this->role === 'User') {
+            
             $validated = $this->validate([
                 'role' => ['required', 'string', 'in:User,Gym Owner/Trainer/Influencer,Shop Owner'],
-                'attachments' => ['required_unless:industry,User', 'array'],
-                'attachments.*' => ['file', 'max:10240'], // 10MB max per file
+                //'attachments' => ['required_unless:industry,User', 'array'],
+                //'attachments.*' => ['file', 'max:10240'], // 10MB max per file
             ]);
             
             // Update user with additional info
@@ -47,10 +48,11 @@ new #[Layout('components.layouts.auth')] class extends Component {
             ]);
             
             // Handle file uploads if industry is not just 'User'
-            if ($validated['role'] !== 'User' && !empty($validated['attachments'])) {
+            //if ($validated['role'] === 'User' || !empty($validated['attachments'])) {
                 // Store files logic here
                 // You might want to create a separate table for user documents
-            }
+            //}
+           
             
         } elseif ($this->role === 'Seller') {
             $validated = $this->validate([
@@ -76,7 +78,11 @@ new #[Layout('components.layouts.auth')] class extends Component {
             $user->update(['profile_completed' => true]);
         }
 
-        $this->redirectIntended(route('dashboard', absolute: false), navigate: true);
+        $completed = $user->profile_completed;
+        if( $completed){
+            $this->redirectIntended(route('dashboard', absolute: false), navigate: true);
+        }
+       
     }
 }; ?>
 
@@ -90,36 +96,37 @@ new #[Layout('components.layouts.auth')] class extends Component {
     <x-auth-session-status class="text-center" :status="session('status')" />
 
     <form wire:submit="completeRegistration" class="flex flex-col gap-6">        <!-- User Additional Info -->
-        @if ($role === 'User')
+        @if ($role !== 'Seller')
             <!-- Industry Selection -->
-            <flux:select wire:model="role" placeholder="Choose your category..." label="I am a...">
+            <flux:select wire:model.live="role" placeholder="Choose your category..." label="I am a...">
             <flux:select.option value="User">Regular User</flux:select.option>
             <flux:select.option value="Gym Owner/Trainer/Influencer">Gym Owner/Trainer/Influencer</flux:select.option>
             <flux:select.option value="Shop Owner">Shop Owner</flux:select.option>
             </flux:select>
             
-            @if ($role === 'Gym Owner/Trainer/Influencer' || $role === 'Shop Owner')
-            <!-- Document proof -->
-            <flux:input 
-                type="file" 
-                wire:model="attachments" 
-                label="Document Proof" 
-                multiple 
-                accept="image/*,application/pdf"
-                required
-                description="Upload at least one document proof (Business license, certification, etc.)"
-            />
-            
-            <!-- Business images -->
-            <flux:input 
-                type="file" 
-                wire:model="attachments" 
-                label="Business Images" 
-                accept="image/*"
-                required
-                multiple 
-                description="Upload at least three images of your business/gym"
-            />
+            <!-- Document proof and Business images - only show for Gym Owner/Trainer/Influencer and Shop Owner -->
+            @if(in_array($role, ['Gym Owner/Trainer/Influencer', 'Shop Owner']))
+                <!-- Document proof -->
+                <flux:input 
+                    type="file" 
+                    wire:model="attachments" 
+                    label="Document Proof" 
+                    multiple 
+                    accept="image/*,application/pdf"
+                    required
+                    description="Upload at least one document proof (Business license, certification, etc.)"
+                />
+                
+                <!-- Business images -->
+                <flux:input 
+                    type="file" 
+                    wire:model="attachments" 
+                    label="Business Images" 
+                    accept="image/*"
+                    required
+                    multiple 
+                    description="Upload at least three images of your business/gym"
+                />
             @endif
         @endif
         <!-- Seller Additional Info -->
@@ -176,7 +183,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
         </div>
     </form>
 
-    @if ($role === 'User')
+    @if ($role !== 'Seller')
     <div class="space-x-1 rtl:space-x-reverse text-center text-sm text-zinc-600 dark:text-zinc-400">
         {{ __('Want to register as a seller instead?') }}
         <flux:link href="{{ route('seller.register') }}" wire:navigate>{{ __('Seller Registration') }}</flux:link>

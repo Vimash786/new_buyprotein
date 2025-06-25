@@ -39,8 +39,12 @@ new #[Layout('components.layouts.auth')] class extends Component {
 
         RateLimiter::clear($this->throttleKey());
         Session::regenerate();
-
-        $this->redirectIntended(default: route('dashboard', absolute: false), navigate: false);
+        $profile_completed = Auth::user()->profile_completed;
+         if($profile_completed){
+            $this->redirectIntended(default: route('dashboard', absolute: false), navigate: false);
+         }else{
+            $this->redirect(route('extra.info', absolute: false), navigate: true);
+         }
     }
 
     /**
