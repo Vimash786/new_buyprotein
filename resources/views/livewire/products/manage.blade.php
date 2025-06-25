@@ -1,7 +1,7 @@
 <?php
 
 use App\Models\products;
-use App\Models\Seller;
+use App\Models\Sellers;
 use Livewire\WithPagination;
 use Livewire\Volt\Component;
 
@@ -67,7 +67,7 @@ new class extends Component
 
         return [
             'products' => $query->latest()->paginate(10),
-            'sellers' => Seller::where('status', 'approved')->get(),
+            'sellers' => Sellers::where('status', 'approved')->get(),
             'totalProducts' => $totalProducts,
             'activeProducts' => $activeProducts,
             'inactiveProducts' => $inactiveProducts,

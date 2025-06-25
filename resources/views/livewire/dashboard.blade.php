@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\Seller;
+use App\Models\Sellers;
 use App\Models\products;
 use App\Models\orders;
 use App\Models\User;
@@ -11,9 +11,9 @@ new class extends Component
     public function with()
     {
         return [
-            'totalSellers' => Seller::count(),
-            'approvedSellers' => Seller::where('status', 'approved')->count(),
-            'pendingSellers' => Seller::where('status', 'not_approved')->count(),
+            'totalSellers' => Sellers::count(),
+            'approvedSellers' => Sellers::where('status', 'approved')->count(),
+            'pendingSellers' => Sellers::where('status', 'not_approved')->count(),
             'totalProducts' => products::count(),
             'totalOrders' => orders::count(),
             'totalUsers' => User::count(),

@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\Seller;
+use App\Models\Sellers;
 use Livewire\WithPagination;
 use Livewire\WithFileUploads;
 use Livewire\Volt\Component;
@@ -36,7 +36,7 @@ new class extends Component
 
     public function with()
     {
-        $query = Seller::query();
+        $query = Sellers::query();
 
         if ($this->search) {
             $query->where(function($q) {
@@ -53,9 +53,9 @@ new class extends Component
 
         return [
             'sellers' => $query->latest()->paginate(10),
-            'totalSellers' => Seller::count(),
-            'approvedSellers' => Seller::where('status', 'approved')->count(),
-            'pendingSellers' => Seller::where('status', 'not_approved')->count(),
+            'totalSellers' => Sellers::count(),
+            'approvedSellers' => Sellers::where('status', 'approved')->count(),
+            'pendingSellers' => Sellers::where('status', 'not_approved')->count(),
         ];
     }
 
@@ -111,10 +111,10 @@ new class extends Component
         } elseif (!$this->editMode) {
             $data['brand_certificate'] = null;
         }if ($this->editMode) {
-            Seller::findOrFail($this->sellerId)->update($data);
+            Sellers::findOrFail($this->sellerId)->update($data);
             session()->flash('message', 'Seller updated successfully!');
         } else {
-            Seller::create($data);
+            Sellers::create($data);
             session()->flash('message', 'Seller created successfully!');
         }
 
@@ -123,7 +123,7 @@ new class extends Component
     
     public function edit($id)
     {
-        $seller = Seller::findOrFail($id);
+        $seller = Sellers::findOrFail($id);
         
         $this->sellerId = $seller->id;
         $this->company_name = $seller->company_name;
@@ -139,13 +139,13 @@ new class extends Component
     }
     public function delete($id)
     {
-        Seller::findOrFail($id)->delete();
+        Sellers::findOrFail($id)->delete();
         session()->flash('message', 'Seller deleted successfully!');
     }
 
     public function toggleStatus($id)
     {
-        $seller = Seller::findOrFail($id);
+        $seller = Sellers::findOrFail($id);
         $seller->update([
             'status' => $seller->status === 'approved' ? 'not_approved' : 'approved'
         ]);

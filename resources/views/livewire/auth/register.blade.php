@@ -15,7 +15,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
     public string $password_confirmation = '';
 
     /**
-     * Handle an incoming registration request.
+     * Handle an incoming registration request. 
      */
     public function register(): void
     {
@@ -62,6 +62,29 @@ new #[Layout('components.layouts.auth')] class extends Component {
             autocomplete="email"
             placeholder="email@example.com"
         />
+
+        <!-- Document proof -->
+        <flux:input 
+        type="file" 
+        wire:model="attachments" 
+        label="Document proof" 
+        multiple 
+        accept="image/*,application/pdf"
+        required
+        :placeholder="__('Upload your document proof')"
+
+        />
+        <!-- Add three image -->
+        <flux:input 
+        type="file" 
+        wire:model="attachments" 
+        label="Add three images" 
+        accept="image/*"
+        required
+        multiple 
+        :placeholder="__('Upload three images')"
+        />
+        
 
         <!-- Password -->
         <flux:input

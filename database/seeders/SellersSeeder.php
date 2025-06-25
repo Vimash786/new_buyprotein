@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\Seller;
+use App\Models\Sellers;
 use App\Models\products;
 use App\Models\orders;
 use App\Models\User;
@@ -17,7 +17,7 @@ class SellersSeeder extends Seeder
     public function run(): void
     {
         // Create 10 sellers
-        Seller::factory(10)->create()->each(function ($seller) {
+        Sellers::factory(10)->create()->each(function ($seller) {
             // Each seller has exactly 5 products
             $products = products::factory(5)->create([
                 'seller_id' => $seller->id,
