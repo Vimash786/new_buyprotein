@@ -81,55 +81,50 @@ new #[Layout('components.layouts.auth')] class extends Component {
         @endif
          
         @if ($role === 'Seller')
-            <!-- Select Business Type -->
-            <flux:select wire:model="industry" label="Business Type" placeholder="Choose your business type..." required>
-                <flux:select.option value="Gym Owner/Trainer/Influencer">Gym Owner/Trainer/Influencer</flux:select.option>
-                <flux:select.option value="Shop Owner">Shop Owner</flux:select.option>
+
+            <!-- Company Name -->
+            <flux:input
+            wire:model="company_name"
+            :label="__('Company Name')"
+            type="text"
+            required
+            :placeholder="__('Enter your company name')"
+            />
+
+            <!-- GST Number -->
+            <flux:input
+            wire:model="gst_number"
+            :label="__('GST Number')"
+            type="text"
+            required
+            :placeholder="__('Enter your GST number')"
+            />
+
+            <!-- Product Category -->
+            <flux:select wire:model="product_category" placeholder="Choose product category...">
+            <flux:select.option>Health Supplements</flux:select.option>
+            <flux:select.option>Fitness Equipment</flux:select.option>
+            <flux:select.option>Apparel</flux:select.option>
+            <flux:select.option>Other</flux:select.option>
             </flux:select>
 
-            <!-- Document proof -->
-            <flux:input 
-                type="file" 
-                wire:model="document_proof" 
-                label="Business Document Proof" 
-                multiple 
-                accept="image/*,application/pdf"
-                required
-                :description="__('Upload business registration, license, or ID proof')"
-            />
-
-            <!-- Business Images -->
-            <flux:input 
-                type="file" 
-                wire:model="business_images" 
-                label="Business Photos" 
-                accept="image/*"
-                required
-                multiple 
-                :description="__('Upload at least 3 photos of your business/products')"
-            />
-            
-
-            <!-- Password -->
+            <!-- Contact Person -->
             <flux:input
-                wire:model="password"
-                :label="__('Password')"
-                type="password"
-                required
-                autocomplete="new-password"
-                :placeholder="__('Password')"
-                viewable
+            wire:model="contact_person"
+            :label="__('Contact Person')"
+            type="text"
+            required
+            :placeholder="__('Enter name of contact person')"
             />
 
-            <!-- Confirm Password -->
-            <flux:input
-                wire:model="password_confirmation"
-                :label="__('Confirm password')"
-                type="password"
-                required
-                autocomplete="new-password"
-                :placeholder="__('Confirm password')"
-                viewable
+            <!-- Brand Certificate -->
+            <flux:input 
+            type="file" 
+            wire:model="brand_certificate" 
+            label="Brand Certificate" 
+            accept="image/*,application/pdf"
+            required
+            :description="__('Upload your brand certificate or related document')"
             />
         @endif
         
