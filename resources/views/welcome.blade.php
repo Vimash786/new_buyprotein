@@ -46,6 +46,14 @@
                                 Register
                             </a>
                         @endif
+
+                        @if (Route::has('seller.register'))
+                            <a
+                                href="{{ route('seller.register') }}"
+                                class="inline-block px-5 py-1.5 dark:text-white border-[#f53003] hover:border-[#d42b02] border rounded-sm text-sm leading-normal bg-[#f53003] text-white hover:bg-[#d42b02]">
+                                Register as Seller
+                            </a>
+                        @endif
                     @endauth
                 </nav>
             @endif

@@ -13,9 +13,12 @@ new #[Layout('components.layouts.auth')] class extends Component {
     public string $email = '';
     public string $password = '';
     public string $password_confirmation = '';
+    public string $industry = '';
+    public $document_proof = null;
+    public $business_images = null;
 
     /**
-     * Handle an incoming registration request. 
+     * Handle an incoming seller registration request. 
      */
     public function register(): void
     {
@@ -23,9 +26,13 @@ new #[Layout('components.layouts.auth')] class extends Component {
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
             'password' => ['required', 'string', 'confirmed', Rules\Password::defaults()],
+            'industry' => ['required', 'string', 'in:Gym Owner/Trainer/Influencer,Shop Owner'],
+            'document_proof' => ['required'],
+            'business_images' => ['required'],
         ]);
 
         $validated['password'] = Hash::make($validated['password']);
+        $validated['role'] = 'seller'; // Add seller role
 
         event(new Registered(($user = User::create($validated))));
 
@@ -36,7 +43,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
 }; ?>
 
 <div class="flex flex-col gap-6">
-    <x-auth-header :title="__('Create an account')" :description="__('Enter your details below to create your account')" />
+    <x-auth-header :title="__('Register as a Seller')" :description="__('Join our marketplace and start selling your products')" />
 
     <!-- Session Status -->
     <x-auth-session-status class="text-center" :status="session('status')" />
@@ -45,12 +52,12 @@ new #[Layout('components.layouts.auth')] class extends Component {
         <!-- Name -->
         <flux:input
             wire:model="name"
-            :label="__('Name')"
+            :label="__('Business/Personal Name')"
             type="text"
             required
             autofocus
             autocomplete="name"
-            :placeholder="__('Full name')"
+            :placeholder="__('Enter your business or full name')"
         />
 
         <!-- Email Address -->
@@ -60,35 +67,35 @@ new #[Layout('components.layouts.auth')] class extends Component {
             type="email"
             required
             autocomplete="email"
-            placeholder="email@example.com"
+            placeholder="business@example.com"
         />
-        <!--slelect role-->
-        <flux:select wire:model="industry" placeholder="Choose industry...">
-            <flux:select.option>User</flux:select.option>
-            <flux:select.option>Gym Owner/Trainer/Influencer</flux:select.option>
-            <flux:select.option>Shop Owner</flux:select.option>
+
+        <!-- Select Business Type -->
+        <flux:select wire:model="industry" label="Business Type" placeholder="Choose your business type..." required>
+            <flux:select.option value="Gym Owner/Trainer/Influencer">Gym Owner/Trainer/Influencer</flux:select.option>
+            <flux:select.option value="Shop Owner">Shop Owner</flux:select.option>
         </flux:select>
 
         <!-- Document proof -->
         <flux:input 
-        type="file" 
-        wire:model="attachments" 
-        label="Document proof" 
-        multiple 
-        accept="image/*,application/pdf"
-        required
-        :description="__('Upload at least one document proof')"
-
+            type="file" 
+            wire:model="document_proof" 
+            label="Business Document Proof" 
+            multiple 
+            accept="image/*,application/pdf"
+            required
+            :description="__('Upload business registration, license, or ID proof')"
         />
-        <!-- Add three image -->
+
+        <!-- Business Images -->
         <flux:input 
-        type="file" 
-        wire:model="attachments" 
-        label="Add three images" 
-        accept="image/*"
-        required
-        multiple 
-        :description="__('Upload at least three images')"
+            type="file" 
+            wire:model="business_images" 
+            label="Business Photos" 
+            accept="image/*"
+            required
+            multiple 
+            :description="__('Upload at least 3 photos of your business/products')"
         />
         
 
@@ -116,7 +123,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
 
         <div class="flex items-center justify-end">
             <flux:button type="submit" variant="primary" class="w-full">
-                {{ __('Create account') }}
+                {{ __('Register as Seller') }}
             </flux:button>
         </div>
     </form>
@@ -127,7 +134,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
     </div>
 
     <div class="space-x-1 rtl:space-x-reverse text-center text-sm text-zinc-600 dark:text-zinc-400">
-        {{ __('Want to become a seller?') }}
-        <flux:link :href="route('seller.register')" wire:navigate class="text-[#f53003] hover:text-[#d42b02] font-medium">{{ __('Seller Registration') }}</flux:link>
+        {{ __('Want to register as a customer instead?') }}
+        <flux:link :href="route('register')" wire:navigate>{{ __('Customer Registration') }}</flux:link>
     </div>
 </div>
