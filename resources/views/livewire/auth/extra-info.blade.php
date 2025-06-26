@@ -107,26 +107,35 @@ new #[Layout('components.layouts.auth')] class extends Component {
             <!-- Document proof and Business images - only show for Gym Owner/Trainer/Influencer and Shop Owner -->
             @if(in_array($role, ['Gym Owner/Trainer/Influencer', 'Shop Owner']))
                 <!-- Document proof -->
-                <flux:input 
-                    type="file" 
-                    wire:model="attachments" 
-                    label="Document Proof" 
-                    multiple 
-                    accept="image/*,application/pdf"
-                    required
-                    description="Upload at least one document proof (Business license, certification, etc.)"
-                />
-                
-                <!-- Business images -->
-                <flux:input 
-                    type="file" 
-                    wire:model="attachments" 
-                    label="Business Images" 
-                    accept="image/*"
-                    required
-                    multiple 
-                    description="Upload at least three images of your business/gym"
-                />
+                @if($role === 'Gym Owner/Trainer/Influencer')
+                    <flux:input 
+                        type="file" 
+                        wire:model="attachments" 
+                        label="Document Proof" 
+                        multiple 
+                        accept="image/*,application/pdf"
+                        required
+                        description="Upload at least one document proof (Business license, certification, etc.)"
+                    />
+                    <flux:input 
+                        type="link" 
+                        wire:model="link" 
+                        label="Social Media link" 
+                        placeholder="Enter your social media link"
+                        required
+                        description="Provide a link to your social media profile or website"
+                    />
+                @endif
+                    <!-- Business images -->
+                    <flux:input 
+                        type="file" 
+                        wire:model="attachments" 
+                        label="Business Images" 
+                        accept="image/*"
+                        required
+                        multiple 
+                        description="Upload at least three images of your business/gym"
+                    />
             @endif
         @endif
         <!-- Seller Additional Info -->
