@@ -22,7 +22,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
 
     public function mount()
     {
-        $this->role = request()->get('role', 'User');
+        $this->role = request()->get('role', Auth::user()->role);
     }
 
     /**
