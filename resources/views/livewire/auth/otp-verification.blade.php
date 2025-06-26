@@ -35,7 +35,14 @@ new #[Layout('components.layouts.auth')] class extends Component {
 
         if ($this->pendingOtp) {
             $this->timeRemaining = max(0, now()->diffInSeconds($this->pendingOtp->expires_at, false));
+        } else {
+            $this->timeRemaining = 0;
         }
+    }
+
+    public function updateTimer(): void
+    {
+        $this->loadPendingOtp();
     }
 
     public function verifyOtp(): void
@@ -107,7 +114,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
     }
 }; ?>
 
-<div class="flex flex-col gap-6">
+<div wire:poll.1s="updateTimer" class="flex flex-col gap-6">
     <x-auth-header 
         :title="__('Verify Your Email')" 
         :description="__('We\'ve sent a 6-digit verification code to your email address')" 
@@ -122,13 +129,19 @@ new #[Layout('components.layouts.auth')] class extends Component {
                 Code sent to: <strong>{{ $email }}</strong>
             </p>
             <p class="text-sm text-blue-600 mt-1">
-                Time remaining: <span class="font-mono font-bold" id="countdown">{{ gmdate('i:s', $timeRemaining) }}</span>
+                Time remaining: <span class="font-mono font-bold">{{ gmdate('i:s', $timeRemaining) }}</span>
             </p>
         </div>
     @elseif($pendingOtp)
         <div class="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
             <p class="text-sm text-red-800">
                 Your OTP has expired. Please request a new one.
+            </p>
+        </div>
+    @else
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+            <p class="text-sm text-red-800">
+                No valid OTP found. Please register again.
             </p>
         </div>
     @endif
@@ -191,28 +204,3 @@ new #[Layout('components.layouts.auth')] class extends Component {
         </div>
     </form>
 </div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    let timeRemaining = {{ $timeRemaining }};
-    const countdownElement = document.getElementById('countdown');
-    
-    if (timeRemaining > 0 && countdownElement) {
-        const timer = setInterval(function() {
-            timeRemaining--;
-            
-            if (timeRemaining <= 0) {
-                clearInterval(timer);
-                window.location.reload(); // Refresh to update the UI
-                return;
-            }
-            
-            const minutes = Math.floor(timeRemaining / 60);
-            const seconds = timeRemaining % 60;
-            countdownElement.textContent = 
-                String(minutes).padStart(2, '0') + ':' + 
-                String(seconds).padStart(2, '0');
-        }, 1000);
-    }
-});
-</script>
