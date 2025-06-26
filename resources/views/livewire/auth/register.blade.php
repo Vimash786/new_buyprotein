@@ -1,9 +1,9 @@
 <?php
 
 use App\Models\User;
-use Illuminate\Auth\Events\Registered;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
+use App\Models\Otp;
+use App\Mail\OtpVerificationMail;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rules;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
@@ -15,7 +15,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
     public string $password_confirmation = '';
 
     /**
-     * Handle an incoming registration request. 
+     * Handle an incoming registration request and send OTP. 
      */
     public function register(): void
     {
@@ -25,13 +25,30 @@ new #[Layout('components.layouts.auth')] class extends Component {
             'password' => ['required', 'string', 'confirmed', Rules\Password::defaults()],
         ]);
 
-        $validated['password'] = Hash::make($validated['password']);
-        $validated['role'] = 'User'; // Set default role
+        // Store user data temporarily and create OTP
+        $userData = [
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => $validated['password'], // Will be hashed during verification
+        ];
 
-        event(new Registered(($user = User::create($validated))));
+        $otp = Otp::createForEmail($validated['email'], $userData);
 
-        Auth::login($user);
-        $this->redirect(route('extra.info', absolute: false), navigate: true);
+        // Send OTP email
+        try {
+            Mail::to($validated['email'])->send(new OtpVerificationMail($otp->otp_code, $validated['name']));
+            
+            // Store email in session for OTP verification page
+            session(['otp_email' => $validated['email']]);
+            
+            session()->flash('status', 'Verification code sent to your email address.');
+            $this->redirect(route('otp.verify'), navigate: true);
+            
+        } catch (\Exception $e) {
+            // If email fails, delete the OTP and show error
+            $otp->delete();
+            $this->addError('email', 'Failed to send verification email. Please try again.');
+        }
     }
 }; ?>
 
