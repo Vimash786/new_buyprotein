@@ -30,7 +30,7 @@ class UserFactory extends Factory
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
             'role' => fake()->randomElement(['User', 'Gym Owner/Trainer/Influencer', 'Shop Owner']),
-            'profile_completed' => fake()->boolean(80), // 80% chance of being completed
+            'profile_completed' => fake()->boolean(50), // 80% chance of being completed
         ];
     }
 

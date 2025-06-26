@@ -17,8 +17,10 @@ class DatabaseSeeder extends Seeder
         User::factory(20)->create();
 
         User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+            'name' => 'Super Admin',
+            'email' => 'super@gmail.com',
+            'password' => bcrypt('Super@123'), // Ensure to set a password
+            'role' => 'Super', // Assuming you have a role field
         ]);
 
         // Run the sellers seeder which will create the complete hierarchy
