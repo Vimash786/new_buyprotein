@@ -15,8 +15,13 @@ return new class extends Migration
             $table->foreignId('category_id')->nullable()->after('seller_id')->constrained('categories')->onDelete('set null');
             $table->foreignId('sub_category_id')->nullable()->after('category_id')->constrained('sub_categories')->onDelete('set null');
             
-            // Change existing category column to old_category for migration purposes
+            // Change existing category column to old_category for migration purposes and make it nullable
             $table->renameColumn('category', 'old_category');
+        });
+        
+        // Make old_category nullable in a separate statement after rename
+        Schema::table('products', function (Blueprint $table) {
+            $table->string('old_category')->nullable()->change();
         });
     }
 

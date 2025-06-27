@@ -23,6 +23,7 @@ class Sellers extends Model
     ];
 
     protected $casts = [
+        'product_category' => 'array',
         'status' => 'string',
     ];
 

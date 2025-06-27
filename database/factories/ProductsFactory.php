@@ -36,7 +36,8 @@ class ProductsFactory extends Factory
             'description' => $this->faker->paragraph(3),
             'price' => $this->faker->randomFloat(2, 15.99, 199.99),
             'stock_quantity' => $this->faker->numberBetween(10, 500),
-            'category' => $this->faker->randomElement(['Whey Protein', 'Casein Protein', 'Plant Protein', 'Mass Gainers', 'Pre-Workout', 'Post-Workout', 'Vitamins', 'Creatine']),
+            'category_id' => $this->faker->numberBetween(1, 9), // 9 main categories will be created by CategorySeeder
+            'sub_category_id' => $this->faker->optional(0.7)->numberBetween(1, 45), // About 45 total subcategories
             'brand' => $this->faker->randomElement(['MuscleTech', 'Optimum Nutrition', 'BSN', 'Dymatize', 'ProteinWorks', 'MyProtein', 'Universal', 'BioTech']),
             'status' => $this->faker->randomElement(['active', 'inactive']),
         ];
