@@ -2,6 +2,8 @@
 
 use App\Models\products;
 use App\Models\Sellers;
+use App\Models\Category;
+use App\Models\SubCategory;
 use Livewire\WithPagination;
 use Livewire\Volt\Component;
 
@@ -12,6 +14,7 @@ new class extends Component
     public $search = '';
     public $statusFilter = '';
     public $categoryFilter = '';
+    public $subCategoryFilter = '';
     public $showModal = false;
     public $editMode = false;
     public $productId = null;
@@ -22,9 +25,13 @@ new class extends Component
     public $description = '';
     public $price = '';
     public $stock_quantity = '';
-    public $category = '';
+    public $category_id = '';
+    public $sub_category_id = '';
     public $brand = '';
     public $status = 'active';
+    
+    // For dynamic subcategory loading
+    public $availableSubCategories = [];
 
     protected $rules = [
         'seller_id' => 'required|exists:sellers,id',
@@ -32,22 +39,28 @@ new class extends Component
         'description' => 'nullable|string',
         'price' => 'required|numeric|min:0',
         'stock_quantity' => 'required|integer|min:0',
-        'category' => 'required|string|max:255',
+        'category_id' => 'required|exists:categories,id',
+        'sub_category_id' => 'nullable|exists:sub_categories,id',
         'brand' => 'nullable|string|max:255',
         'status' => 'required|in:active,inactive',
     ];
 
     public function with()
     {
-        $query = products::with('seller');
+        $query = products::with(['seller', 'category', 'subCategory']);
 
         if ($this->search) {
             $query->where(function($q) {
                 $q->where('name', 'like', '%' . $this->search . '%')
-                  ->orWhere('category', 'like', '%' . $this->search . '%')
                   ->orWhere('brand', 'like', '%' . $this->search . '%')
                   ->orWhereHas('seller', function($seller) {
                       $seller->where('company_name', 'like', '%' . $this->search . '%');
+                  })
+                  ->orWhereHas('category', function($category) {
+                      $category->where('name', 'like', '%' . $this->search . '%');
+                  })
+                  ->orWhereHas('subCategory', function($subCategory) {
+                      $subCategory->where('name', 'like', '%' . $this->search . '%');
                   });
             });
         }
@@ -57,7 +70,11 @@ new class extends Component
         }
 
         if ($this->categoryFilter) {
-            $query->where('category', 'like', '%' . $this->categoryFilter . '%');
+            $query->where('category_id', $this->categoryFilter);
+        }
+
+        if ($this->subCategoryFilter) {
+            $query->where('sub_category_id', $this->subCategoryFilter);
         }
 
         $totalProducts = products::count();
@@ -68,6 +85,8 @@ new class extends Component
         return [
             'products' => $query->latest()->paginate(10),
             'sellers' => Sellers::where('status', 'approved')->get(),
+            'categories' => Category::active()->ordered()->get(),
+            'subCategories' => SubCategory::active()->ordered()->get(),
             'totalProducts' => $totalProducts,
             'activeProducts' => $activeProducts,
             'inactiveProducts' => $inactiveProducts,
@@ -96,9 +115,11 @@ new class extends Component
         $this->description = '';
         $this->price = '';
         $this->stock_quantity = '';
-        $this->category = '';
+        $this->category_id = '';
+        $this->sub_category_id = '';
         $this->brand = '';
         $this->status = 'active';
+        $this->availableSubCategories = [];
         $this->resetValidation();
     }
 
@@ -112,7 +133,8 @@ new class extends Component
             'description' => $this->description,
             'price' => $this->price,
             'stock_quantity' => $this->stock_quantity,
-            'category' => $this->category,
+            'category_id' => $this->category_id,
+            'sub_category_id' => $this->sub_category_id ?: null,
             'brand' => $this->brand,
             'status' => $this->status,
         ];
@@ -138,9 +160,18 @@ new class extends Component
         $this->description = $product->description;
         $this->price = $product->price;
         $this->stock_quantity = $product->stock_quantity;
-        $this->category = $product->category;
+        $this->category_id = $product->category_id;
+        $this->sub_category_id = $product->sub_category_id;
         $this->brand = $product->brand;
         $this->status = $product->status;
+        
+        // Load subcategories for the selected category
+        if ($this->category_id) {
+            $this->availableSubCategories = SubCategory::where('category_id', $this->category_id)
+                ->active()
+                ->ordered()
+                ->get();
+        }
         
         $this->editMode = true;
         $this->showModal = true;
@@ -175,6 +206,27 @@ new class extends Component
     public function updatingCategoryFilter()
     {
         $this->resetPage();
+    }
+
+    public function updatingSubCategoryFilter()
+    {
+        $this->resetPage();
+    }
+
+    public function updatedCategoryId()
+    {
+        // Reset subcategory when category changes
+        $this->sub_category_id = '';
+        
+        // Load subcategories for the selected category
+        if ($this->category_id) {
+            $this->availableSubCategories = SubCategory::where('category_id', $this->category_id)
+                ->active()
+                ->ordered()
+                ->get();
+        } else {
+            $this->availableSubCategories = [];
+        }
     }
 }; ?>
 
@@ -273,12 +325,20 @@ new class extends Component
                         </select>
 
                         <!-- Category Filter -->
-                        <input 
-                            type="text" 
-                            wire:model.live="categoryFilter"
-                            placeholder="Filter by category..."
-                            class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        >
+                        <select wire:model.live="categoryFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="">All Categories</option>
+                            @foreach($categories as $category)
+                                <option value="{{ $category->id }}">{{ $category->name }}</option>
+                            @endforeach
+                        </select>
+
+                        <!-- SubCategory Filter -->
+                        <select wire:model.live="subCategoryFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="">All Subcategories</option>
+                            @foreach($subCategories as $subCategory)
+                                <option value="{{ $subCategory->id }}">{{ $subCategory->name }}</option>
+                            @endforeach
+                        </select>
                     </div>
 
                     <!-- Add Button -->
@@ -313,6 +373,7 @@ new class extends Component
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subcategory</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                         </tr>
@@ -346,7 +407,10 @@ new class extends Component
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    {{ $product->category }}
+                                    {{ $product->category->name ?? 'N/A' }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    {{ $product->subCategory->name ?? 'N/A' }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <button 
@@ -393,7 +457,7 @@ new class extends Component
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="px-6 py-4 text-center text-gray-500">
+                                <td colspan="8" class="px-6 py-4 text-center text-gray-500">
                                     No products found.
                                 </td>
                             </tr>
@@ -494,13 +558,35 @@ new class extends Component
                             <!-- Category -->
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
-                                <input 
-                                    type="text" 
-                                    wire:model="category"
+                                <select 
+                                    wire:model="category_id"
                                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    placeholder="Enter category"
                                 >
-                                @error('category') <span class="text-red-500 text-sm">{{ $errors->first('category') }}</span> @enderror
+                                    <option value="">Select a category</option>
+                                    @foreach($categories as $category)
+                                        <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                    @endforeach
+                                </select>
+                                @error('category_id') <span class="text-red-500 text-sm">{{ $errors->first('category_id') }}</span> @enderror
+                            </div>
+
+                            <!-- SubCategory -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Subcategory</label>
+                                <select 
+                                    wire:model="sub_category_id"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    {{ empty($availableSubCategories) ? 'disabled' : '' }}
+                                >
+                                    <option value="">Select a subcategory (optional)</option>
+                                    @foreach($availableSubCategories as $subCategory)
+                                        <option value="{{ $subCategory->id }}">{{ $subCategory->name }}</option>
+                                    @endforeach
+                                </select>
+                                @if(empty($availableSubCategories))
+                                    <p class="text-sm text-gray-500 mt-1">Select a category first to see subcategories</p>
+                                @endif
+                                @error('sub_category_id') <span class="text-red-500 text-sm">{{ $errors->first('sub_category_id') }}</span> @enderror
                             </div>
 
                             <!-- Brand -->
