@@ -14,6 +14,9 @@ return new class extends Migration
         Schema::table('users', function (Blueprint $table) {
             $table->string('role')->default('User')->after('email');
             $table->boolean('profile_completed')->default(false)->after('role');
+            $table->string('document_proof')->nullable()->after('profile_completed');
+            $table->string('social_media_link')->nullable()->after('document_proof');
+            $table->json('business_images')->nullable()->after('social_media_link');
         });
     }
 

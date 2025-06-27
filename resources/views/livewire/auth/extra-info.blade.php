@@ -14,11 +14,17 @@ new #[Layout('components.layouts.auth')] class extends Component {
     use WithFileUploads;
     
     public string $role = '';
-    public $attachments = [];    public string $company_name = '';
+    public $attachments = [];
+    public string $company_name = '';
     public string $gst_number = '';
     public string $product_category = '';
     public string $contact_person = '';
     public $brand_certificate = null;
+    public $document_proof = null;
+    public string $social_media_link = '';
+    public string $social_link = '';
+    public $business_certificate = null;
+    public $business_images = [];
 
     public function mount()
     {
@@ -32,26 +38,50 @@ new #[Layout('components.layouts.auth')] class extends Component {
     {
         $user = Auth::user();
         
-        
-        if ($this->role === 'User') {
-            
-            $validated = $this->validate([
+        if ($this->role !== 'Seller') {
+            // Base validation rules for all user types
+            $rules = [
                 'role' => ['required', 'string', 'in:User,Gym Owner/Trainer/Influencer,Shop Owner'],
-                //'attachments' => ['required_unless:industry,User', 'array'],
-                //'attachments.*' => ['file', 'max:10240'], // 10MB max per file
-            ]);
+            ];
+            
+            // Add conditional validation based on role
+            if ($this->role === 'Gym Owner/Trainer/Influencer') {
+                $rules['document_proof'] = ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'];
+                $rules['social_link'] = ['required', 'string', 'url', 'max:255'];
+                $rules['business_images'] = ['required', 'array', 'min:1'];
+                $rules['business_images.*'] = ['file', 'image', 'max:10240'];
+            } elseif ($this->role === 'Shop Owner') {
+                $rules['business_images'] = ['required', 'array', 'min:1'];
+                $rules['business_images.*'] = ['file', 'image', 'max:10240'];
+            }
+            
+            $validated = $this->validate($rules);
             
             // Update user with additional info
             $user->update([
                 'role' => $validated['role'],
                 'profile_completed' => true,
             ]);
-            
-            // Handle file uploads if industry is not just 'User'
-            //if ($validated['role'] === 'User' || !empty($validated['attachments'])) {
-                // Store files logic here
-                // You might want to create a separate table for user documents
-            //}
+
+            // Save document proof for Gym Owner/Trainer/Influencer
+            if (isset($validated['document_proof'])) {
+                $documentProofPath = $validated['document_proof']->store('user_documents', 'public');
+                $user->update(['document_proof' => $documentProofPath]);
+            }
+
+            // Save social media link for Gym Owner/Trainer/Influencer
+            if (isset($validated['social_link'])) {
+                $user->update(['social_media_link' => $validated['social_link']]);
+            }
+
+            // Save business images for both Gym Owner/Trainer/Influencer and Shop Owner
+            if (isset($validated['business_images']) && is_array($validated['business_images'])) {
+                $businessImagePaths = [];
+                foreach ($validated['business_images'] as $image) {
+                    $businessImagePaths[] = $image->store('business_images', 'public');
+                }
+                $user->update(['business_images' => json_encode($businessImagePaths)]);
+            }
            
             
         } elseif ($this->role === 'Seller') {
@@ -110,16 +140,15 @@ new #[Layout('components.layouts.auth')] class extends Component {
                 @if($role === 'Gym Owner/Trainer/Influencer')
                     <flux:input 
                         type="file" 
-                        wire:model="attachments" 
+                        wire:model="document_proof" 
                         label="Document Proof" 
-                        multiple 
                         accept="image/*,application/pdf"
                         required
-                        description="Upload at least one document proof (Business license, certification, etc.)"
+                        description="Upload document proof (Business license, certification, etc.)"
                     />
                     <flux:input 
-                        type="link" 
-                        wire:model="link" 
+                        type="text" 
+                        wire:model="social_link" 
                         label="Social Media link" 
                         placeholder="Enter your social media link"
                         required
@@ -129,7 +158,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
                     <!-- Business images -->
                     <flux:input 
                         type="file" 
-                        wire:model="attachments" 
+                        wire:model="business_images" 
                         label="Business Images" 
                         accept="image/*"
                         required

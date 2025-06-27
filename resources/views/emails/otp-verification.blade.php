@@ -67,7 +67,14 @@
 <body>
     <div class="container">
         <div class="header">
-            <div class="logo">BuyProtein</div>
+            <div class="logo">
+                <div style="text-align: center; font-family: Arial, sans-serif; font-weight: bold; font-size: 28px; letter-spacing: 2px;">
+                    <span style="color: #000;">BUY PRO</span><span style="color: #2dc2fa;">T</span><span style="color: #000;">EIN</span>
+                </div>
+                <div style="font-family: Arial, sans-serif; font-size: 12px; color: #666; text-align: center; margin-top: 5px;">
+                    Your Fitness Partner
+                </div>
+            </div>
             <p>Account Verification</p>
         </div>
         
