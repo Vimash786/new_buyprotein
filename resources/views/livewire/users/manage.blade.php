@@ -633,7 +633,7 @@ new class extends Component
 
     <!-- Modal -->
     @if($showModal)
-        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="fixed inset-0 bg-black-shadow bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div class="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
                 <div class="p-6">
                     <div class="flex items-center justify-between mb-6">
@@ -865,7 +865,7 @@ new class extends Component
 
     <!-- Document Viewer Modal -->
     @if($showDocumentModal && $selectedUser)
-        <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="fixed inset-0 bg-black-shadow bg-opacity-50 overflow-y-auto h-full w-full z-50">
             <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
                 <div class="mt-3">
                     <!-- Modal Header -->
@@ -987,39 +987,40 @@ new class extends Component
                             @endif
 
                         @elseif($selectedUser->role === 'Seller')
-                            @if($selectedUser->seller)
+                            @php $seller = \App\Models\Sellers::where('user_id', $selectedUser->id)->first(); @endphp
+                            @if($seller)
                                 <!-- Seller Information -->
                                 <div class="mb-4 p-4 border rounded-lg bg-gray-50">
                                     <h4 class="font-medium text-gray-900 mb-3">Seller Information</h4>
                                     <div class="grid grid-cols-2 gap-4 text-sm">
                                         <div>
                                             <span class="text-gray-600">Company:</span>
-                                            <p class="font-medium">{{ $selectedUser->seller->company_name }}</p>
+                                            <p class="font-medium">{{ $seller->company_name }}</p>
                                         </div>
                                         <div>
                                             <span class="text-gray-600">GST Number:</span>
-                                            <p class="font-medium">{{ $selectedUser->seller->gst_number }}</p>
+                                            <p class="font-medium">{{ $seller->gst_number }}</p>
                                         </div>
                                         <div>
                                             <span class="text-gray-600">Product Category:</span>
-                                            <p class="font-medium">{{ $selectedUser->seller->product_category }}</p>
+                                            <p class="font-medium">{{ $seller->product_category }}</p>
                                         </div>
                                         <div>
                                             <span class="text-gray-600">Contact Person:</span>
-                                            <p class="font-medium">{{ $selectedUser->seller->contact_person }}</p>
+                                            <p class="font-medium">{{ $seller->contact_person }}</p>
                                         </div>
                                         <div>
                                             <span class="text-gray-600">Status:</span>
                                             <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
-                                                   {{ $selectedUser->seller->status === 'approved' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">
-                                                {{ ucfirst($selectedUser->seller->status) }}
+                                                   {{ $seller->status === 'approved' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">
+                                                {{ ucfirst($seller->status) }}
                                             </span>
                                         </div>
                                     </div>
                                 </div>
 
                                 <!-- Brand Certificate -->
-                                @if($selectedUser->seller->brand_certificate)
+                                @if($seller->brand_certificate)
                                     <div class="mb-4 p-4 border rounded-lg">
                                         <h4 class="font-medium text-gray-900 mb-2">Brand Certificate</h4>
                                         <div class="flex items-center gap-3">
@@ -1027,11 +1028,11 @@ new class extends Component
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                             </svg>
                                             <div class="flex-1">
-                                                <p class="text-sm text-gray-600">{{ basename($selectedUser->seller->brand_certificate) }}</p>
+                                                <p class="text-sm text-gray-600">{{ basename($seller->brand_certificate) }}</p>
                                                 <div class="flex gap-2 mt-1">
-                                                    <a href="{{ Storage::url($selectedUser->seller->brand_certificate) }}" target="_blank" 
+                                                    <a href="{{ Storage::url($seller->brand_certificate) }}" target="_blank" 
                                                        class="text-blue-600 hover:text-blue-800 text-xs">View</a>
-                                                    <a href="{{ Storage::url($selectedUser->seller->brand_certificate) }}" download 
+                                                    <a href="{{ Storage::url($seller->brand_certificate) }}" download 
                                                        class="text-green-600 hover:text-green-800 text-xs">Download</a>
                                                 </div>
                                             </div>
