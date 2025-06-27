@@ -50,7 +50,7 @@ class UserFactory extends Factory
     public function seller(): static
     {
         return $this->state(fn (array $attributes) => [
-            'role' => 'seller',
+            'role' => 'Seller',
             'profile_completed' => true,
         ]);
     }

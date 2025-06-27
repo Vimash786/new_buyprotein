@@ -22,7 +22,10 @@ class SellersFactory extends Factory
             'user_id' => \App\Models\User::factory()->seller(),
             'company_name' => $this->faker->company(),
             'gst_number' => $this->faker->unique()->regexify('[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}'),
-            'product_category' => $this->faker->randomElements($categories, $this->faker->numberBetween(1, 3)),
+           'product_category' => implode(',', $this->faker->randomElements(
+                ['Protein Supplements', 'Pre-Workout', 'Post-Workout', 'Vitamins', 'Mass Gainers', 'Creatine'],
+                $this->faker->numberBetween(1, 3)
+            )),
             'contact_person' => $this->faker->name(),
             'brand_certificate' => $this->faker->optional()->word() . '_certificate.pdf',
             'status' => $this->faker->randomElement(['approved', 'not_approved']),
