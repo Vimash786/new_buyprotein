@@ -23,8 +23,9 @@ class DatabaseSeeder extends Seeder
             'role' => 'Super', // Assuming you have a role field
         ]);
 
-        // Run the sellers seeder which will create the complete hierarchy
+        // Run the seeders to create the complete data hierarchy
         $this->call([
+            CategorySeeder::class,
             SellersSeeder::class,
         ]);
     }

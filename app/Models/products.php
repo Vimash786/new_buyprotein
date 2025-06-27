@@ -14,16 +14,22 @@ class products extends Model
 
     protected $fillable = [
         'seller_id',
+        'category_id',
+        'sub_category_id',
         'name',
         'description',
         'price',
         'stock_quantity',
         'category',
+        'old_category',
         'brand',
         'status',
     ];
 
     protected $casts = [
+        'seller_id' => 'integer',
+        'category_id' => 'integer',
+        'sub_category_id' => 'integer',
         'price' => 'decimal:2',
         'stock_quantity' => 'integer',
         'status' => 'string',
@@ -35,6 +41,22 @@ class products extends Model
     public function seller(): BelongsTo
     {
         return $this->belongsTo(Sellers::class, 'seller_id');
+    }
+
+    /**
+     * Get the category that owns the product.
+     */
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class, 'category_id');
+    }
+
+    /**
+     * Get the sub-category that owns the product.
+     */
+    public function subCategory(): BelongsTo
+    {
+        return $this->belongsTo(SubCategory::class, 'sub_category_id');
     }
 
     /**

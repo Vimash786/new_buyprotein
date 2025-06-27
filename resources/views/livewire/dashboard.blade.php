@@ -4,6 +4,8 @@ use App\Models\Sellers;
 use App\Models\products;
 use App\Models\orders;
 use App\Models\User;
+use App\Models\Category;
+use App\Models\SubCategory;
 use Livewire\Volt\Component;
 
 new class extends Component
@@ -17,6 +19,8 @@ new class extends Component
             'totalProducts' => products::count(),
             'totalOrders' => orders::count(),
             'totalUsers' => User::count(),
+            'totalCategories' => Category::count(),
+            'totalSubCategories' => SubCategory::count(),
         ];
     }
 }; ?>
@@ -34,7 +38,7 @@ new class extends Component
             <div class="mb-8">
                 <div class="bg-white rounded-lg shadow p-6">
                     <h2 class="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         <a href="{{ route('sellers.manage') }}" wire:navigate 
                            class="bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg p-4 flex items-center space-x-3 transition-colors">
                             <div class="bg-blue-500 p-2 rounded-lg">
@@ -61,6 +65,19 @@ new class extends Component
                             </div>
                         </a>
 
+                        <a href="{{ route('categories.manage') }}" wire:navigate 
+                           class="bg-green-50 hover:bg-green-100 border border-green-200 rounded-lg p-4 flex items-center space-x-3 transition-colors">
+                            <div class="bg-green-500 p-2 rounded-lg">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-900">Manage Categories</h3>
+                                <p class="text-sm text-gray-600">Add, edit categories & sub-categories</p>
+                            </div>
+                        </a>
+
                         <a href="{{ route('orders.manage') }}" wire:navigate 
                            class="bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg p-4 flex items-center space-x-3 transition-colors">
                             <div class="bg-indigo-500 p-2 rounded-lg">
@@ -78,7 +95,7 @@ new class extends Component
             </div>
 
             <!-- Stats Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
                 <!-- Total Sellers -->
                 <div class="bg-white rounded-lg shadow p-6">
                     <div class="flex items-center">
@@ -95,38 +112,6 @@ new class extends Component
                     </div>
                 </div>
 
-                <!-- Approved Sellers -->
-                <div class="bg-white rounded-lg shadow p-6">
-                    <div class="flex items-center">
-                        <div class="flex-1">
-                            <h3 class="text-lg font-medium text-gray-900">Approved Sellers</h3>
-                            <p class="text-3xl font-bold text-green-600">{{ $approvedSellers }}</p>
-                            <p class="text-sm text-gray-600 mt-1">Active and verified</p>
-                        </div>
-                        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Pending Sellers -->
-                <div class="bg-white rounded-lg shadow p-6">
-                    <div class="flex items-center">
-                        <div class="flex-1">
-                            <h3 class="text-lg font-medium text-gray-900">Pending Approval</h3>
-                            <p class="text-3xl font-bold text-yellow-600">{{ $pendingSellers }}</p>
-                            <p class="text-sm text-gray-600 mt-1">Awaiting review</p>
-                        </div>
-                        <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Total Products -->
                 <div class="bg-white rounded-lg shadow p-6">
                     <div class="flex items-center">
@@ -138,6 +123,38 @@ new class extends Component
                         <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Total Categories -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="flex-1">
+                            <h3 class="text-lg font-medium text-gray-900">Categories</h3>
+                            <p class="text-3xl font-bold text-green-600">{{ $totalCategories }}</p>
+                            <p class="text-sm text-gray-600 mt-1">Product categories</p>
+                        </div>
+                        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Total Sub Categories -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="flex-1">
+                            <h3 class="text-lg font-medium text-gray-900">Sub-Categories</h3>
+                            <p class="text-3xl font-bold text-orange-600">{{ $totalSubCategories }}</p>
+                            <p class="text-sm text-gray-600 mt-1">Product sub-categories</p>
+                        </div>
+                        <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                             </svg>
                         </div>
                     </div>
@@ -170,6 +187,38 @@ new class extends Component
                         <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Approved Sellers -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="flex-1">
+                            <h3 class="text-lg font-medium text-gray-900">Approved Sellers</h3>
+                            <p class="text-3xl font-bold text-teal-600">{{ $approvedSellers }}</p>
+                            <p class="text-sm text-gray-600 mt-1">Active and verified</p>
+                        </div>
+                        <div class="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pending Sellers -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="flex-1">
+                            <h3 class="text-lg font-medium text-gray-900">Pending Approval</h3>
+                            <p class="text-3xl font-bold text-yellow-600">{{ $pendingSellers }}</p>
+                            <p class="text-sm text-gray-600 mt-1">Awaiting review</p>
+                        </div>
+                        <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                         </div>
                     </div>

@@ -2,6 +2,7 @@
 
 use App\Models\User;
 use App\Models\Sellers;
+use App\Models\Category;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -25,9 +26,11 @@ new #[Layout('components.layouts.auth')] class extends Component {
     public string $social_link = '';
     public $business_certificate = null;
     public $business_images = [];
+    public $categories = [];
 
     public function mount()
     {
+        $categories = Category::active()->ordered()->get();
         $this->role = request()->get('role', Auth::user()->role);
     }
 
@@ -36,6 +39,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
      */
     public function completeRegistration(): void
     {
+        
         $user = Auth::user();
         
         if ($this->role !== 'Seller') {
@@ -189,10 +193,9 @@ new #[Layout('components.layouts.auth')] class extends Component {
 
             <!-- Product Category -->
             <flux:select wire:model="product_category" placeholder="Choose product category..." label="Product Category">
-                <flux:select.option value="Health Supplements">Health Supplements</flux:select.option>
-                <flux:select.option value="Fitness Equipment">Fitness Equipment</flux:select.option>
-                <flux:select.option value="Apparel">Apparel</flux:select.option>
-                <flux:select.option value="Other">Other</flux:select.option>
+                @foreach($categories as $category)
+                    <flux:select.option value="{{ $category->name }}">{{ $category->name }}</flux:select.option>
+                @endforeach
             </flux:select>
 
             <!-- Contact Person -->
