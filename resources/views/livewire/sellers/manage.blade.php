@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Sellers;
+use App\Models\Category;
 use Livewire\WithPagination;
 use Livewire\WithFileUploads;
 use Livewire\Volt\Component;
@@ -19,7 +20,7 @@ new class extends Component
     // Form fields
     public $company_name = '';
     public $gst_number = '';
-    public $product_category = '';
+    public $product_category = [];
     public $contact_person = '';
     public $brand_certificate = '';
     public $brand_certificate_file = null;
@@ -28,7 +29,8 @@ new class extends Component
     protected $rules = [
         'company_name' => 'required|string|max:255',
         'gst_number' => 'required|string|max:255|unique:sellers,gst_number',
-        'product_category' => 'required|string|max:255',
+        'product_category' => 'required|array|min:1',
+        'product_category.*' => 'string',
         'contact_person' => 'required|string|max:255',
         'brand_certificate_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,gif|max:2048',
         'status' => 'required|in:approved,not_approved',
@@ -53,6 +55,7 @@ new class extends Component
 
         return [
             'sellers' => $query->latest()->paginate(10),
+            'categories' => Category::all(),
             'totalSellers' => Sellers::count(),
             'approvedSellers' => Sellers::where('status', 'approved')->count(),
             'pendingSellers' => Sellers::where('status', 'not_approved')->count(),
@@ -77,7 +80,7 @@ new class extends Component
         $this->sellerId = null;
         $this->company_name = '';
         $this->gst_number = '';
-        $this->product_category = '';
+        $this->product_category = [];
         $this->contact_person = '';
         $this->brand_certificate = '';
         $this->brand_certificate_file = null;
@@ -98,7 +101,7 @@ new class extends Component
         $data = [
             'company_name' => $this->company_name,
             'gst_number' => $this->gst_number,
-            'product_category' => $this->product_category,
+            'product_category' => implode(', ', $this->product_category), // Convert array to comma-separated string
             'contact_person' => $this->contact_person,
             'status' => $this->status,
         ];
@@ -128,7 +131,7 @@ new class extends Component
         $this->sellerId = $seller->id;
         $this->company_name = $seller->company_name;
         $this->gst_number = $seller->gst_number;
-        $this->product_category = $seller->product_category;
+        $this->product_category = $seller->product_category ? explode(', ', $seller->product_category) : [];
         $this->contact_person = $seller->contact_person;
         $this->brand_certificate = $seller->brand_certificate;
         $this->brand_certificate_file = null; // Reset file input for edit
@@ -161,6 +164,13 @@ new class extends Component
     public function updatingStatusFilter()
     {
         $this->resetPage();
+    }
+
+    public function removeCategory($category)
+    {
+        $this->product_category = array_values(array_filter($this->product_category, function($cat) use ($category) {
+            return $cat !== $category;
+        }));
     }
 }; ?>
 
@@ -412,16 +422,20 @@ new class extends Component
                         </div>
 
                         <!-- Product Category -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Product Category</label>
-                            <input 
-                                type="text" 
-                                wire:model="product_category"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                placeholder="Enter product category"
-                            >
-                            @error('product_category') <span class="text-red-500 text-sm">{{ $errors->first('product_category') }}</span> @enderror
-                        </div>
+                        <x-multiselect
+                            label="Product Categories"
+                            wire-model="product_category"
+                            :options="$categories"
+                            :selected="$product_category"
+                            placeholder="Choose product categories..."
+                            description="Select one or more categories that best describe your products. You can choose multiple categories to reach a broader audience."
+                            remove-method="removeCategory"
+                            option-value="id"
+                            option-label="name"
+                            option-description="description"
+                            required
+                            :show-description="true"
+                        />
 
                         <!-- Contact Person -->
                         <div>

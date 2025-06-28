@@ -206,100 +206,20 @@ new #[Layout('components.layouts.auth')] class extends Component {
             />
             
             <!-- Product Category -->
-            <div class="space-y-3" x-data="{ open: false }">
-                <flux:label for="product_category" class="text-sm font-medium text-gray-900 dark:text-gray-100">Product Categories</flux:label>
-                
-                <!-- Selected Categories Display -->
-                @if(!empty($product_category))
-                    <div class="flex flex-wrap gap-2 mb-3">
-                        @foreach($product_category as $category)
-                            <span class="inline-flex items-center gap-x-1.5 py-2 px-3 rounded-full text-sm font-medium bg-gradient-to-r text-accent-content bg-accent-foreground border-0 shadow-sm hover:shadow-md transition-all duration-200">
-                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                                </svg>
-                                {{ $category }}
-                                <button 
-                                    type="button" 
-                                    wire:click="removeCategory('{{ $category }}')"
-                                    class="ml-1 inline-flex items-center justify-center w-5 h-5 text-accent-content hover:text-gray-200 hover:bg-white/20 rounded-full transition-colors duration-150"
-                                >
-                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                    </svg>
-                                </button>
-                            </span>
-                        @endforeach
-                    </div>
-                @endif
-
-                <!-- Custom Multiselect Dropdown -->
-                <div class="relative">
-                    <button 
-                        type="button"
-                        @click="open = !open"
-                        class="w-full px-4 py-3 text-left bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm hover:border-gray-400 dark:hover:border-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-                    >
-                        <div class="flex items-center justify-between">
-                            <span class="block truncate text-gray-700 dark:text-gray-200">
-                                @if(empty($product_category))
-                                    <span class="text-gray-500 dark:text-gray-400">Choose product categories...</span>
-                                @elseif(count($product_category) <= 2)
-                                    {{ implode(', ', $product_category) }}
-                                @else
-                                    {{ $product_category[0] }}, {{ $product_category[1] }} 
-                                    <span class="text-blue-600 font-medium">+{{ count($product_category) - 2 }} more</span>
-                                @endif
-                            </span>
-                            <svg class="w-5 h-5 text-gray-400 transition-transform duration-200" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                            </svg>
-                        </div>
-                    </button>
-
-                    <!-- Dropdown Options -->
-                    <div 
-                        x-show="open" 
-                        x-transition:enter="transition ease-out duration-100"
-                        x-transition:enter-start="transform opacity-0 scale-95"
-                        x-transition:enter-end="transform opacity-100 scale-100"
-                        x-transition:leave="transition ease-in duration-75"
-                        x-transition:leave-start="transform opacity-100 scale-100"
-                        x-transition:leave-end="transform opacity-0 scale-95"
-                        @click.away="open = false"
-                        class="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-auto"
-                    >
-                        <div class="py-1">
-                            @foreach($categories as $category)
-                                <label class="flex items-center px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors duration-150">
-                                    <input 
-                                        type="checkbox" 
-                                        wire:model.live="product_category" 
-                                        value="{{ $category->name }}"
-                                        class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                                    >
-                                    <div class="ml-3 flex-1">
-                                        <div class="flex items-center justify-between">
-                                            <span class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ $category->name }}</span>
-                                            @if(in_array($category->name, $product_category))
-                                                <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                                                </svg>
-                                            @endif
-                                        </div>
-                                        @if($category->description)
-                                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ Str::limit($category->description, 60) }}</p>
-                                        @endif
-                                    </div>
-                                </label>
-                            @endforeach
-                        </div>
-                    </div>
-                </div>
-                
-                <flux:description class="text-sm text-gray-600 dark:text-gray-400">
-                    Select one or more categories that best describe your products. You can choose multiple categories to reach a broader audience.
-                </flux:description>
-            </div>
+            <x-multiselect
+                label="Product Categories"
+                wire-model="product_category"
+                :options="$categories"
+                :selected="$product_category"
+                placeholder="Choose product categories..."
+                description="Select one or more categories that best describe your products. You can choose multiple categories to reach a broader audience."
+                remove-method="removeCategory"
+                option-value="id"
+                option-label="name"
+                option-description="description"
+                required
+                :show-description="true"
+            />
 
             <!-- Contact Person -->
             <flux:input
