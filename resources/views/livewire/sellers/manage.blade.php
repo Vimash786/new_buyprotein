@@ -101,7 +101,7 @@ new class extends Component
         $data = [
             'company_name' => $this->company_name,
             'gst_number' => $this->gst_number,
-            'product_category' => implode(', ', $this->product_category), // Convert array to comma-separated string
+            'product_category' => implode(',', array_filter($this->product_category)), // Convert array to comma-separated string
             'contact_person' => $this->contact_person,
             'status' => $this->status,
         ];
@@ -131,7 +131,7 @@ new class extends Component
         $this->sellerId = $seller->id;
         $this->company_name = $seller->company_name;
         $this->gst_number = $seller->gst_number;
-        $this->product_category = $seller->product_category ? explode(', ', $seller->product_category) : [];
+        $this->product_category = $seller->product_category ? array_filter(array_map('trim', preg_split('/,\s*/', $seller->product_category))) : [];
         $this->contact_person = $seller->contact_person;
         $this->brand_certificate = $seller->brand_certificate;
         $this->brand_certificate_file = null; // Reset file input for edit
@@ -313,8 +313,21 @@ new class extends Component
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                     {{ $seller->gst_number }}
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    {{ $seller->product_category }}
+                                <td class="px-6 py-4 text-sm text-gray-900">
+                                    @if($seller->product_category)
+                                        <div class="flex flex-wrap gap-1 max-w-xs">
+                                            @php
+                                                $category = array_filter(array_map('trim', explode(',', $seller->product_category)));
+                                            @endphp
+                                            @foreach($category as $p_category)
+                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 whitespace-nowrap">
+                                                    {{ $p_category }}
+                                                </span>
+                                            @endforeach
+                                        </div>
+                                    @else
+                                        <span class="text-gray-400">No categories</span>
+                                    @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                     {{ $seller->contact_person }}
@@ -426,7 +439,7 @@ new class extends Component
                             label="Product Categories"
                             wire-model="product_category"
                             :options="$categories"
-                            :selected="$product_category"
+                            :selected="is_array($product_category) ? $product_category : (empty($product_category) ? [] : array_filter(array_map('trim', preg_split('/,\s*/', $product_category))))"
                             placeholder="Choose product categories..."
                             description="Select one or more categories that best describe your products. You can choose multiple categories to reach a broader audience."
                             remove-method="removeCategory"

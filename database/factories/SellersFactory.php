@@ -16,7 +16,7 @@ class SellersFactory extends Factory
      */
     public function definition(): array
     {
-        $categories = ['Whey Protein', 'Casein Protein', 'Plant Protein', 'Mass Gainers', 'Pre-Workout', 'Post-Workout', 'Vitamins', 'Creatine'];
+        $categories = ['Protein Supplements', 'Pre-Workout', 'Post-Workout', 'Vitamins & Minerals', 'Weight Management', 'Health & Wellness', 'Fitness Equipment', 'Gym Accessories'];
         
         return [
             'user_id' => \App\Models\User::factory()->seller(),
