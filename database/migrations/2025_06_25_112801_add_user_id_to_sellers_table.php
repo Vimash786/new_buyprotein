@@ -12,6 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('sellers', function (Blueprint $table) {
+            $table->string('commission')->after('contact_person')->default('10');
             $table->foreignId('user_id')->after('id')->constrained()->onDelete('cascade');
         });
     }
