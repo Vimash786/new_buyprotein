@@ -22,78 +22,13 @@
             </div>
         </div>
     </div>
-    <div class="header-mid-one-wrapper">
-        <div class="container">
-            <div class="row">
-                <div class="col-lg-12">
-                    <div class="header-mid-wrapper-between">
-                        <div class="nav-sm-left">
-                            <ul class="nav-h_top">
-                                <li><a href="about.html">About Us</a></li>
-                                <li><a href="account.html">My Account</a></li>
-                                <li><a href="wishlist.html">Wishlist</a></li>
-                            </ul>
-                            <p class="para">We deliver to your everyday from 7:00 to 22:00</p>
-                        </div>
-                        <div class="nav-sm-left">
-                            <ul class="nav-h_top language">
-                                <li class="category-hover-header language-hover">
-                                    <a href="#">English</a>
-                                    <ul class="category-sub-menu">
-                                        <li>
-                                            <a href="#" class="menu-item">
-                                                <span>Italian</span>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="#" class="menu-item">
-                                                <span>Russian</span>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="#" class="menu-item">
-                                                <span>Chinian</span>
-                                            </a>
-                                        </li>
-                                    </ul>
-                                </li>
-                                <li class="category-hover-header language-hover">
-                                    <a href="#">
-                                        USD
-                                    </a>
-                                    <ul class="category-sub-menu">
-                                        <li>
-                                            <a href="#" class="menu-item">
-                                                <span>Rubol</span>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="#" class="menu-item">
-                                                <span>Rupi</span>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="#" class="menu-item">
-                                                <span>Euro</span>
-                                            </a>
-                                        </li>
-                                    </ul>
-                                </li>
-                                <li><a href="trackorder.html">Track Order</a></li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
     <div class="search-header-area-main">
         <div class="container">
             <div class="row">
                 <div class="col-lg-12">
                     <div class="logo-search-category-wrapper">
                         <a href="index.html" class="logo-area">
-                            <img src="{{ asset('assets/images/logo/logo-01.svg') }}" alt="logo-main" class="logo">
+                            <img src="{{ asset('buy-protein.jpg') }}" height="auto" style="width: 288px;" alt="logo-main" class="logo">
                         </a>
                         <div class="category-search-wrapper">
                             <div class="category-btn category-hover-header">

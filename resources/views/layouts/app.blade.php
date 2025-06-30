@@ -8,7 +8,7 @@
     <meta name="description" content="Ekomart-Grocery-Store(e-Commerce) HTML Template: A sleek, responsive, and user-friendly HTML template designed for online grocery stores.">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="keywords" content="Grocery, Store, stores">
-    <title>@yield('title', 'Ekomart-Grocery-Store(e-Commerce) HTML Template')</title>
+    <title>@yield('title', 'Buy Protein Store(e-Commerce)')</title>
     <link rel="shortcut icon" type="image/x-icon" href="{{ asset('assets/images/fav.png') }}">
     <!-- plugins css -->
     <link rel="stylesheet preload" href="{{ asset('assets/css/plugins.css') }}" as="style">
