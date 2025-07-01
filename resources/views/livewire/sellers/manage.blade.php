@@ -22,6 +22,7 @@ new class extends Component
     public $gst_number = '';
     public $product_category = [];
     public $contact_person = '';
+    public $commission = '';
     public $brand_certificate = '';
     public $brand_certificate_file = null;
     public $status = 'not_approved';
@@ -32,6 +33,7 @@ new class extends Component
         'product_category' => 'required|array|min:1',
         'product_category.*' => 'string',
         'contact_person' => 'required|string|max:255',
+        'commission' => 'required|string|max:255',
         'brand_certificate_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,gif|max:2048',
         'status' => 'required|in:approved,not_approved',
     ];
@@ -82,6 +84,7 @@ new class extends Component
         $this->gst_number = '';
         $this->product_category = [];
         $this->contact_person = '';
+        $this->commission = '';
         $this->brand_certificate = '';
         $this->brand_certificate_file = null;
         $this->status = 'not_approved';
@@ -103,6 +106,7 @@ new class extends Component
             'gst_number' => $this->gst_number,
             'product_category' => implode(',', array_filter($this->product_category)), // Convert array to comma-separated string
             'contact_person' => $this->contact_person,
+            'commission' => $this->commission,
             'status' => $this->status,
         ];
 
@@ -113,7 +117,9 @@ new class extends Component
             $data['brand_certificate'] = $filePath;
         } elseif (!$this->editMode) {
             $data['brand_certificate'] = null;
-        }if ($this->editMode) {
+        }
+        
+        if ($this->editMode) {
             Sellers::findOrFail($this->sellerId)->update($data);
             session()->flash('message', 'Seller updated successfully!');
         } else {
@@ -133,6 +139,7 @@ new class extends Component
         $this->gst_number = $seller->gst_number;
         $this->product_category = $seller->product_category ? array_filter(array_map('trim', preg_split('/,\s*/', $seller->product_category))) : [];
         $this->contact_person = $seller->contact_person;
+        $this->commission = $seller->commission;
         $this->brand_certificate = $seller->brand_certificate;
         $this->brand_certificate_file = null; // Reset file input for edit
         $this->status = $seller->status;
@@ -292,7 +299,8 @@ new class extends Component
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
                         @forelse($sellers as $seller)
-                            <tr class="hover:bg-gray-50">                                <td class="px-6 py-4 whitespace-nowrap">
+                            <tr class="hover:bg-gray-50">                                
+                                <td class="px-6 py-4 whitespace-nowrap">
                                     <div>
                                         <div class="text-sm font-medium text-gray-900">{{ $seller->company_name }}</div>
                                         @if($seller->brand_certificate)
@@ -395,7 +403,7 @@ new class extends Component
 
     <!-- Modal -->
     @if($showModal)
-        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="fixed inset-0 bg-black-shadow bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div class="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
                 <div class="p-6">
                     <div class="flex items-center justify-between mb-6">
@@ -433,6 +441,28 @@ new class extends Component
                             >
                             @error('gst_number') <span class="text-red-500 text-sm">{{ $errors->first('gst_number') }}</span> @enderror
                         </div>
+                        <!-- Commission assign -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Assign Commission</label>
+                            <input 
+                                type="text" 
+                                wire:model="commission"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                placeholder="Enter Commission number" 
+                            >
+                            @error('commission') <span class="text-red-500 text-sm">{{ $errors->first('commission') }}</span> @enderror
+                        </div>
+                        <!-- Contact Person -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Contact Person</label>
+                            <input 
+                                type="text" 
+                                wire:model="contact_person"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                placeholder="Enter contact person name"
+                            >
+                            @error('contact_person') <span class="text-red-500 text-sm">{{ $errors->first('contact_person') }}</span> @enderror
+                        </div>   
 
                         <!-- Product Category -->
                         <x-multiselect
@@ -449,18 +479,8 @@ new class extends Component
                             required
                             :show-description="true"
                         />
-
-                        <!-- Contact Person -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Contact Person</label>
-                            <input 
-                                type="text" 
-                                wire:model="contact_person"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                placeholder="Enter contact person name"
-                            >
-                            @error('contact_person') <span class="text-red-500 text-sm">{{ $errors->first('contact_person') }}</span> @enderror
-                        </div>                        <!-- Brand Certificate -->
+                                        
+                        <!-- Brand Certificate -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Brand Certificate</label>
                             
