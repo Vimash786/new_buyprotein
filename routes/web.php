@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 use Livewire\Volt\Volt;
 
@@ -7,9 +8,11 @@ Route::get('/dash', function () {
     return view('welcome');
 })->name('home');
 
-Route::get('/', function () {
-    return view('dashboard');
-})->name('home');
+Route::get('/', [DashboardController::class, 'index'])->name('home');
+
+// Route::get('/', function () {
+//     return view('dashboard');
+// })->name('home');
 
 Volt::route('dashboard', 'dashboard')
     ->middleware(['auth', 'verified'])

@@ -7,7 +7,8 @@
                 <div class="col-lg-12">
                     <div class="bwtween-area-header-top">
                         <div class="discount-area">
-                            <p class="disc">FREE delivery & 40% Discount for next 3 orders! Place your 1st order in.</p>
+                            <p class="disc">FREE delivery & 40% Discount for next 3 orders! Place your 1st order in.
+                            </p>
                             <div class="countdown">
                                 <div class="countDown">10/05/2025 10:20:00</div>
                             </div>
@@ -28,7 +29,8 @@
                 <div class="col-lg-12">
                     <div class="logo-search-category-wrapper">
                         <a href="index.html" class="logo-area">
-                            <img src="{{ asset('buy-protein.jpg') }}" height="auto" style="width: 288px;" alt="logo-main" class="logo">
+                            <img src="{{ asset('buy-protein.jpg') }}" height="auto" style="width: 288px;"
+                                alt="logo-main" class="logo">
                         </a>
                         <div class="category-search-wrapper">
                             <div class="category-btn category-hover-header">
@@ -122,7 +124,8 @@
                                 </ul>
                             </div>
                             <form action="#" class="search-header">
-                                <input type="text" placeholder="Search for products, categories or brands" required>
+                                <input type="text" placeholder="Search for products, categories or brands"
+                                    required>
                                 <a href="#" class="rts-btn btn-primary radious-sm with-icon">
                                     <div class="btn-text">
                                         Search
@@ -139,14 +142,18 @@
                         <div class="actions-area">
                             <div class="search-btn" id="searchs">
 
-                                <svg width="17" height="16" viewBox="0 0 17 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M15.75 14.7188L11.5625 10.5312C12.4688 9.4375 12.9688 8.03125 12.9688 6.5C12.9688 2.9375 10.0312 0 6.46875 0C2.875 0 0 2.9375 0 6.5C0 10.0938 2.90625 13 6.46875 13C7.96875 13 9.375 12.5 10.5 11.5938L14.6875 15.7812C14.8438 15.9375 15.0312 16 15.25 16C15.4375 16 15.625 15.9375 15.75 15.7812C16.0625 15.5 16.0625 15.0312 15.75 14.7188ZM1.5 6.5C1.5 3.75 3.71875 1.5 6.5 1.5C9.25 1.5 11.5 3.75 11.5 6.5C11.5 9.28125 9.25 11.5 6.5 11.5C3.71875 11.5 1.5 9.28125 1.5 6.5Z" fill="#1F1F25"></path>
+                                <svg width="17" height="16" viewBox="0 0 17 16" fill="none"
+                                    xmlns="http://www.w3.org/2000/svg">
+                                    <path
+                                        d="M15.75 14.7188L11.5625 10.5312C12.4688 9.4375 12.9688 8.03125 12.9688 6.5C12.9688 2.9375 10.0312 0 6.46875 0C2.875 0 0 2.9375 0 6.5C0 10.0938 2.90625 13 6.46875 13C7.96875 13 9.375 12.5 10.5 11.5938L14.6875 15.7812C14.8438 15.9375 15.0312 16 15.25 16C15.4375 16 15.625 15.9375 15.75 15.7812C16.0625 15.5 16.0625 15.0312 15.75 14.7188ZM1.5 6.5C1.5 3.75 3.71875 1.5 6.5 1.5C9.25 1.5 11.5 3.75 11.5 6.5C11.5 9.28125 9.25 11.5 6.5 11.5C3.71875 11.5 1.5 9.28125 1.5 6.5Z"
+                                        fill="#1F1F25"></path>
                                 </svg>
 
                             </div>
                             <div class="menu-btn" id="menu-btn">
 
-                                <svg width="20" height="16" viewBox="0 0 20 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <svg width="20" height="16" viewBox="0 0 20 16" fill="none"
+                                    xmlns="http://www.w3.org/2000/svg">
                                     <rect y="14" width="20" height="2" fill="#1F1F25"></rect>
                                     <rect y="7" width="20" height="2" fill="#1F1F25"></rect>
                                     <rect width="20" height="2" fill="#1F1F25"></rect>
@@ -166,14 +173,15 @@
                             </a>
                             <div class="btn-border-only cart category-hover-header">
                                 <i class="fa-sharp fa-regular fa-cart-shopping"></i>
-                                <span  class="text">My Cart</span>
+                                <span class="text">My Cart</span>
                                 <span class="number">2</span>
                                 <div class="category-sub-menu card-number-show">
                                     <h5 class="shopping-cart-number">Shopping Cart (03)</h5>
                                     <div class="cart-item-1 border-top">
                                         <div class="img-name">
                                             <div class="thumbanil">
-                                                <img src="{{ asset('assets/images/shop/cart-1.png') }}" alt="">
+                                                <img src="{{ asset('assets/images/shop/cart-1.png') }}"
+                                                    alt="">
                                             </div>
                                             <div class="details">
                                                 <a href="shop-details.html">
@@ -235,14 +243,17 @@
                                             </div>
                                             <div class="single-progress-area-incard">
                                                 <div class="progress">
-                                                    <div class="progress-bar wow fadeInLeft" role="progressbar" style="width: 80%" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+                                                    <div class="progress-bar wow fadeInLeft" role="progressbar"
+                                                        style="width: 80%" aria-valuenow="25" aria-valuemin="0"
+                                                        aria-valuemax="100"></div>
                                                 </div>
                                             </div>
                                             <p>Spend More <span>$125.00</span> to reach <span>Free Shipping</span></p>
                                         </div>
                                         <div class="button-wrapper d-flex align-items-center justify-content-between">
                                             <a href="cart.html" class="rts-btn btn-primary ">View Cart</a>
-                                            <a href="checkout.html" class="rts-btn btn-primary border-only">CheckOut</a>
+                                            <a href="checkout.html"
+                                                class="rts-btn btn-primary border-only">CheckOut</a>
                                         </div>
                                     </div>
                                 </div>
@@ -263,16 +274,8 @@
                             <nav>
                                 <ul class="parent-nav">
                                     <li class="parent has-dropdown">
-                                        <a class="nav-link" href="#">Home</a>
-                                        <ul class="submenu">
-                                            <li><a class="sub-b" href="index.html">Home One</a></li>
-                                            <li><a class="sub-b" href="index-two.html">Home Two</a></li>
-                                            <li><a class="sub-b" href="index-three.html">Home Three</a></li>
-                                            <li><a class="sub-b" href="index-four.html">Home Four</a></li>
-                                            <li><a class="sub-b" href="index-five.html">Home Five</a></li>
-                                        </ul>
+                                        <a class="nav-link" href="{{ route('home') }}">Home</a>
                                     </li>
-                                    <li class="parent"><a href="about.html">About</a></li>
                                     <li class="parent with-megamenu">
                                         <a href="#">Shop</a>
                                         <div class="rts-megamenu">
@@ -284,10 +287,14 @@
                                                             <div class="single-megamenu-wrapper">
                                                                 <p class="title">Shop Layout</p>
                                                                 <ul>
-                                                                    <li><a href="shop-grid-sidebar.html">Shop Grid Sidebar</a></li>
-                                                                    <li><a href="shop-list-sidebar.html">Shop list Sidebar</a></li>
-                                                                    <li><a href="shop-grid-top-filter.html">Shop Top Filter Grid</a></li>
-                                                                    <li><a href="shop-list-top-filter.html">Shop Top Filter List</a></li>
+                                                                    <li><a href="shop-grid-sidebar.html">Shop Grid
+                                                                            Sidebar</a></li>
+                                                                    <li><a href="shop-list-sidebar.html">Shop list
+                                                                            Sidebar</a></li>
+                                                                    <li><a href="shop-grid-top-filter.html">Shop Top
+                                                                            Filter Grid</a></li>
+                                                                    <li><a href="shop-list-top-filter.html">Shop Top
+                                                                            Filter List</a></li>
                                                                 </ul>
                                                             </div>
                                                             <!-- single item areas end -->
@@ -295,10 +302,18 @@
                                                             <div class="single-megamenu-wrapper">
                                                                 <p class="title">Shop Details</p>
                                                                 <ul>
-                                                                    <li><a class="sub-b" href="shop-details.html">Shop Details</a></li>
-                                                                    <li><a class="sub-b" href="shop-details-2.html">Shop Details V2</a></li>
-                                                                    <li><a class="sub-b" href="shop-details-right-sidebar.html">Shop Details V3</a></li>
-                                                                    <li><a class="sub-b" href="shop-details-4.html">Shop Details V4</a></li>
+                                                                    <li><a class="sub-b"
+                                                                            href="shop-details.html">Shop Details</a>
+                                                                    </li>
+                                                                    <li><a class="sub-b"
+                                                                            href="shop-details-2.html">Shop Details
+                                                                            V2</a></li>
+                                                                    <li><a class="sub-b"
+                                                                            href="shop-details-right-sidebar.html">Shop
+                                                                            Details V3</a></li>
+                                                                    <li><a class="sub-b"
+                                                                            href="shop-details-4.html">Shop Details
+                                                                            V4</a></li>
                                                                 </ul>
                                                             </div>
                                                             <!-- single item areas end -->
@@ -306,10 +321,18 @@
                                                             <div class="single-megamenu-wrapper">
                                                                 <p class="title">Product Feature</p>
                                                                 <ul>
-                                                                    <li><a class="sub-b" href="shop-details-variable.html">Variable product</a></li>
-                                                                    <li><a class="sub-b" href="shop-details-affiliats.html">Affiliate product</a></li>
-                                                                    <li><a class="sub-b" href="shop-details-group.html">Shop Details Group</a></li>
-                                                                    <li><a class="sub-b" href="shop-compare.html">Shop Compare</a></li>
+                                                                    <li><a class="sub-b"
+                                                                            href="shop-details-variable.html">Variable
+                                                                            product</a></li>
+                                                                    <li><a class="sub-b"
+                                                                            href="shop-details-affiliats.html">Affiliate
+                                                                            product</a></li>
+                                                                    <li><a class="sub-b"
+                                                                            href="shop-details-group.html">Shop Details
+                                                                            Group</a></li>
+                                                                    <li><a class="sub-b"
+                                                                            href="shop-compare.html">Shop Compare</a>
+                                                                    </li>
                                                                 </ul>
                                                             </div>
                                                             <!-- single item areas end -->
@@ -317,17 +340,22 @@
                                                             <div class="single-megamenu-wrapper">
                                                                 <p class="title">Shop Others</p>
                                                                 <ul>
-                                                                    <li><a class="sub-b" href="cart.html">Cart</a></li>
-                                                                    <li><a class="sub-b" href="checkout.html">Checkout</a></li>
-                                                                    <li><a class="sub-b" href="trackorder.html">Track Order</a></li>
+                                                                    <li><a class="sub-b" href="cart.html">Cart</a>
+                                                                    </li>
+                                                                    <li><a class="sub-b"
+                                                                            href="checkout.html">Checkout</a></li>
+                                                                    <li><a class="sub-b" href="trackorder.html">Track
+                                                                            Order</a></li>
                                                                 </ul>
                                                             </div>
                                                             <!-- single item areas end -->
                                                         </div>
                                                     </div>
                                                     <div class="col-lg-4">
-                                                        <a href="shop-grid-sidebar.html" class="feature-add-megamenu-area">
-                                                            <img src="{{ asset('assets/images/feature/05.jpg') }}" alt="feature_product">
+                                                        <a href="shop-grid-sidebar.html"
+                                                            class="feature-add-megamenu-area">
+                                                            <img src="{{ asset('assets/images/feature/05.jpg') }}"
+                                                                alt="feature_product">
                                                         </a>
                                                     </div>
                                                 </div>
@@ -354,7 +382,8 @@
                                             <li><a class="sub-b" href="login.html">Login</a></li>
                                             <li><a class="sub-b" href="privacy-policy.html">Privacy Policy</a></li>
                                             <li><a class="sub-b" href="cookies-policy.html">Cookies Policy</a></li>
-                                            <li><a class="sub-b" href="terms-condition.html">Terms & Condition</a></li>
+                                            <li><a class="sub-b" href="terms-condition.html">Terms & Condition</a>
+                                            </li>
                                             <li><a class="sub-b" href="404.html">Error</a></li>
                                         </ul>
                                     </li>
@@ -362,11 +391,14 @@
                                         <a class="nav-link" href="#">Blog</a>
                                         <ul class="submenu">
                                             <li><a class="sub-b" href="blog.html">Blog</a></li>
-                                            <li><a class="sub-b" href="blog-list-left-sidebar.html">Blog List Right Sidebar</a></li>
-                                            <li><a class="sub-b" href="blog-list-right-sidebar.html">Blog List Left Sidebar</a></li>
+                                            <li><a class="sub-b" href="blog-list-left-sidebar.html">Blog List Right
+                                                    Sidebar</a></li>
+                                            <li><a class="sub-b" href="blog-list-right-sidebar.html">Blog List Left
+                                                    Sidebar</a></li>
                                             <li><a class="sub-b" href="blog-details.html">Blog Details</a></li>
                                         </ul>
                                     </li>
+                                    <li class="parent"><a href="about.html">About</a></li>
                                     <li class="parent"><a href="contact.html">Contact</a></li>
                                 </ul>
                             </nav>
@@ -389,7 +421,8 @@
                         </a>
                         <div class="category-search-wrapper">
                             <div class="category-btn category-hover-header">
-                                <img class="parent" src="{{ asset('assets/images/icons/bar-1.svg') }}" alt="icons">
+                                <img class="parent" src="{{ asset('assets/images/icons/bar-1.svg') }}"
+                                    alt="icons">
                                 <span>Categories</span>
                                 <ul class="category-sub-menu">
                                     <li>
@@ -459,17 +492,18 @@
                                 </ul>
                             </div>
                             <form action="#" class="search-header">
-                                <input type="text" placeholder="Search for products, categories or brands" required>
+                                <input type="text" placeholder="Search for products, categories or brands"
+                                    required>
                                 <button class="rts-btn btn-primary radious-sm with-icon">
                                     <span class="btn-text">
-                                    Search
-                                </span>
+                                        Search
+                                    </span>
                                     <span class="arrow-icon">
-                                    <i class="fa-light fa-magnifying-glass"></i>
-                                </span>
+                                        <i class="fa-light fa-magnifying-glass"></i>
+                                    </span>
                                     <span class="arrow-icon">
-                                    <i class="fa-light fa-magnifying-glass"></i>
-                                </span>
+                                        <i class="fa-light fa-magnifying-glass"></i>
+                                    </span>
                                 </button>
                             </form>
                         </div>
@@ -491,11 +525,13 @@
                                         <div class="cart-item-1 border-top">
                                             <div class="img-name">
                                                 <div class="thumbanil">
-                                                    <img src="{{ asset('assets/images/shop/cart-1.png') }}" alt="">
+                                                    <img src="{{ asset('assets/images/shop/cart-1.png') }}"
+                                                        alt="">
                                                 </div>
                                                 <div class="details">
                                                     <a href="shop-details.html">
-                                                        <h5 class="title">Foster Farms Breast Nuggets Shaped Chicken</h5>
+                                                        <h5 class="title">Foster Farms Breast Nuggets Shaped Chicken
+                                                        </h5>
                                                     </a>
                                                     <div class="number">
                                                         1 <i class="fa-regular fa-x"></i>
@@ -510,11 +546,13 @@
                                         <div class="cart-item-1">
                                             <div class="img-name">
                                                 <div class="thumbanil">
-                                                    <img src="{{ asset('assets/images/shop/05.png') }}" alt="">
+                                                    <img src="{{ asset('assets/images/shop/05.png') }}"
+                                                        alt="">
                                                 </div>
                                                 <div class="details">
                                                     <a href="shop-details.html">
-                                                        <h5 class="title">Foster Farms Breast Nuggets Shaped Chicken</h5>
+                                                        <h5 class="title">Foster Farms Breast Nuggets Shaped Chicken
+                                                        </h5>
                                                     </a>
                                                     <div class="number">
                                                         1 <i class="fa-regular fa-x"></i>
@@ -529,11 +567,13 @@
                                         <div class="cart-item-1">
                                             <div class="img-name">
                                                 <div class="thumbanil">
-                                                    <img src="{{ asset('assets/images/shop/04.png') }}" alt="">
+                                                    <img src="{{ asset('assets/images/shop/04.png') }}"
+                                                        alt="">
                                                 </div>
                                                 <div class="details">
                                                     <a href="shop-details.html">
-                                                        <h5 class="title">Foster Farms Breast Nuggets Shaped Chicken</h5>
+                                                        <h5 class="title">Foster Farms Breast Nuggets Shaped Chicken
+                                                        </h5>
                                                     </a>
                                                     <div class="number">
                                                         1 <i class="fa-regular fa-x"></i>
@@ -553,14 +593,19 @@
                                                 </div>
                                                 <div class="single-progress-area-incard">
                                                     <div class="progress">
-                                                        <div class="progress-bar wow fadeInLeft" role="progressbar" style="width: 80%" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+                                                        <div class="progress-bar wow fadeInLeft" role="progressbar"
+                                                            style="width: 80%" aria-valuenow="25" aria-valuemin="0"
+                                                            aria-valuemax="100"></div>
                                                     </div>
                                                 </div>
-                                                <p>Spend More <span>$125.00</span> to reach <span>Free Shipping</span></p>
+                                                <p>Spend More <span>$125.00</span> to reach <span>Free Shipping</span>
+                                                </p>
                                             </div>
-                                            <div class="button-wrapper d-flex align-items-center justify-content-between">
+                                            <div
+                                                class="button-wrapper d-flex align-items-center justify-content-between">
                                                 <a href="cart.html" class="rts-btn btn-primary ">View Cart</a>
-                                                <a href="checkout.html" class="rts-btn btn-primary border-only">CheckOut</a>
+                                                <a href="checkout.html"
+                                                    class="rts-btn btn-primary border-only">CheckOut</a>
                                             </div>
                                         </div>
                                     </div>
@@ -570,14 +615,18 @@
                             <div class="actions-area">
                                 <div class="search-btn" id="search">
 
-                                    <svg width="17" height="16" viewBox="0 0 17 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M15.75 14.7188L11.5625 10.5312C12.4688 9.4375 12.9688 8.03125 12.9688 6.5C12.9688 2.9375 10.0312 0 6.46875 0C2.875 0 0 2.9375 0 6.5C0 10.0938 2.90625 13 6.46875 13C7.96875 13 9.375 12.5 10.5 11.5938L14.6875 15.7812C14.8438 15.9375 15.0312 16 15.25 16C15.4375 16 15.625 15.9375 15.75 15.7812C16.0625 15.5 16.0625 15.0312 15.75 14.7188ZM1.5 6.5C1.5 3.75 3.71875 1.5 6.5 1.5C9.25 1.5 11.5 3.75 11.5 6.5C11.5 9.28125 9.25 11.5 6.5 11.5C3.71875 11.5 1.5 9.28125 1.5 6.5Z" fill="#1F1F25"></path>
+                                    <svg width="17" height="16" viewBox="0 0 17 16" fill="none"
+                                        xmlns="http://www.w3.org/2000/svg">
+                                        <path
+                                            d="M15.75 14.7188L11.5625 10.5312C12.4688 9.4375 12.9688 8.03125 12.9688 6.5C12.9688 2.9375 10.0312 0 6.46875 0C2.875 0 0 2.9375 0 6.5C0 10.0938 2.90625 13 6.46875 13C7.96875 13 9.375 12.5 10.5 11.5938L14.6875 15.7812C14.8438 15.9375 15.0312 16 15.25 16C15.4375 16 15.625 15.9375 15.75 15.7812C16.0625 15.5 16.0625 15.0312 15.75 14.7188ZM1.5 6.5C1.5 3.75 3.71875 1.5 6.5 1.5C9.25 1.5 11.5 3.75 11.5 6.5C11.5 9.28125 9.25 11.5 6.5 11.5C3.71875 11.5 1.5 9.28125 1.5 6.5Z"
+                                            fill="#1F1F25"></path>
                                     </svg>
 
                                 </div>
                                 <div class="menu-btn">
 
-                                    <svg width="20" height="16" viewBox="0 0 20 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <svg width="20" height="16" viewBox="0 0 20 16" fill="none"
+                                        xmlns="http://www.w3.org/2000/svg">
                                         <rect y="14" width="20" height="2" fill="#1F1F25"></rect>
                                         <rect y="7" width="20" height="2" fill="#1F1F25"></rect>
                                         <rect width="20" height="2" fill="#1F1F25"></rect>
