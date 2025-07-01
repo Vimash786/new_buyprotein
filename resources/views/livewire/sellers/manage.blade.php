@@ -14,8 +14,10 @@ new class extends Component
     public $search = '';
     public $statusFilter = '';
     public $showModal = false;
+    public $showViewModal = false;
     public $editMode = false;
     public $sellerId = null;
+    public $viewingSeller = null;
     
     // Form fields
     public $company_name = '';
@@ -75,6 +77,19 @@ new class extends Component
     {
         $this->showModal = false;
         $this->resetForm();
+    }
+
+    public function openViewModal($id)
+    {
+        $seller = Sellers::with(['products', 'orders'])->findOrFail($id);
+        $this->viewingSeller = $seller;
+        $this->showViewModal = true;
+    }
+
+    public function closeViewModal()
+    {
+        $this->showViewModal = false;
+        $this->viewingSeller = null;
     }    
     
     public function resetForm()
@@ -178,6 +193,23 @@ new class extends Component
         $this->product_category = array_values(array_filter($this->product_category, function($cat) use ($category) {
             return $cat !== $category;
         }));
+    }
+
+    public function getSellerStats($seller)
+    {
+        $totalProducts = $seller->products->count();
+        $totalProductsSold = $seller->orders->sum('quantity');
+        $totalRevenue = $seller->orders->sum('total_amount');
+        $commission = floatval($seller->commission);
+        $sellerRevenue = $totalRevenue * ($commission / 100);
+
+        return [
+            'totalProducts' => $totalProducts,
+            'totalProductsSold' => $totalProductsSold,
+            'totalRevenue' => $totalRevenue,
+            'sellerRevenue' => $sellerRevenue,
+            'commission' => $commission
+        ];
     }
 }; ?>
 
@@ -364,6 +396,16 @@ new class extends Component
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                     <div class="flex items-center gap-2">
                                         <button 
+                                            wire:click="openViewModal({{ $seller->id }})"
+                                            class="text-green-600 hover:text-green-900"
+                                            title="View Details"
+                                        >
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                            </svg>
+                                        </button>
+                                        <button 
                                             wire:click="edit({{ $seller->id }})"
                                             class="text-blue-600 hover:text-blue-900"
                                         >
@@ -548,6 +590,201 @@ new class extends Component
                             </button>
                         </div>
                     </form>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- View Seller Modal -->
+    @if($showViewModal && $viewingSeller)
+        @php
+            $stats = $this->getSellerStats($viewingSeller);
+        @endphp
+        <div class="fixed inset-0 bg-black-shadow bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div class="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-bold text-gray-900">
+                            Seller Details - {{ $viewingSeller->company_name }}
+                        </h2>
+                        <button wire:click="closeViewModal" class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Seller Info Grid -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                        <!-- Basic Information -->
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Basic Information</h3>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="text-sm font-medium text-gray-600">Company Name</label>
+                                    <p class="text-gray-900">{{ $viewingSeller->company_name }}</p>
+                                </div>
+                                <div>
+                                    <label class="text-sm font-medium text-gray-600">GST Number</label>
+                                    <p class="text-gray-900">{{ $viewingSeller->gst_number }}</p>
+                                </div>
+                                <div>
+                                    <label class="text-sm font-medium text-gray-600">Contact Person</label>
+                                    <p class="text-gray-900">{{ $viewingSeller->contact_person }}</p>
+                                </div>
+                                <div>
+                                    <label class="text-sm font-medium text-gray-600">Commission Rate</label>
+                                    <p class="text-gray-900">{{ $viewingSeller->commission }}%</p>
+                                </div>
+                                <div>
+                                    <label class="text-sm font-medium text-gray-600">Status</label>
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
+                                           {{ $viewingSeller->status === 'approved' 
+                                              ? 'bg-green-100 text-green-800' 
+                                              : 'bg-yellow-100 text-yellow-800' }}">
+                                        {{ $viewingSeller->status === 'approved' ? 'Approved' : 'Pending' }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Performance Stats -->
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Performance Statistics</h3>
+                            <div class="space-y-4">
+                                <div class="bg-white rounded p-3 border">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm font-medium text-gray-600">Total Products</span>
+                                        <span class="text-xl font-bold text-blue-600">{{ $stats['totalProducts'] }}</span>
+                                    </div>
+                                </div>
+                                <div class="bg-white rounded p-3 border">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm font-medium text-gray-600">Products Sold</span>
+                                        <span class="text-xl font-bold text-green-600">{{ $stats['totalProductsSold'] }}</span>
+                                    </div>
+                                </div>
+                                <div class="bg-white rounded p-3 border">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm font-medium text-gray-600">Total Revenue</span>
+                                        <span class="text-xl font-bold text-purple-600">₹{{ number_format($stats['totalRevenue'], 2) }}</span>
+                                    </div>
+                                </div>
+                                <div class="bg-white rounded p-3 border">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm font-medium text-gray-600">Seller Commission</span>
+                                        <span class="text-xl font-bold text-orange-600">₹{{ number_format($stats['sellerRevenue'], 2) }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Product Categories -->
+                    <div class="mb-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-3">Product Categories</h3>
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            @if($viewingSeller->product_category)
+                                <div class="flex flex-wrap gap-2">
+                                    @php
+                                        $categories = array_filter(array_map('trim', explode(',', $viewingSeller->product_category)));
+                                    @endphp
+                                    @foreach($categories as $category)
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                                            {{ $category }}
+                                        </span>
+                                    @endforeach
+                                </div>
+                            @else
+                                <p class="text-gray-500">No categories assigned</p>
+                            @endif
+                        </div>
+                    </div>
+
+                    <!-- Brand Certificate -->
+                    @if($viewingSeller->brand_certificate)
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-3">Brand Certificate</h3>
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-900">Certificate Document</p>
+                                            <p class="text-xs text-gray-500">Uploaded brand certificate</p>
+                                        </div>
+                                    </div>
+                                    <a href="{{ Storage::url($viewingSeller->brand_certificate) }}" 
+                                       target="_blank" 
+                                       class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                        </svg>
+                                        View Certificate
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
+                    <!-- Recent Products -->
+                    @if($viewingSeller->products->count() > 0)
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-3">Recent Products</h3>
+                            <div class="bg-gray-50 rounded-lg overflow-hidden">
+                                <div class="overflow-x-auto">
+                                    <table class="w-full">
+                                        <thead class="bg-gray-100">
+                                            <tr>
+                                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product Name</th>
+                                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
+                                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stock</th>
+                                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-gray-200">
+                                            @foreach($viewingSeller->products->take(5) as $product)
+                                                <tr class="bg-white">
+                                                    <td class="px-4 py-3 text-sm text-gray-900">{{ $product->name }}</td>
+                                                    <td class="px-4 py-3 text-sm text-gray-900">₹{{ number_format($product->price, 2) }}</td>
+                                                    <td class="px-4 py-3 text-sm text-gray-900">{{ $product->stock_quantity }}</td>
+                                                    <td class="px-4 py-3 text-sm">
+                                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
+                                                               {{ $product->status === 'active' 
+                                                                  ? 'bg-green-100 text-green-800' 
+                                                                  : 'bg-red-100 text-red-800' }}">
+                                                            {{ ucfirst($product->status) }}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                                @if($viewingSeller->products->count() > 5)
+                                    <div class="px-4 py-3 bg-gray-100 text-center">
+                                        <p class="text-sm text-gray-600">
+                                            Showing 5 of {{ $viewingSeller->products->count() }} products
+                                        </p>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    @endif
+
+                    <!-- Close Button -->
+                    <div class="flex justify-end pt-4 border-t border-gray-200">
+                        <button 
+                            wire:click="closeViewModal"
+                            class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg font-medium"
+                        >
+                            Close
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
