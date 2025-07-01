@@ -26,68 +26,68 @@ new class extends Component
 }; ?>
 
 <div>
-     <div class="min-h-screen bg-gray-50 py-8">
+     <div class="min-h-screen bg-gray-50 dark:bg-zinc-800 py-8">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Header -->
             <div class="mb-8">
-                <h1 class="text-3xl font-bold text-gray-900">Dashboard</h1>
-                <p class="mt-2 text-sm text-gray-600">Overview of your BuyProtein platform</p>
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+                <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">Overview of your BuyProtein platform</p>
             </div>
 
             <!-- Quick Actions -->
             <div class="mb-8">
-                <div class="bg-white rounded-lg shadow p-6">
-                    <h2 class="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
+                <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
+                    <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h2>
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         <a href="{{ route('sellers.manage') }}" wire:navigate 
-                           class="bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg p-4 flex items-center space-x-3 transition-colors">
+                           class="bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 flex items-center space-x-3 transition-colors">
                             <div class="bg-blue-500 p-2 rounded-lg">
                                 <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                                 </svg>
                             </div>
                             <div>
-                                <h3 class="font-semibold text-gray-900">Manage Sellers</h3>
-                                <p class="text-sm text-gray-600">Add, edit, and approve sellers</p>
+                                <h3 class="font-semibold text-gray-900 dark:text-white">Manage Sellers</h3>
+                                <p class="text-sm text-gray-600 dark:text-gray-300">Add, edit, and approve sellers</p>
                             </div>
                         </a>
                         
                         <a href="{{ route('products.manage') }}" wire:navigate 
-                           class="bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-lg p-4 flex items-center space-x-3 transition-colors">
+                           class="bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/30 border border-purple-200 dark:border-purple-800 rounded-lg p-4 flex items-center space-x-3 transition-colors">
                             <div class="bg-purple-500 p-2 rounded-lg">
                                 <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                                 </svg>
                             </div>
                             <div>
-                                <h3 class="font-semibold text-gray-900">Manage Products</h3>
-                                <p class="text-sm text-gray-600">Add, edit, and manage products</p>
+                                <h3 class="font-semibold text-gray-900 dark:text-white">Manage Products</h3>
+                                <p class="text-sm text-gray-600 dark:text-gray-300">Add, edit, and manage products</p>
                             </div>
                         </a>
 
                         <a href="{{ route('categories.manage') }}" wire:navigate 
-                           class="bg-green-50 hover:bg-green-100 border border-green-200 rounded-lg p-4 flex items-center space-x-3 transition-colors">
+                           class="bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-lg p-4 flex items-center space-x-3 transition-colors">
                             <div class="bg-green-500 p-2 rounded-lg">
                                 <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                                 </svg>
                             </div>
                             <div>
-                                <h3 class="font-semibold text-gray-900">Manage Categories</h3>
-                                <p class="text-sm text-gray-600">Add, edit categories & sub-categories</p>
+                                <h3 class="font-semibold text-gray-900 dark:text-white">Manage Categories</h3>
+                                <p class="text-sm text-gray-600 dark:text-gray-300">Add, edit categories & sub-categories</p>
                             </div>
                         </a>
 
                         <a href="{{ route('orders.manage') }}" wire:navigate 
-                           class="bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg p-4 flex items-center space-x-3 transition-colors">
+                           class="bg-indigo-50 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800 rounded-lg p-4 flex items-center space-x-3 transition-colors">
                             <div class="bg-indigo-500 p-2 rounded-lg">
                                 <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                                 </svg>
                             </div>
                             <div>
-                                <h3 class="font-semibold text-gray-900">Manage Orders</h3>
-                                <p class="text-sm text-gray-600">View, edit, and manage orders</p>
+                                <h3 class="font-semibold text-gray-900 dark:text-white">Manage Orders</h3>
+                                <p class="text-sm text-gray-600 dark:text-gray-300">View, edit, and manage orders</p>
                             </div>
                         </a>
                     </div>
@@ -97,14 +97,14 @@ new class extends Component
             <!-- Stats Grid -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
                 <!-- Total Sellers -->
-                <div class="bg-white rounded-lg shadow p-6">
+                <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
                     <div class="flex items-center">
                         <div class="flex-1">
-                            <h3 class="text-lg font-medium text-gray-900">Total Sellers</h3>
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Total Sellers</h3>
                             <p class="text-3xl font-bold text-blue-600">{{ $totalSellers }}</p>
-                            <p class="text-sm text-gray-600 mt-1">Registered companies</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">Registered companies</p>
                         </div>
-                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/50 rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                             </svg>
@@ -113,14 +113,14 @@ new class extends Component
                 </div>
 
                 <!-- Total Products -->
-                <div class="bg-white rounded-lg shadow p-6">
+                <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
                     <div class="flex items-center">
                         <div class="flex-1">
-                            <h3 class="text-lg font-medium text-gray-900">Total Products</h3>
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Total Products</h3>
                             <p class="text-3xl font-bold text-purple-600">{{ $totalProducts }}</p>
-                            <p class="text-sm text-gray-600 mt-1">Available in catalog</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">Available in catalog</p>
                         </div>
-                        <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                        <div class="w-12 h-12 bg-purple-100 dark:bg-purple-900/50 rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                             </svg>
@@ -129,14 +129,14 @@ new class extends Component
                 </div>
 
                 <!-- Total Categories -->
-                <div class="bg-white rounded-lg shadow p-6">
+                <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
                     <div class="flex items-center">
                         <div class="flex-1">
-                            <h3 class="text-lg font-medium text-gray-900">Categories</h3>
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Categories</h3>
                             <p class="text-3xl font-bold text-green-600">{{ $totalCategories }}</p>
-                            <p class="text-sm text-gray-600 mt-1">Product categories</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">Product categories</p>
                         </div>
-                        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                        <div class="w-12 h-12 bg-green-100 dark:bg-green-900/50 rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                             </svg>
@@ -145,14 +145,14 @@ new class extends Component
                 </div>
 
                 <!-- Total Sub Categories -->
-                <div class="bg-white rounded-lg shadow p-6">
+                <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
                     <div class="flex items-center">
                         <div class="flex-1">
-                            <h3 class="text-lg font-medium text-gray-900">Sub-Categories</h3>
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Sub-Categories</h3>
                             <p class="text-3xl font-bold text-orange-600">{{ $totalSubCategories }}</p>
-                            <p class="text-sm text-gray-600 mt-1">Product sub-categories</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">Product sub-categories</p>
                         </div>
-                        <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                        <div class="w-12 h-12 bg-orange-100 dark:bg-orange-900/50 rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                             </svg>
@@ -161,14 +161,14 @@ new class extends Component
                 </div>
 
                 <!-- Total Orders -->
-                <div class="bg-white rounded-lg shadow p-6">
+                <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
                     <div class="flex items-center">
                         <div class="flex-1">
-                            <h3 class="text-lg font-medium text-gray-900">Total Orders</h3>
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Total Orders</h3>
                             <p class="text-3xl font-bold text-indigo-600">{{ $totalOrders }}</p>
-                            <p class="text-sm text-gray-600 mt-1">All time orders</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">All time orders</p>
                         </div>
-                        <div class="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
+                        <div class="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/50 rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                             </svg>
@@ -177,14 +177,14 @@ new class extends Component
                 </div>
 
                 <!-- Total Users -->
-                <div class="bg-white rounded-lg shadow p-6">
+                <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
                     <div class="flex items-center">
                         <div class="flex-1">
-                            <h3 class="text-lg font-medium text-gray-900">Total Users</h3>
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Total Users</h3>
                             <p class="text-3xl font-bold text-red-600">{{ $totalUsers }}</p>
-                            <p class="text-sm text-gray-600 mt-1">Registered customers</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">Registered customers</p>
                         </div>
-                        <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                        <div class="w-12 h-12 bg-red-100 dark:bg-red-900/50 rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
                             </svg>
@@ -193,14 +193,14 @@ new class extends Component
                 </div>
 
                 <!-- Approved Sellers -->
-                <div class="bg-white rounded-lg shadow p-6">
+                <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
                     <div class="flex items-center">
                         <div class="flex-1">
-                            <h3 class="text-lg font-medium text-gray-900">Approved Sellers</h3>
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Approved Sellers</h3>
                             <p class="text-3xl font-bold text-teal-600">{{ $approvedSellers }}</p>
-                            <p class="text-sm text-gray-600 mt-1">Active and verified</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">Active and verified</p>
                         </div>
-                        <div class="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center">
+                        <div class="w-12 h-12 bg-teal-100 dark:bg-teal-900/50 rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
@@ -209,14 +209,14 @@ new class extends Component
                 </div>
 
                 <!-- Pending Sellers -->
-                <div class="bg-white rounded-lg shadow p-6">
+                <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
                     <div class="flex items-center">
                         <div class="flex-1">
-                            <h3 class="text-lg font-medium text-gray-900">Pending Approval</h3>
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Pending Approval</h3>
                             <p class="text-3xl font-bold text-yellow-600">{{ $pendingSellers }}</p>
-                            <p class="text-sm text-gray-600 mt-1">Awaiting review</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">Awaiting review</p>
                         </div>
-                        <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                        <div class="w-12 h-12 bg-yellow-100 dark:bg-yellow-900/50 rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
@@ -228,51 +228,51 @@ new class extends Component
             <!-- Recent Activity -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <!-- Seller Status Breakdown -->
-                <div class="bg-white rounded-lg shadow p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Seller Status</h3>
+                <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Seller Status</h3>
                     <div class="space-y-3">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center">
                                 <div class="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
-                                <span class="text-sm text-gray-600">Approved</span>
+                                <span class="text-sm text-gray-600 dark:text-gray-300">Approved</span>
                             </div>
-                            <span class="text-sm font-medium text-gray-900">{{ $approvedSellers }}</span>
+                            <span class="text-sm font-medium text-gray-900 dark:text-white">{{ $approvedSellers }}</span>
                         </div>
                         <div class="flex items-center justify-between">
                             <div class="flex items-center">
                                 <div class="w-3 h-3 bg-yellow-500 rounded-full mr-3"></div>
-                                <span class="text-sm text-gray-600">Pending</span>
+                                <span class="text-sm text-gray-600 dark:text-gray-300">Pending</span>
                             </div>
-                            <span class="text-sm font-medium text-gray-900">{{ $pendingSellers }}</span>
+                            <span class="text-sm font-medium text-gray-900 dark:text-white">{{ $pendingSellers }}</span>
                         </div>
                     </div>
                     <div class="mt-4">
                         <a href="{{ route('sellers.manage') }}" wire:navigate 
-                           class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                           class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium">
                             View all sellers →
                         </a>
                     </div>
                 </div>
 
                 <!-- Quick Stats -->
-                <div class="bg-white rounded-lg shadow p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Platform Overview</h3>
+                <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Platform Overview</h3>
                     <div class="space-y-3">
                         <div class="flex items-center justify-between">
-                            <span class="text-sm text-gray-600">Products per Seller</span>
-                            <span class="text-sm font-medium text-gray-900">
+                            <span class="text-sm text-gray-600 dark:text-gray-300">Products per Seller</span>
+                            <span class="text-sm font-medium text-gray-900 dark:text-white">
                                 {{ $totalSellers > 0 ? number_format($totalProducts / $totalSellers, 1) : '0' }}
                             </span>
                         </div>
                         <div class="flex items-center justify-between">
-                            <span class="text-sm text-gray-600">Orders per Product</span>
-                            <span class="text-sm font-medium text-gray-900">
+                            <span class="text-sm text-gray-600 dark:text-gray-300">Orders per Product</span>
+                            <span class="text-sm font-medium text-gray-900 dark:text-white">
                                 {{ $totalProducts > 0 ? number_format($totalOrders / $totalProducts, 1) : '0' }}
                             </span>
                         </div>
                         <div class="flex items-center justify-between">
-                            <span class="text-sm text-gray-600">Approval Rate</span>
-                            <span class="text-sm font-medium text-gray-900">
+                            <span class="text-sm text-gray-600 dark:text-gray-300">Approval Rate</span>
+                            <span class="text-sm font-medium text-gray-900 dark:text-white">
                                 {{ $totalSellers > 0 ? number_format(($approvedSellers / $totalSellers) * 100, 1) : '0' }}%
                             </span>
                         </div>
