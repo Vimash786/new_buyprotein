@@ -4,12 +4,17 @@ use App\Models\products;
 use App\Models\Sellers;
 use App\Models\Category;
 use App\Models\SubCategory;
+use App\Models\ProductVariant;
+use App\Models\ProductVariantOption;
+use App\Models\ProductVariantCombination;
+use App\Models\ProductImage;
 use Livewire\WithPagination;
+use Livewire\WithFileUploads;
 use Livewire\Volt\Component;
 
 new class extends Component
 {
-    use WithPagination;
+    use WithPagination, WithFileUploads;
 
     public $search = '';
     public $statusFilter = '';
@@ -29,6 +34,22 @@ new class extends Component
     public $sub_category_id = '';
     public $brand = '';
     public $status = 'active';
+    public $section_category = 'everyday_essential';
+    public $discount_percentage = 0;
+    public $discounted_price = '';
+    public $has_variants = false;
+    
+    // Image upload properties
+    public $thumbnail_image;
+    public $product_images = [];
+    public $existing_images = [];
+    public $images_to_delete = [];
+    
+    // Variant properties
+    public $variants = [];
+    public $variant_combinations = [];
+    public $show_variant_modal = false;
+    public $generating_combinations = false;
     
     // For dynamic subcategory loading
     public $availableSubCategories = [];
@@ -43,11 +64,17 @@ new class extends Component
         'sub_category_id' => 'nullable|exists:sub_categories,id',
         'brand' => 'nullable|string|max:255',
         'status' => 'required|in:active,inactive',
+        'section_category' => 'required|in:everyday_essential,popular_pick,exclusive_deal',
+        'discount_percentage' => 'nullable|numeric|min:0|max:100',
+        'discounted_price' => 'nullable|numeric|min:0',
+        'has_variants' => 'boolean',
+        'thumbnail_image' => 'nullable|image|max:2048',
+        'product_images.*' => 'nullable|image|max:2048',
     ];
 
     public function with()
     {
-        $query = products::with(['seller', 'category', 'subCategory']);
+        $query = products::with(['seller', 'category', 'subCategory', 'variants', 'images']);
 
         if ($this->search) {
             $query->where(function($q) {
@@ -81,6 +108,7 @@ new class extends Component
         $activeProducts = products::where('status', 'active')->count();
         $inactiveProducts = products::where('status', 'inactive')->count();
         $lowStockProducts = products::where('stock_quantity', '<=', 10)->count();
+        $variantProducts = products::where('has_variants', true)->count();
 
         return [
             'products' => $query->latest()->paginate(10),
@@ -91,6 +119,7 @@ new class extends Component
             'activeProducts' => $activeProducts,
             'inactiveProducts' => $inactiveProducts,
             'lowStockProducts' => $lowStockProducts,
+            'variantProducts' => $variantProducts,
         ];
     }
 
@@ -119,6 +148,16 @@ new class extends Component
         $this->sub_category_id = '';
         $this->brand = '';
         $this->status = 'active';
+        $this->section_category = 'everyday_essential';
+        $this->discount_percentage = 0;
+        $this->discounted_price = '';
+        $this->has_variants = false;
+        $this->thumbnail_image = null;
+        $this->product_images = [];
+        $this->existing_images = [];
+        $this->images_to_delete = [];
+        $this->variants = [];
+        $this->variant_combinations = [];
         $this->availableSubCategories = [];
         $this->resetValidation();
     }
@@ -126,6 +165,11 @@ new class extends Component
     public function save()
     {
         $this->validate();
+
+        // Calculate discounted price if discount percentage is provided
+        if ($this->discount_percentage > 0) {
+            $this->discounted_price = $this->price * (1 - ($this->discount_percentage / 100));
+        }
 
         $data = [
             'seller_id' => $this->seller_id,
@@ -137,22 +181,123 @@ new class extends Component
             'sub_category_id' => $this->sub_category_id ?: null,
             'brand' => $this->brand,
             'status' => $this->status,
+            'section_category' => $this->section_category,
+            'discount_percentage' => $this->discount_percentage ?: 0,
+            'discounted_price' => $this->discounted_price ?: null,
+            'has_variants' => $this->has_variants,
         ];
 
-        if ($this->editMode) {
-            products::findOrFail($this->productId)->update($data);
-            session()->flash('message', 'Product updated successfully!');
-        } else {
-            products::create($data);
-            session()->flash('message', 'Product created successfully!');
+        // Handle thumbnail image upload
+        if ($this->thumbnail_image) {
+            $data['thumbnail_image'] = $this->thumbnail_image->store('products/thumbnails', 'public');
         }
 
+        if ($this->editMode) {
+            $product = products::findOrFail($this->productId);
+            $product->update($data);
+            
+            // Handle image deletions
+            if (!empty($this->images_to_delete)) {
+                ProductImage::whereIn('id', $this->images_to_delete)->delete();
+            }
+        } else {
+            $product = products::create($data);
+        }
+
+        // Handle additional product images
+        if (!empty($this->product_images)) {
+            foreach ($this->product_images as $index => $image) {
+                if ($image) {
+                    ProductImage::create([
+                        'product_id' => $product->id,
+                        'image_path' => $image->store('products/images', 'public'),
+                        'sort_order' => $index + 1,
+                        'is_primary' => false
+                    ]);
+                }
+            }
+        }
+
+        // Handle variants if enabled
+        if ($this->has_variants && !empty($this->variants)) {
+            $this->saveVariants($product);
+        } else {
+            // Remove all variants if variants are disabled
+            $product->variants()->delete();
+            $product->variantCombinations()->delete();
+        }
+
+        $message = $this->editMode ? 'Product updated successfully!' : 'Product created successfully!';
+        session()->flash('message', $message);
         $this->closeModal();
+    }
+
+    private function saveVariants($product)
+    {
+        // Delete existing variants and combinations
+        $product->variants()->delete();
+        $product->variantCombinations()->delete();
+
+        foreach ($this->variants as $variantIndex => $variantData) {
+            if (empty(trim($variantData['name']))) continue;
+
+            $variant = ProductVariant::create([
+                'product_id' => $product->id,
+                'name' => $variantData['name'],
+                'display_name' => $variantData['display_name'] ?: $variantData['name'],
+                'sort_order' => $variantIndex,
+                'is_required' => $variantData['is_required'] ?? true,
+            ]);
+
+            foreach ($variantData['options'] as $optionIndex => $optionData) {
+                if (empty(trim($optionData['value']))) continue;
+
+                ProductVariantOption::create([
+                    'product_variant_id' => $variant->id,
+                    'value' => $optionData['value'],
+                    'display_value' => $optionData['display_value'] ?: $optionData['value'],
+                    'price_adjustment' => $optionData['price_adjustment'] ?: 0,
+                    'sort_order' => $optionIndex,
+                    'is_active' => true,
+                ]);
+            }
+        }
+
+        // Save variant combinations
+        foreach ($this->variant_combinations as $combination) {
+            if (empty($combination['options'])) continue;
+
+            $optionIds = array_column($combination['options'], 'id');
+            // For new options, we need to get the IDs from the database
+            $actualOptionIds = [];
+            
+            foreach ($combination['options'] as $option) {
+                $variantOption = ProductVariantOption::where('value', $option['value'])
+                    ->whereHas('variant', function($q) use ($product) {
+                        $q->where('product_id', $product->id);
+                    })
+                    ->first();
+                
+                if ($variantOption) {
+                    $actualOptionIds[] = $variantOption->id;
+                }
+            }
+
+            if (!empty($actualOptionIds)) {
+                ProductVariantCombination::create([
+                    'product_id' => $product->id,
+                    'variant_options' => $actualOptionIds,
+                    'price' => $combination['price'] ?: $product->price,
+                    'stock_quantity' => $combination['stock_quantity'] ?: 0,
+                    'is_active' => $combination['is_active'] ?? true,
+                ]);
+            }
+        }
     }
 
     public function edit($id)
     {
-        $product = products::findOrFail($id);
+        $product = products::with(['variants.options', 'variantCombinations', 'images'])->findOrFail($id);
         
         $this->productId = $product->id;
         $this->seller_id = $product->seller_id;
@@ -164,6 +309,58 @@ new class extends Component
         $this->sub_category_id = $product->sub_category_id;
         $this->brand = $product->brand;
         $this->status = $product->status;
+        $this->section_category = $product->section_category;
+        $this->discount_percentage = $product->discount_percentage;
+        $this->discounted_price = $product->discounted_price;
+        $this->has_variants = $product->has_variants;
+        
+        // Load existing images
+        $this->existing_images = $product->images->map(function($image) {
+            return [
+                'id' => $image->id,
+                'image_path' => $image->image_path,
+                'sort_order' => $image->sort_order,
+                'is_primary' => $image->is_primary,
+                'image_url' => asset('storage/' . $image->image_path)
+            ];
+        })->toArray();
+        
+        // Load variants and options
+        $this->variants = $product->variants->map(function($variant) {
+            return [
+                'id' => $variant->id,
+                'name' => $variant->name,
+                'display_name' => $variant->display_name,
+                'is_required' => $variant->is_required,
+                'options' => $variant->options->map(function($option) {
+                    return [
+                        'id' => $option->id,
+                        'value' => $option->value,
+                        'display_value' => $option->display_value,
+                        'price_adjustment' => $option->price_adjustment,
+                    ];
+                })->toArray()
+            ];
+        })->toArray();
+
+        // Load variant combinations
+        $this->variant_combinations = $product->variantCombinations->map(function($combination) {
+            $options = ProductVariantOption::whereIn('id', $combination->variant_options)->get();
+            return [
+                'id' => $combination->id,
+                'options' => $options->map(function($option) {
+                    return [
+                        'id' => $option->id,
+                        'value' => $option->value,
+                        'display_value' => $option->display_value,
+                        'price_adjustment' => $option->price_adjustment,
+                    ];
+                })->toArray(),
+                'price' => $combination->price,
+                'stock_quantity' => $combination->stock_quantity,
+                'is_active' => $combination->is_active,
+            ];
+        })->toArray();
         
         // Load subcategories for the selected category
         if ($this->category_id) {
@@ -172,7 +369,7 @@ new class extends Component
                 ->orderBy('sort_order')
                 ->orderBy('name')
                 ->get()
-                ->toArray(); // Convert to array for consistency
+                ->toArray();
         } else {
             $this->availableSubCategories = [];
         }
@@ -244,6 +441,123 @@ new class extends Component
         // Force a re-render of the component
         $this->dispatch('subcategories-updated');
     }
+
+    public function addVariant()
+    {
+        $this->variants[] = [
+            'id' => null,
+            'name' => '',
+            'display_name' => '',
+            'is_required' => true,
+            'options' => [
+                ['id' => null, 'value' => '', 'display_value' => '', 'price_adjustment' => 0]
+            ]
+        ];
+    }
+
+    public function removeVariant($index)
+    {
+        unset($this->variants[$index]);
+        $this->variants = array_values($this->variants);
+        $this->generateVariantCombinations();
+    }
+
+    public function addVariantOption($variantIndex)
+    {
+        $this->variants[$variantIndex]['options'][] = [
+            'id' => null,
+            'value' => '',
+            'display_value' => '',
+            'price_adjustment' => 0
+        ];
+        $this->generateVariantCombinations();
+    }
+
+    public function removeVariantOption($variantIndex, $optionIndex)
+    {
+        unset($this->variants[$variantIndex]['options'][$optionIndex]);
+        $this->variants[$variantIndex]['options'] = array_values($this->variants[$variantIndex]['options']);
+        $this->generateVariantCombinations();
+    }
+
+    public function generateVariantCombinations()
+    {
+        if (!$this->has_variants || empty($this->variants)) {
+            $this->variant_combinations = [];
+            return;
+        }
+
+        // Filter variants that have at least one option with value
+        $validVariants = array_filter($this->variants, function($variant) {
+            return !empty(array_filter($variant['options'], function($option) {
+                return !empty(trim($option['value']));
+            }));
+        });
+
+        if (empty($validVariants)) {
+            $this->variant_combinations = [];
+            return;
+        }
+
+        // Generate all combinations
+        $combinations = $this->getCombinations($validVariants);
+        
+        $this->variant_combinations = array_map(function($combination, $index) {
+            return [
+                'id' => null,
+                'options' => $combination,
+                'sku' => '',
+                'price' => $this->price,
+                'stock_quantity' => 0,
+                'is_active' => true
+            ];
+        }, $combinations, array_keys($combinations));
+    }
+
+    private function getCombinations($variants)
+    {
+        $result = [[]];
+        
+        foreach ($variants as $variant) {
+            $temp = [];
+            foreach ($result as $combination) {
+                foreach ($variant['options'] as $option) {
+                    if (!empty(trim($option['value']))) {
+                        $temp[] = array_merge($combination, [$option]);
+                    }
+                }
+            }
+            $result = $temp;
+        }
+        
+        return $result;
+    }
+
+    public function updatedHasVariants()
+    {
+        if ($this->has_variants) {
+            if (empty($this->variants)) {
+                $this->addVariant();
+            }
+        } else {
+            $this->variants = [];
+            $this->variant_combinations = [];
+        }
+    }
+
+    public function removeImage($imageIndex)
+    {
+        if (isset($this->existing_images[$imageIndex])) {
+            $this->images_to_delete[] = $this->existing_images[$imageIndex]['id'];
+            unset($this->existing_images[$imageIndex]);
+            $this->existing_images = array_values($this->existing_images);
+        }
+    }
+
+    public function toggleVariantModal()
+    {
+        $this->show_variant_modal = !$this->show_variant_modal;
+    }
 }; ?>
 
 <div class="min-h-screen bg-gray-50 dark:bg-zinc-800 py-8">
@@ -255,7 +569,7 @@ new class extends Component
         </div>
 
         <!-- Stats Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
             <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
                 <div class="flex items-center">
                     <div class="flex-1">
@@ -307,6 +621,20 @@ new class extends Component
                     <div class="w-12 h-12 bg-yellow-100 dark:bg-yellow-900/50 rounded-lg flex items-center justify-center">
                         <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="flex-1">
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-white">With Variants</h3>
+                        <p class="text-3xl font-bold text-purple-600">{{ $variantProducts }}</p>
+                    </div>
+                    <div class="w-12 h-12 bg-purple-100 dark:bg-purple-900/50 rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
                         </svg>
                     </div>
                 </div>
@@ -389,7 +717,8 @@ new class extends Component
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Price</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Stock</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Category</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Subcategory</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Section</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Variants</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
                         </tr>
@@ -403,13 +732,26 @@ new class extends Component
                                         @if($product->brand)
                                             <div class="text-sm text-gray-500 dark:text-gray-400">{{ $product->brand }}</div>
                                         @endif
+                                        @if($product->thumbnail_image)
+                                            <img src="{{ asset('storage/' . $product->thumbnail_image) }}" alt="{{ $product->name }}" class="w-10 h-10 object-cover rounded mt-1">
+                                        @endif
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                                     {{ $product->seller->company_name ?? 'N/A' }}
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                                    ${{ number_format($product->price, 2) }}
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-900 dark:text-white">
+                                        @if($product->has_discount)
+                                            <div class="line-through text-gray-500">${{ number_format($product->price, 2) }}</div>
+                                            <div class="font-medium text-green-600">${{ number_format($product->final_price, 2) }}</div>
+                                            @if($product->discount_percentage > 0)
+                                                <div class="text-xs text-red-600">{{ $product->discount_percentage }}% off</div>
+                                            @endif
+                                        @else
+                                            <div class="font-medium">${{ number_format($product->price, 2) }}</div>
+                                        @endif
+                                    </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <span class="text-sm font-medium 
@@ -423,10 +765,29 @@ new class extends Component
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                                    {{ $product->category->name ?? 'N/A' }}
+                                    <div>{{ $product->category->name ?? 'N/A' }}</div>
+                                    @if($product->subCategory)
+                                        <div class="text-xs text-gray-500">{{ $product->subCategory->name }}</div>
+                                    @endif
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                                    {{ $product->subCategory->name ?? 'N/A' }}
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
+                                        {{ $product->section_category === 'popular_pick' ? 'bg-blue-100 text-blue-800' : 
+                                           ($product->section_category === 'exclusive_deal' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800') }}">
+                                        {{ $product->section_category_display }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-center">
+                                    @if($product->has_variants)
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd" />
+                                            </svg>
+                                            {{ $product->variants->count() ?? 0 }} types
+                                        </span>
+                                    @else
+                                        <span class="text-gray-400 text-sm">No variants</span>
+                                    @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <button 
@@ -492,7 +853,7 @@ new class extends Component
     <!-- Modal -->
     @if($showModal)
         <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div class="bg-white dark:bg-zinc-900 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="bg-white dark:bg-zinc-900 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
                 <div class="p-6">
                     <div class="flex items-center justify-between mb-6">
                         <h2 class="text-xl font-bold text-gray-900 dark:text-white">
@@ -505,165 +866,7 @@ new class extends Component
                         </button>
                     </div>
 
-                    <form wire:submit="save" class="space-y-4">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <!-- Seller -->
-                            <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Seller</label>
-                                <select 
-                                    wire:model="seller_id"
-                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-                                >
-                                    <option value="">Select a seller</option>
-                                    @foreach($sellers as $seller)
-                                        <option value="{{ $seller->id }}">{{ $seller->company_name }}</option>
-                                    @endforeach
-                                </select>
-                                @error('seller_id') <span class="text-red-500 text-sm">{{ $errors->first('seller_id') }}</span> @enderror
-                            </div>
-
-                            <!-- Product Name -->
-                            <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Product Name</label>
-                                <input 
-                                    type="text" 
-                                    wire:model="name"
-                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-                                    placeholder="Enter product name"
-                                >
-                                @error('name') <span class="text-red-500 text-sm">{{ $errors->first('name') }}</span> @enderror
-                            </div>
-
-                            <!-- Description -->
-                            <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description</label>
-                                <textarea 
-                                    wire:model="description"
-                                    rows="3"
-                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-                                    placeholder="Enter product description"
-                                ></textarea>
-                                @error('description') <span class="text-red-500 text-sm">{{ $errors->first('description') }}</span> @enderror
-                            </div>
-
-                            <!-- Price -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Price ($)</label>
-                                <input 
-                                    type="number" 
-                                    step="0.01"
-                                    wire:model="price"
-                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-                                    placeholder="0.00"
-                                >
-                                @error('price') <span class="text-red-500 text-sm">{{ $errors->first('price') }}</span> @enderror
-                            </div>
-
-                            <!-- Stock Quantity -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Stock Quantity</label>
-                                <input 
-                                    type="number" 
-                                    wire:model="stock_quantity"
-                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-                                    placeholder="0"
-                                >
-                                @error('stock_quantity') <span class="text-red-500 text-sm">{{ $errors->first('stock_quantity') }}</span> @enderror
-                            </div>
-
-                            <!-- Category -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Category</label>
-                                <select 
-                                    wire:model.live="category_id"
-                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-                                >
-                                    <option value="">Select a category</option>
-                                    @foreach($categories as $category)
-                                        <option value="{{ $category->id }}">{{ $category->name }}</option>
-                                    @endforeach
-                                </select>
-                                @error('category_id') <span class="text-red-500 text-sm">{{ $errors->first('category_id') }}</span> @enderror
-                            </div>
-
-                            <!-- SubCategory -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Subcategory</label>
-                                <select 
-                                    wire:model="sub_category_id"
-                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-                                    {{ empty($availableSubCategories) ? 'disabled' : '' }}
-                                >
-                                    <option value="">Select a subcategory (optional)</option>
-                                    @if(is_array($availableSubCategories))
-                                        @foreach($availableSubCategories as $subCategory)
-                                            <option value="{{ $subCategory['id'] }}">{{ $subCategory['name'] }}</option>
-                                        @endforeach
-                                    @else
-                                        @foreach($availableSubCategories as $subCategory)
-                                            <option value="{{ $subCategory->id }}">{{ $subCategory->name }}</option>
-                                        @endforeach
-                                    @endif
-                                </select>
-                                @if(empty($availableSubCategories))
-                                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Select a category first to see subcategories</p>
-                                @endif
-                                @error('sub_category_id') <span class="text-red-500 text-sm">{{ $errors->first('sub_category_id') }}</span> @enderror
-                            </div>
-
-                            <!-- Brand -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Brand</label>
-                                <input 
-                                    type="text" 
-                                    wire:model="brand"
-                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-                                    placeholder="Enter brand (optional)"
-                                >
-                                @error('brand') <span class="text-red-500 text-sm">{{ $errors->first('brand') }}</span> @enderror
-                            </div>
-                             <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Weight</label>
-                                <input 
-                                    type="text" 
-                                    wire:model="weight"
-                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-                                    placeholder="Enter weight in (Kg or g)"
-                                >
-                                @error('brand') <span class="text-red-500 text-sm">{{ $errors->first('brand') }}</span> @enderror
-                            </div>
-
-                            <!-- Status -->
-                            <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Status</label>
-                                <select 
-                                    wire:model="status"
-                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-                                >
-                                    <option value="active">Active</option>
-                                    <option value="inactive">Inactive</option>
-                                </select>
-                                @error('status') <span class="text-red-500 text-sm">{{ $errors->first('status') }}</span> @enderror
-                            </div>
-                        </div>
-
-                        <!-- Buttons -->
-                        <div class="flex gap-3 pt-4">
-                            <button 
-                                type="submit"
-                                class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium"
-                            >
-                                {{ $editMode ? 'Update Product' : 'Create Product' }}
-                            </button>
-                            <button 
-                                type="button"
-                                wire:click="closeModal"
-                                class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 py-2 px-4 rounded-lg font-medium"
-                            >
-                                Cancel
-                            </button>
-                        </div>
-                    </form>
+                    @include('livewire.products.enhanced-form')
                 </div>
             </div>
         </div>
