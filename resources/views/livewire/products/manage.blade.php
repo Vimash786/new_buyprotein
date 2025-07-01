@@ -168,9 +168,13 @@ new class extends Component
         // Load subcategories for the selected category
         if ($this->category_id) {
             $this->availableSubCategories = SubCategory::where('category_id', $this->category_id)
-                ->active()
-                ->ordered()
-                ->get();
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get()
+                ->toArray(); // Convert to array for consistency
+        } else {
+            $this->availableSubCategories = [];
         }
         
         $this->editMode = true;
@@ -220,13 +224,25 @@ new class extends Component
         
         // Load subcategories for the selected category
         if ($this->category_id) {
-            $this->availableSubCategories = SubCategory::where('category_id', $this->category_id)
-                ->active()
-                ->ordered()
-                ->get();
+            try {
+                $this->availableSubCategories = SubCategory::where('category_id', $this->category_id)
+                    ->where('is_active', true)
+                    ->orderBy('sort_order')
+                    ->orderBy('name')
+                    ->get()
+                    ->toArray(); // Convert to array to ensure it's properly serialized
+            } catch (\Exception $e) {
+                // Fallback: get all subcategories for the category without scopes
+                $this->availableSubCategories = SubCategory::where('category_id', $this->category_id)
+                    ->get()
+                    ->toArray();
+            }
         } else {
             $this->availableSubCategories = [];
         }
+        
+        // Force a re-render of the component
+        $this->dispatch('subcategories-updated');
     }
 }; ?>
 
@@ -559,7 +575,7 @@ new class extends Component
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Category</label>
                                 <select 
-                                    wire:model="category_id"
+                                    wire:model.live="category_id"
                                     class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
                                 >
                                     <option value="">Select a category</option>
@@ -579,9 +595,15 @@ new class extends Component
                                     {{ empty($availableSubCategories) ? 'disabled' : '' }}
                                 >
                                     <option value="">Select a subcategory (optional)</option>
-                                    @foreach($availableSubCategories as $subCategory)
-                                        <option value="{{ $subCategory->id }}">{{ $subCategory->name }}</option>
-                                    @endforeach
+                                    @if(is_array($availableSubCategories))
+                                        @foreach($availableSubCategories as $subCategory)
+                                            <option value="{{ $subCategory['id'] }}">{{ $subCategory['name'] }}</option>
+                                        @endforeach
+                                    @else
+                                        @foreach($availableSubCategories as $subCategory)
+                                            <option value="{{ $subCategory->id }}">{{ $subCategory->name }}</option>
+                                        @endforeach
+                                    @endif
                                 </select>
                                 @if(empty($availableSubCategories))
                                     <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Select a category first to see subcategories</p>
