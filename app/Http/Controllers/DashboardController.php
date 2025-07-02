@@ -16,7 +16,11 @@ class DashboardController extends Controller
         $productCounts = orders::select('product_id', DB::raw('count(*) as total'))->groupBy('product_id')->orderBy('product_id')->get();
         $productIds = $productCounts->pluck('product_id');
         $products = products::with(['subCategory', 'category'])->whereIn('id', $productIds)->get();
+        $everyDayEssentials = products::with(['subCategory', 'category'])->where('section_category', 'everyday_essential')->limit(10)->get();
+        $populerProducts = products::where('section_category', 'popular_pick')->limit(6)->get();
+        $latestProducts = products::orderBy('created_at', 'desc')->take(12)->get();
+        $offers = products::where('section_category', 'exclusive_deal')->limit(8)->get();
         
-        return view('dashboard', compact('categories', 'products'));
+        return view('dashboard', compact('categories', 'products', 'everyDayEssentials', 'populerProducts', 'latestProducts', 'offers'));
     }
 }
