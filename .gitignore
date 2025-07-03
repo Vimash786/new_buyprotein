@@ -23,4 +23,3 @@ yarn-error.log
 /.zed
 
 # Temporarily ignore GitHub workflows until PAT has workflow scope
-.github/workflows/
