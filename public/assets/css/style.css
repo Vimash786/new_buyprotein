@@ -18179,7 +18179,7 @@ li.with-megamenu:hover .rts-megamenu {
 }
 
 .rts-btn.btn-primary {
-  background: #629D23;
+  background: #009ec9;
   border-radius: 6px;
   display: block;
   max-width: max-content;
@@ -18617,8 +18617,8 @@ li.with-megamenu:hover .rts-megamenu {
   font-size: 14px;
   padding: 8px 16px !important;
   background: transparent;
-  color: #629D23;
-  border: 1px solid #629D23;
+  color: #009ec9;
+  border: 1px solid #009ec9;
 }
 
 .single-shopping-card-one .cart-counter-action .rts-btn i {
@@ -20165,7 +20165,7 @@ li.with-megamenu:hover .rts-megamenu {
 }
 
 .single-footer-wized .call-area .info .number {
-  color: #629D23;
+  color: #009ec9;
   font-size: 24px;
   font-weight: 600;
 }
