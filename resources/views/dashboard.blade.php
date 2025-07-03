@@ -47,51 +47,14 @@
                                     <!-- single swiper start -->
                                     <div class="swiper-slide">
                                         <div class="banner-bg-image bg_image bg_one-banner  ptb--120 ptb_md--80 ptb_sm--60">
-                                            <div class="banner-one-inner-content">
-                                                <span class="pre">Get up to 30% off on your first $150 purchase</span>
-                                                <h1 class="title">
-                                                    Do not miss our amazing <br>
-                                                    grocery deals
-                                                </h1>
-                                                <a href="shop-grid-sidebar.html"
-                                                    class="rts-btn btn-primary radious-sm with-icon">
-                                                    <div class="btn-text">
-                                                        Shop Now
-                                                    </div>
-                                                    <div class="arrow-icon">
-                                                        <i class="fa-light fa-arrow-right"></i>
-                                                    </div>
-                                                    <div class="arrow-icon">
-                                                        <i class="fa-light fa-arrow-right"></i>
-                                                    </div>
-                                                </a>
-                                            </div>
+
                                         </div>
                                     </div>
                                     <!-- single swiper start -->
                                     <!-- single swiper start -->
                                     <div class="swiper-slide">
-                                        <div
-                                            class="banner-bg-image bg_image bg_one-banner two  ptb--120 ptb_md--80 ptb_sm--60">
-                                            <div class="banner-one-inner-content">
-                                                <span class="pre">Get up to 30% off on your first $150 purchase</span>
-                                                <h1 class="title">
-                                                    Do not miss our amazing <br>
-                                                    grocery deals
-                                                </h1>
-                                                <a href="shop-grid-sidebar.html"
-                                                    class="rts-btn btn-primary radious-sm with-icon">
-                                                    <div class="btn-text">
-                                                        Shop Now
-                                                    </div>
-                                                    <div class="arrow-icon">
-                                                        <i class="fa-light fa-arrow-right"></i>
-                                                    </div>
-                                                    <div class="arrow-icon">
-                                                        <i class="fa-light fa-arrow-right"></i>
-                                                    </div>
-                                                </a>
-                                            </div>
+                                        <div class="banner-bg-image bg_image bg_one-banner two  ptb--120 ptb_md--80 ptb_sm--60">
+
                                         </div>
                                     </div>
                                     <!-- single swiper start -->
@@ -243,12 +206,13 @@
                                                             <i class="fa-solid fa-bookmark"></i>
                                                         </div>
                                                     @endif
-                                                    <img src="{{ asset('storage/' . $everyDayProduct->thumbnail_image) }}" alt="product">
+                                                    <img src="{{ asset('storage/' . $everyDayProduct->thumbnail_image) }}"
+                                                        alt="product">
                                                     {{-- <img src="assets/images/grocery/01.jpg" alt="grocery"> --}}
                                                 </a>
                                                 <div class="action-share-option">
-                                                    <div class="single-action openuptip message-show-action"
-                                                        data-flow="up" title="Add To Wishlist">
+                                                    <div class="single-action openuptip message-show-action" data-flow="up"
+                                                        title="Add To Wishlist">
                                                         <i class="fa-light fa-heart"></i>
                                                     </div>
                                                     <div class="single-action openuptip" data-flow="up" title="Compare"
@@ -340,7 +304,8 @@
                                                         <i class="fa-solid fa-bookmark"></i>
                                                     </div>
                                                 @endif
-                                                <img src="{{ asset('storage/' . $populerProduct->thumbnail_image) }}" alt="product">
+                                                <img src="{{ asset('storage/' . $populerProduct->thumbnail_image) }}"
+                                                    alt="product">
                                             </a>
                                             <div class="body-content">
 
@@ -421,7 +386,8 @@
                                                             <i class="fa-solid fa-bookmark"></i>
                                                         </div>
                                                     @endif
-                                                    <img src="{{ asset('storage/' . $lat_pro->thumbnail_image) }}" alt="product">
+                                                    <img src="{{ asset('storage/' . $lat_pro->thumbnail_image) }}"
+                                                        alt="product">
                                                 </a>
                                                 <div class="action-share-option">
                                                     <span class="single-action openuptip message-show-action"

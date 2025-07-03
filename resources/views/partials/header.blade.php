@@ -417,7 +417,7 @@
                 <div class="col-lg-12">
                     <div class="logo-search-category-wrapper after-md-device-header">
                         <a href="index.html" class="logo-area">
-                            <img src="{{ asset('assets/images/logo/logo-01.svg') }}" alt="logo-main" class="logo">
+                            <img src="{{ asset('buy-protein.jpg') }}" alt="logo-main" style="height: 94px; width: 288px;" class="logo">
                         </a>
                         <div class="category-search-wrapper">
                             <div class="category-btn category-hover-header">
