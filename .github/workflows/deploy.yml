@@ -24,12 +24,21 @@ jobs:
         with:
           php-version: '8.1'
           tools: composer
+          extensions: pdo, pdo_mysql, mbstring, zip, exif, pcntl, bcmath
+
+      # Cache Composer dependencies
+      - name: Cache Composer dependencies
+        uses: actions/cache@v3
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-
 
       # Install dependencies
       - name: Install Dependencies
         run: |
-          composer install --no-dev --no-scripts --prefer-dist
-          npm install
+          composer install --no-dev --optimize-autoloader --no-scripts --prefer-dist
+          npm install --production
           npm run build
 
       # Deploy via FTP/FTPS
