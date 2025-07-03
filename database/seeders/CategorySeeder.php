@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\SubCategory;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\File;
 
 class CategorySeeder extends Seeder
 {
@@ -14,6 +15,8 @@ class CategorySeeder extends Seeder
      */
     public function run(): void
     {
+        // Get available category images
+        $categoryImages = $this->getCategoryImages();
         // Create main categories with their subcategories
         $categories = [
             'Protein Supplements' => [
@@ -85,10 +88,18 @@ class CategorySeeder extends Seeder
         ];
 
         $sortOrder = 1;
+        $imageIndex = 0;
         foreach ($categories as $categoryName => $subCategories) {
+            // Get random image from available category images
+            $imagePath = null;
+            if (!empty($categoryImages) && isset($categoryImages[$imageIndex % count($categoryImages)])) {
+                $imagePath = 'categories/' . $categoryImages[$imageIndex % count($categoryImages)];
+            }
+            
             $category = Category::create([
                 'name' => $categoryName,
                 'description' => "High-quality {$categoryName} for fitness enthusiasts",
+                'image' => $imagePath,
                 'is_active' => true,
                 'sort_order' => $sortOrder++,
             ]);
@@ -103,6 +114,24 @@ class CategorySeeder extends Seeder
                     'sort_order' => $subSortOrder++,
                 ]);
             }
+            $imageIndex++;
         }
+    }
+
+    /**
+     * Get available category images from storage
+     */
+    private function getCategoryImages(): array
+    {
+        $storagePath = public_path('storage/categories');
+        
+        if (!File::exists($storagePath)) {
+            return [];
+        }
+
+        $images = File::files($storagePath);
+        return array_map(function ($file) {
+            return $file->getFilename();
+        }, $images);
     }
 }
