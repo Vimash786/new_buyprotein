@@ -38,7 +38,7 @@ jobs:
       - name: Install Dependencies
         run: |
           composer install --no-dev --optimize-autoloader --no-scripts --prefer-dist
-          npm install --production
+          npm ci --production
           npm run build
 
       # Deploy via FTP/FTPS
