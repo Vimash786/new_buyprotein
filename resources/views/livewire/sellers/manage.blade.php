@@ -117,6 +117,7 @@ new class extends Component
         $this->validate($rules);
 
         $data = [
+            'user_id' => auth()->id(),
             'company_name' => $this->company_name,
             'gst_number' => $this->gst_number,
             'product_category' => implode(',', array_filter($this->product_category)), // Convert array to comma-separated string

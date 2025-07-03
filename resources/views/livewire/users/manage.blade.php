@@ -32,6 +32,7 @@ new class extends Component
     public $gst_number = '';
     public $product_category = '';
     public $contact_person = '';
+    public $commission = '10';
     public $brand_certificate = '';
     public $brand_certificate_file = null;
     public $status = 'not_approved';
@@ -187,6 +188,7 @@ new class extends Component
                     'gst_number' => $this->gst_number,
                     'product_category' => $this->product_category,
                     'contact_person' => $this->contact_person,
+                    'commission' => $this->commission,
                     'status' => $this->status,
                 ];
                 
@@ -217,6 +219,7 @@ new class extends Component
                     'gst_number' => $this->gst_number,
                     'product_category' => $this->product_category,
                     'contact_person' => $this->contact_person,
+                    'commission' => $this->commission,
                     'status' => $this->status,
                 ];
                 
