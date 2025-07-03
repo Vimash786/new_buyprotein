@@ -1,0 +1,45 @@
+name: Deploy Laravel App to Server
+
+# This workflow deploys the Laravel application to the server via FTP
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the code
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Setup PHP
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          tools: composer
+
+      # Install dependencies
+      - name: Install Dependencies
+        run: |
+          composer install --no-dev --no-scripts --prefer-dist
+          npm install
+          npm run build
+
+      # Deploy via FTP/FTPS
+      - name: Deploy via FTP/FTPS
+        uses: SamKirkland/FTP-Deploy-Action@4.3.0
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          port: 21 # Adjust this if your FTP server uses a different port
+          protocol: ftps
+          local-dir: ./ 
+          server-dir: /public_html/Demo/buyprotein/
