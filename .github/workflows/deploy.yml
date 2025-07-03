@@ -38,6 +38,22 @@ jobs:
           npm ci --production
           npm run build
 
+      # Setup environment for deployment
+      - name: Setup Environment
+        run: |
+          # Create minimal .env for build process
+          echo "DB_CONNECTION=mysql" > .env
+          echo "DB_HOST=127.0.0.1" >> .env
+          echo "DB_PORT=3306" >> .env
+          echo "DB_DATABASE=temp_db" >> .env
+          echo "DB_USERNAME=root" >> .env
+          echo "DB_PASSWORD=" >> .env
+          echo "CACHE_STORE=file" >> .env
+          echo "SESSION_DRIVER=file" >> .env
+          echo "APP_ENV=production" >> .env
+          echo "APP_DEBUG=false" >> .env
+          echo "APP_KEY=base64:$(openssl rand -base64 32)" >> .env
+
       # Laravel optimizations (needs PHP installed on GitHub runner)
       - name: Laravel Optimizations
         run: |
@@ -57,3 +73,8 @@ jobs:
           protocol: ftps
           local-dir: ./ 
           server-dir: /public_html/Demo/buyprotein/
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            .env
