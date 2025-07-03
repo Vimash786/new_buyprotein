@@ -22,5 +22,5 @@ yarn-error.log
 /.vscode
 /.zed
 
-# Temporarily ignore GitHub workflows until PAT has workflow scope
-/.github/
+# GitHub workflows can now be pushed with updated PAT
+# /.github/
