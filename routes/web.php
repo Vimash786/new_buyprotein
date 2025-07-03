@@ -6,7 +6,7 @@ use Livewire\Volt\Volt;
 
 Route::get('/dash', function () {
     return view('welcome');
-})->name('home');
+})->name('welcome');
 
 Route::get('/', [DashboardController::class, 'index'])->name('home');
 
