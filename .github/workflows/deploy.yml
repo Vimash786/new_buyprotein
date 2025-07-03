@@ -1,6 +1,5 @@
 name: Deploy Laravel App to Server
 
-# This workflow deploys the Laravel application to the server via FTP
 on:
   push:
     branches:
@@ -18,13 +17,11 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # Setup PHP
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+      # Setup Node.js (for Volt + Tailwind)
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
-          php-version: '8.1'
-          tools: composer
-          extensions: pdo, pdo_mysql, mbstring, zip, exif, pcntl, bcmath
+          node-version: '18'
 
       # Cache Composer dependencies
       - name: Cache Composer dependencies
@@ -34,12 +31,19 @@ jobs:
           key: composer-${{ hashFiles('composer.lock') }}
           restore-keys: composer-
 
-      # Install dependencies
+      # Install backend and frontend dependencies, build assets
       - name: Install Dependencies
         run: |
           composer install --no-dev --optimize-autoloader --no-scripts --prefer-dist
           npm ci --production
           npm run build
+
+      # Laravel optimizations (needs PHP installed on GitHub runner)
+      - name: Laravel Optimizations
+        run: |
+          php artisan config:cache
+          php artisan route:cache
+          php artisan view:cache
 
       # Deploy via FTP/FTPS
       - name: Deploy via FTP/FTPS
@@ -48,7 +52,7 @@ jobs:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          port: 21 # Adjust this if your FTP server uses a different port
+          port: 21
           protocol: ftps
           local-dir: ./ 
           server-dir: /public_html/Demo/buyprotein/
