@@ -57,15 +57,24 @@ new class extends Component
     // For dynamic subcategory loading
     public $availableSubCategories = [];
 
+    // For variant details and product details views
+    public $showVariantPricesModal = false;
+    public $showVariantStockModal = false;
+    public $showDetailsModal = false;
+    public $selectedProduct = null;
+    public $variantPrices = [];
+    public $variantStock = [];
+    public $productDetails = [];
+
     protected $rules = [
         'seller_id' => 'required|exists:sellers,id',
         'name' => 'required|string|max:255',
         'description' => 'nullable|string',
-        'price' => 'required_if:has_variants,false|numeric|min:0',
+        'price' => 'required_if:has_variants,false|nullable|numeric|min:0',
         'gym_owner_price' => 'nullable|numeric|min:0',
         'regular_user_price' => 'nullable|numeric|min:0',
         'shop_owner_price' => 'nullable|numeric|min:0',
-        'stock_quantity' => 'required_if:has_variants,false|integer|min:0',
+        'stock_quantity' => 'required_if:has_variants,false|nullable|integer|min:0',
         'weight' => 'nullable|string|max:50',
         'category_id' => 'required|exists:categories,id',
         'sub_category_id' => 'nullable|exists:sub_categories,id',
@@ -179,6 +188,22 @@ new class extends Component
             $this->discounted_price = $this->price * (1 - ($this->discount_percentage / 100));
         }
 
+        // Set default values for empty numeric fields
+        $numericFields = ['price', 'gym_owner_price', 'regular_user_price', 'shop_owner_price', 'stock_quantity', 'discount_percentage', 'discounted_price'];
+        foreach ($numericFields as $field) {
+            if ($this->$field === '' || $this->$field === null) {
+                if ($field === 'price' || $field === 'stock_quantity') {
+                    // Required fields must have a default value of 0
+                    $this->$field = 0;
+                } else if ($field === 'discount_percentage') {
+                    $this->$field = 0;
+                } else {
+                    // Optional fields can be 0 or null depending on database schema
+                    $this->$field = 0;
+                }
+            }
+        }
+
         $data = [
             'seller_id' => $this->seller_id,
             'name' => $this->name,
@@ -194,7 +219,7 @@ new class extends Component
             'status' => $this->status,
             'section_category' => $this->section_category,
             'discount_percentage' => $this->discount_percentage ?: 0,
-            'discounted_price' => $this->discounted_price ?: null,
+            'discounted_price' => $this->discounted_price ?: 0,
             'has_variants' => $this->has_variants,
         ];
 
@@ -297,12 +322,12 @@ new class extends Component
                 ProductVariantCombination::create([
                     'product_id' => $product->id,
                     'variant_options' => $actualOptionIds,
-                    'price' => $combination['price'] ?: $product->price,
-                    'gym_owner_price' => $combination['gym_owner_price'] ?: $product->gym_owner_price,
-                    'regular_user_price' => $combination['regular_user_price'] ?: $product->regular_user_price,
-                    'shop_owner_price' => $combination['shop_owner_price'] ?: $product->shop_owner_price,
+                    'price' => $combination['price'] ?: 0,
+                    'gym_owner_price' => $combination['gym_owner_price'] ?: 0,
+                    'regular_user_price' => $combination['regular_user_price'] ?: 0,
+                    'shop_owner_price' => $combination['shop_owner_price'] ?: 0,
                     'discount_percentage' => $combination['discount_percentage'] ?: 0,
-                    'discounted_price' => $combination['discounted_price'] ?: null,
+                    'discounted_price' => $combination['discounted_price'] ?: 0,
                     'stock_quantity' => $combination['stock_quantity'] ?: 0,
                     'is_active' => $combination['is_active'] ?? true,
                 ]);
@@ -527,12 +552,12 @@ new class extends Component
                 'id' => null,
                 'options' => $combination,
                 'sku' => '',
-                'price' => $this->price,
-                'gym_owner_price' => $this->gym_owner_price,
-                'regular_user_price' => $this->regular_user_price,
-                'shop_owner_price' => $this->shop_owner_price,
+                'price' => $this->price ?: 0,
+                'gym_owner_price' => $this->gym_owner_price ?: 0,
+                'regular_user_price' => $this->regular_user_price ?: 0,
+                'shop_owner_price' => $this->shop_owner_price ?: 0,
                 'discount_percentage' => 0,
-                'discounted_price' => null,
+                'discounted_price' => 0,
                 'stock_quantity' => 0,
                 'is_active' => true
             ];
@@ -600,6 +625,97 @@ new class extends Component
                 $this->variant_combinations[$index]['discounted_price'] = null;
             }
         }
+    }
+
+    public function viewVariantPrices($productId)
+    {
+        $product = products::with(['variantCombinations'])->findOrFail($productId);
+        $this->selectedProduct = $product;
+        
+        $this->variantPrices = $product->variantCombinations->map(function($combination) {
+            $optionNames = [];
+            $options = ProductVariantOption::whereIn('id', $combination->variant_options)->get();
+            
+            foreach ($options as $option) {
+                $variant = $option->variant;
+                $optionNames[] = $variant->display_name . ': ' . $option->display_value;
+            }
+            
+            return [
+                'id' => $combination->id,
+                'variant_name' => implode(' / ', $optionNames),
+                'price' => $combination->price,
+                'discount_percentage' => $combination->discount_percentage,
+                'discounted_price' => $combination->discounted_price,
+                'gym_owner_price' => $combination->gym_owner_price,
+                'regular_user_price' => $combination->regular_user_price,
+                'shop_owner_price' => $combination->shop_owner_price,
+            ];
+        })->toArray();
+        
+        $this->showVariantPricesModal = true;
+    }
+    
+    public function viewVariantStock($productId)
+    {
+        $product = products::with(['variantCombinations'])->findOrFail($productId);
+        $this->selectedProduct = $product;
+        
+        $this->variantStock = $product->variantCombinations->map(function($combination) {
+            $optionNames = [];
+            $options = ProductVariantOption::whereIn('id', $combination->variant_options)->get();
+            
+            foreach ($options as $option) {
+                $variant = $option->variant;
+                $optionNames[] = $variant->display_name . ': ' . $option->display_value;
+            }
+            
+            return [
+                'id' => $combination->id,
+                'variant_name' => implode(' / ', $optionNames),
+                'stock_quantity' => $combination->stock_quantity,
+                'is_active' => $combination->is_active,
+            ];
+        })->toArray();
+        
+        $this->showVariantStockModal = true;
+    }
+    
+    public function viewDetails($productId)
+    {
+        $product = products::with([
+            'seller', 
+            'category', 
+            'subCategory', 
+            'variants.options', 
+            'variantCombinations',
+            'images'
+        ])->findOrFail($productId);
+        
+        $this->selectedProduct = $product;
+        $this->productDetails = $product;
+        $this->showDetailsModal = true;
+    }
+    
+    public function closeVariantPricesModal()
+    {
+        $this->showVariantPricesModal = false;
+        $this->variantPrices = [];
+        $this->selectedProduct = null;
+    }
+    
+    public function closeVariantStockModal()
+    {
+        $this->showVariantStockModal = false;
+        $this->variantStock = [];
+        $this->selectedProduct = null;
+    }
+    
+    public function closeDetailsModal()
+    {
+        $this->showDetailsModal = false;
+        $this->productDetails = [];
+        $this->selectedProduct = null;
     }
 }; ?>
 
@@ -782,26 +898,44 @@ new class extends Component
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm text-gray-900 dark:text-white">
-                                        @if($product->has_discount)
-                                            <div class="line-through text-gray-500">${{ number_format($product->price, 2) }}</div>
-                                            <div class="font-medium text-green-600">${{ number_format($product->final_price, 2) }}</div>
-                                            @if($product->discount_percentage > 0)
-                                                <div class="text-xs text-red-600">{{ $product->discount_percentage }}% off</div>
-                                            @endif
+                                        @if($product->has_variants)
+                                            <button 
+                                                wire:click="viewVariantPrices({{ $product->id }})"
+                                                class="text-xs px-2 py-1 bg-blue-100 text-blue-600 rounded hover:bg-blue-200"
+                                            >
+                                                View Variant Prices
+                                            </button>
                                         @else
-                                            <div class="font-medium">${{ number_format($product->price, 2) }}</div>
+                                            @if($product->has_discount)
+                                                <div class="line-through text-gray-500">${{ number_format($product->price, 2) }}</div>
+                                                <div class="font-medium text-green-600">${{ number_format($product->final_price, 2) }}</div>
+                                                @if($product->discount_percentage > 0)
+                                                    <div class="text-xs text-red-600">{{ $product->discount_percentage }}% off</div>
+                                                @endif
+                                            @else
+                                                <div class="font-medium">${{ number_format($product->price, 2) }}</div>
+                                            @endif
                                         @endif
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="text-sm font-medium 
-                                        {{ $product->stock_quantity <= 10 ? 'text-red-600' : 'text-gray-900' }}">
-                                        {{ $product->stock_quantity }}
-                                    </span>
-                                    @if($product->stock_quantity <= 10)
-                                        <span class="ml-1 text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full">
-                                            Low Stock
+                                    @if($product->has_variants)
+                                        <button 
+                                            wire:click="viewVariantStock({{ $product->id }})"
+                                            class="text-xs px-2 py-1 bg-green-100 text-green-600 rounded hover:bg-green-200"
+                                        >
+                                            View Variant Stock
+                                        </button>
+                                    @else
+                                        <span class="text-sm font-medium 
+                                            {{ $product->stock_quantity <= 10 ? 'text-red-600' : 'text-gray-900' }}">
+                                            {{ $product->stock_quantity }}
                                         </span>
+                                        @if($product->stock_quantity <= 10)
+                                            <span class="ml-1 text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full">
+                                                Low Stock
+                                            </span>
+                                        @endif
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
@@ -853,8 +987,19 @@ new class extends Component
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                     <div class="flex items-center gap-2">
                                         <button 
+                                            wire:click="viewDetails({{ $product->id }})"
+                                            class="text-indigo-600 hover:text-indigo-900"
+                                            title="View Details"
+                                        >
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                            </svg>
+                                        </button>
+                                        <button 
                                             wire:click="edit({{ $product->id }})"
                                             class="text-blue-600 hover:text-blue-900"
+                                            title="Edit"
                                         >
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -864,6 +1009,7 @@ new class extends Component
                                             wire:click="delete({{ $product->id }})"
                                             wire:confirm="Are you sure you want to delete this product?"
                                             class="text-red-600 hover:text-red-900"
+                                            title="Delete"
                                         >
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -907,6 +1053,318 @@ new class extends Component
                     </div>
 
                     @include('livewire.products.enhanced-form')
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- Variant Prices Modal -->
+    @if($showVariantPricesModal && $selectedProduct)
+        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div class="bg-white dark:bg-zinc-900 rounded-lg max-w-3xl w-full max-h-[80vh] overflow-y-auto">
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-xl font-bold text-gray-900 dark:text-white">
+                            Variant Prices for {{ $selectedProduct->name }}
+                        </h2>
+                        <button wire:click="closeVariantPricesModal" class="text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-gray-100">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-50 dark:bg-zinc-800">
+                                <tr>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Variant</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Price</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Discount</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Final Price</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Special Prices</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white dark:bg-zinc-900 divide-y divide-gray-200 dark:divide-gray-700">
+                                @foreach($variantPrices as $variant)
+                                    <tr class="hover:bg-gray-50 dark:hover:bg-zinc-800">
+                                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-white">{{ $variant['variant_name'] }}</td>
+                                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-white">${{ number_format($variant['price'], 2) }}</td>
+                                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                            @if($variant['discount_percentage'] > 0)
+                                                <span class="text-red-600">{{ $variant['discount_percentage'] }}%</span>
+                                            @else
+                                                -
+                                            @endif
+                                        </td>
+                                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                            @if($variant['discounted_price'])
+                                                <span class="font-medium text-green-600">${{ number_format($variant['discounted_price'], 2) }}</span>
+                                            @else
+                                                -
+                                            @endif
+                                        </td>
+                                        <td class="px-4 py-2 text-sm text-gray-900 dark:text-white">
+                                            <div class="flex flex-col gap-1">
+                                                @if($variant['gym_owner_price'])
+                                                    <div>Gym Owner: ${{ number_format($variant['gym_owner_price'], 2) }}</div>
+                                                @endif
+                                                @if($variant['regular_user_price'])
+                                                    <div>Regular User: ${{ number_format($variant['regular_user_price'], 2) }}</div>
+                                                @endif
+                                                @if($variant['shop_owner_price'])
+                                                    <div>Shop Owner: ${{ number_format($variant['shop_owner_price'], 2) }}</div>
+                                                @endif
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- Variant Stock Modal -->
+    @if($showVariantStockModal && $selectedProduct)
+        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div class="bg-white dark:bg-zinc-900 rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-xl font-bold text-gray-900 dark:text-white">
+                            Variant Stock for {{ $selectedProduct->name }}
+                        </h2>
+                        <button wire:click="closeVariantStockModal" class="text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-gray-100">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-50 dark:bg-zinc-800">
+                                <tr>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Variant</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Stock Quantity</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white dark:bg-zinc-900 divide-y divide-gray-200 dark:divide-gray-700">
+                                @foreach($variantStock as $variant)
+                                    <tr class="hover:bg-gray-50 dark:hover:bg-zinc-800">
+                                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-white">{{ $variant['variant_name'] }}</td>
+                                        <td class="px-4 py-2 whitespace-nowrap text-sm font-medium {{ $variant['stock_quantity'] <= 10 ? 'text-red-600' : 'text-gray-900 dark:text-white' }}">
+                                            {{ $variant['stock_quantity'] }}
+                                            @if($variant['stock_quantity'] <= 10)
+                                                <span class="ml-1 text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full">
+                                                    Low Stock
+                                                </span>
+                                            @endif
+                                        </td>
+                                        <td class="px-4 py-2 whitespace-nowrap">
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {{ $variant['is_active'] ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                                                {{ $variant['is_active'] ? 'Active' : 'Inactive' }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- Product Details Modal -->
+    @if($showDetailsModal && $selectedProduct)
+        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div class="bg-white dark:bg-zinc-900 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-xl font-bold text-gray-900 dark:text-white">
+                            Product Details: {{ $selectedProduct->name }}
+                        </h2>
+                        <button wire:click="closeDetailsModal" class="text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-gray-100">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <!-- Product Images -->
+                        <div>
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Product Images</h3>
+                            <div class="mb-4">
+                                @if($selectedProduct->thumbnail_image)
+                                    <div class="mb-2">
+                                        <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Thumbnail Image</h4>
+                                        <img src="{{ asset('storage/' . $selectedProduct->thumbnail_image) }}" 
+                                            alt="{{ $selectedProduct->name }}" 
+                                            class="w-full h-auto max-h-48 object-contain rounded-lg border border-gray-200 dark:border-gray-700">
+                                    </div>
+                                @endif
+
+                                @if(count($selectedProduct->images) > 0)
+                                    <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Additional Images</h4>
+                                    <div class="grid grid-cols-3 gap-2">
+                                        @foreach($selectedProduct->images as $image)
+                                            <img src="{{ asset('storage/' . $image->image_path) }}" 
+                                                alt="{{ $selectedProduct->name }}" 
+                                                class="w-full h-24 object-cover rounded-lg border border-gray-200 dark:border-gray-700">
+                                        @endforeach
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+
+                        <!-- Product Info -->
+                        <div>
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Product Information</h3>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Seller</p>
+                                    <p class="text-sm text-gray-900 dark:text-white">{{ $selectedProduct->seller->company_name ?? 'N/A' }}</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Status</p>
+                                    <p class="text-sm">
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {{ $selectedProduct->status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                                            {{ ucfirst($selectedProduct->status) }}
+                                        </span>
+                                    </p>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Category</p>
+                                    <p class="text-sm text-gray-900 dark:text-white">{{ $selectedProduct->category->name ?? 'N/A' }}</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Subcategory</p>
+                                    <p class="text-sm text-gray-900 dark:text-white">{{ $selectedProduct->subCategory->name ?? 'None' }}</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Section</p>
+                                    <p class="text-sm text-gray-900 dark:text-white">{{ $selectedProduct->section_category_display }}</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Has Variants</p>
+                                    <p class="text-sm text-gray-900 dark:text-white">{{ $selectedProduct->has_variants ? 'Yes' : 'No' }}</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Weight</p>
+                                    <p class="text-sm text-gray-900 dark:text-white">{{ $selectedProduct->weight ?: 'N/A' }}</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Stock</p>
+                                    <p class="text-sm font-medium {{ $selectedProduct->stock_quantity <= 10 ? 'text-red-600' : 'text-gray-900 dark:text-white' }}">
+                                        {{ $selectedProduct->stock_quantity }}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="mt-4">
+                                <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Price Information</p>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Base Price</p>
+                                        <p class="text-sm text-gray-900 dark:text-white">${{ number_format($selectedProduct->price, 2) }}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Discount</p>
+                                        <p class="text-sm text-gray-900 dark:text-white">{{ $selectedProduct->discount_percentage }}%</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Discounted Price</p>
+                                        <p class="text-sm text-green-600 dark:text-green-400">{{ $selectedProduct->discounted_price ? '$' . number_format($selectedProduct->discounted_price, 2) : 'N/A' }}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            @if($selectedProduct->gym_owner_price || $selectedProduct->regular_user_price || $selectedProduct->shop_owner_price)
+                                <div class="mt-4">
+                                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Special Pricing</p>
+                                    <div class="grid grid-cols-3 gap-3">
+                                        @if($selectedProduct->gym_owner_price)
+                                            <div>
+                                                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Gym Owner</p>
+                                                <p class="text-sm text-gray-900 dark:text-white">${{ number_format($selectedProduct->gym_owner_price, 2) }}</p>
+                                            </div>
+                                        @endif
+                                        @if($selectedProduct->regular_user_price)
+                                            <div>
+                                                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Regular User</p>
+                                                <p class="text-sm text-gray-900 dark:text-white">${{ number_format($selectedProduct->regular_user_price, 2) }}</p>
+                                            </div>
+                                        @endif
+                                        @if($selectedProduct->shop_owner_price)
+                                            <div>
+                                                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Shop Owner</p>
+                                                <p class="text-sm text-gray-900 dark:text-white">${{ number_format($selectedProduct->shop_owner_price, 2) }}</p>
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+
+                    <div class="mt-6">
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Description</h3>
+                        <div class="bg-gray-50 dark:bg-zinc-800 rounded-lg p-4 prose dark:prose-invert max-w-none">
+                            {!! $selectedProduct->description ?: 'No description available.' !!}
+                        </div>
+                    </div>
+
+                    @if($selectedProduct->has_variants && count($selectedProduct->variants) > 0)
+                        <div class="mt-6">
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Variants</h3>
+                            <div class="space-y-4">
+                                @foreach($selectedProduct->variants as $variant)
+                                    <div class="bg-gray-50 dark:bg-zinc-800 rounded-lg p-4">
+                                        <h4 class="text-base font-medium text-gray-900 dark:text-white mb-2">{{ $variant->display_name }}</h4>
+                                        <div class="flex flex-wrap gap-2">
+                                            @foreach($variant->options as $option)
+                                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
+                                                    {{ $option->display_value }}
+                                                </span>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <div class="mt-6">
+                            <button 
+                                wire:click="viewVariantPrices({{ $selectedProduct->id }})"
+                                class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:border-indigo-900 focus:ring ring-indigo-300 disabled:opacity-25 transition mr-2"
+                            >
+                                View Variant Prices
+                            </button>
+                            <button 
+                                wire:click="viewVariantStock({{ $selectedProduct->id }})"
+                                class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 active:bg-green-900 focus:outline-none focus:border-green-900 focus:ring ring-green-300 disabled:opacity-25 transition"
+                            >
+                                View Variant Stock
+                            </button>
+                        </div>
+                    @endif
+
+                    <div class="mt-6 flex justify-end">
+                        <button 
+                            wire:click="edit({{ $selectedProduct->id }})"
+                            class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 active:bg-blue-900 focus:outline-none focus:border-blue-900 focus:ring ring-blue-300 disabled:opacity-25 transition"
+                        >
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                            Edit Product
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
