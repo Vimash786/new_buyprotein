@@ -32,7 +32,6 @@ new class extends Component
     public $stock_quantity = '';
     public $category_id = '';
     public $sub_category_id = '';
-    public $brand = '';
     public $status = 'active';
     public $section_category = 'everyday_essential';
     public $discount_percentage = 0;
@@ -62,7 +61,6 @@ new class extends Component
         'stock_quantity' => 'required|integer|min:0',
         'category_id' => 'required|exists:categories,id',
         'sub_category_id' => 'nullable|exists:sub_categories,id',
-        'brand' => 'nullable|string|max:255',
         'status' => 'required|in:active,inactive',
         'section_category' => 'required|in:everyday_essential,popular_pick,exclusive_deal',
         'discount_percentage' => 'nullable|numeric|min:0|max:100',
@@ -79,7 +77,6 @@ new class extends Component
         if ($this->search) {
             $query->where(function($q) {
                 $q->where('name', 'like', '%' . $this->search . '%')
-                  ->orWhere('brand', 'like', '%' . $this->search . '%')
                   ->orWhereHas('seller', function($seller) {
                       $seller->where('company_name', 'like', '%' . $this->search . '%');
                   })
@@ -146,7 +143,6 @@ new class extends Component
         $this->stock_quantity = '';
         $this->category_id = '';
         $this->sub_category_id = '';
-        $this->brand = '';
         $this->status = 'active';
         $this->section_category = 'everyday_essential';
         $this->discount_percentage = 0;
@@ -179,7 +175,6 @@ new class extends Component
             'stock_quantity' => $this->stock_quantity,
             'category_id' => $this->category_id,
             'sub_category_id' => $this->sub_category_id ?: null,
-            'brand' => $this->brand,
             'status' => $this->status,
             'section_category' => $this->section_category,
             'discount_percentage' => $this->discount_percentage ?: 0,
@@ -307,7 +302,6 @@ new class extends Component
         $this->stock_quantity = $product->stock_quantity;
         $this->category_id = $product->category_id;
         $this->sub_category_id = $product->sub_category_id;
-        $this->brand = $product->brand;
         $this->status = $product->status;
         $this->section_category = $product->section_category;
         $this->discount_percentage = $product->discount_percentage;
@@ -729,9 +723,6 @@ new class extends Component
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div>
                                         <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $product->name }}</div>
-                                        @if($product->brand)
-                                            <div class="text-sm text-gray-500 dark:text-gray-400">{{ $product->brand }}</div>
-                                        @endif
                                         @if($product->thumbnail_image)
                                             <img src="{{ asset('storage/' . $product->thumbnail_image) }}" alt="{{ $product->name }}" class="w-10 h-10 object-cover rounded mt-1">
                                         @endif

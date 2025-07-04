@@ -132,7 +132,7 @@
         </div>
 
         <!-- Section Category -->
-        <div>
+        <div class="md:col-span-2">
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Section Category</label>
             <select 
                 wire:model="section_category"
@@ -143,18 +143,6 @@
                 <option value="exclusive_deal">Exclusive Deal & Offers</option>
             </select>
             @error('section_category') <span class="text-red-500 text-sm">{{ $errors->first('section_category') }}</span> @enderror
-        </div>
-
-        <!-- Brand -->
-        <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Brand</label>
-            <input 
-                type="text" 
-                wire:model="brand"
-                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-                placeholder="Enter brand (optional)"
-            >
-            @error('brand') <span class="text-red-500 text-sm">{{ $errors->first('brand') }}</span> @enderror
         </div>
 
         <!-- Thumbnail Image -->

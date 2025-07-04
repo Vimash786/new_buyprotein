@@ -25,6 +25,9 @@ new class extends Component
     public $product_category = [];
     public $contact_person = '';
     public $commission = '';
+    public $brand = '';
+    public $brand_logo = '';
+    public $brand_logo_file = null;
     public $brand_certificate = '';
     public $brand_certificate_file = null;
     public $status = 'not_approved';
@@ -36,6 +39,8 @@ new class extends Component
         'product_category.*' => 'string',
         'contact_person' => 'required|string|max:255',
         'commission' => 'required|string|max:255',
+        'brand' => 'required|string|max:255',
+        'brand_logo_file' => 'nullable|file|mimes:jpg,jpeg,png,gif|max:2048',
         'brand_certificate_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,gif|max:2048',
         'status' => 'required|in:approved,not_approved',
     ];
@@ -49,6 +54,7 @@ new class extends Component
                 $q->where('company_name', 'like', '%' . $this->search . '%')
                   ->orWhere('gst_number', 'like', '%' . $this->search . '%')
                   ->orWhere('contact_person', 'like', '%' . $this->search . '%')
+                  ->orWhere('brand', 'like', '%' . $this->search . '%')
                   ->orWhere('product_category', 'like', '%' . $this->search . '%');
             });
         }
@@ -100,6 +106,9 @@ new class extends Component
         $this->product_category = [];
         $this->contact_person = '';
         $this->commission = '';
+        $this->brand = '';
+        $this->brand_logo = '';
+        $this->brand_logo_file = null;
         $this->brand_certificate = '';
         $this->brand_certificate_file = null;
         $this->status = 'not_approved';
@@ -123,12 +132,22 @@ new class extends Component
             'product_category' => implode(',', array_filter($this->product_category)), // Convert array to comma-separated string
             'contact_person' => $this->contact_person,
             'commission' => $this->commission,
+            'brand' => $this->brand,
             'status' => $this->status,
         ];
 
-        // Handle file upload
+        // Handle brand logo upload
+        if ($this->brand_logo_file) {
+            $fileName = time() . '_brand_logo_' . $this->brand_logo_file->getClientOriginalName();
+            $filePath = $this->brand_logo_file->storeAs('brand_logos', $fileName, 'public');
+            $data['brand_logo'] = $filePath;
+        } elseif (!$this->editMode) {
+            $data['brand_logo'] = null;
+        }
+
+        // Handle brand certificate upload
         if ($this->brand_certificate_file) {
-            $fileName = time() . '_' . $this->brand_certificate_file->getClientOriginalName();
+            $fileName = time() . '_brand_certificate_' . $this->brand_certificate_file->getClientOriginalName();
             $filePath = $this->brand_certificate_file->storeAs('brand_certificates', $fileName, 'public');
             $data['brand_certificate'] = $filePath;
         } elseif (!$this->editMode) {
@@ -156,6 +175,9 @@ new class extends Component
         $this->product_category = $seller->product_category ? array_filter(array_map('trim', preg_split('/,\s*/', $seller->product_category))) : [];
         $this->contact_person = $seller->contact_person;
         $this->commission = $seller->commission;
+        $this->brand = $seller->brand;
+        $this->brand_logo = $seller->brand_logo;
+        $this->brand_logo_file = null; // Reset file input for edit
         $this->brand_certificate = $seller->brand_certificate;
         $this->brand_certificate_file = null; // Reset file input for edit
         $this->status = $seller->status;
@@ -323,6 +345,7 @@ new class extends Component
                     <thead class="bg-gray-50 dark:bg-zinc-800">
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Company</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Brand</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">GST Number</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Category</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Contact Person</th>
@@ -349,6 +372,16 @@ new class extends Component
                                                 </a>
                                             </div>
                                         @endif
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center gap-2">
+                                        @if($seller->brand_logo)
+                                            <img src="{{ Storage::url($seller->brand_logo) }}" alt="Brand Logo" class="w-8 h-8 rounded object-cover">
+                                        @endif
+                                        <div>
+                                            <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $seller->brand ?? 'Not specified' }}</div>
+                                        </div>
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
@@ -428,7 +461,7 @@ new class extends Component
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                                <td colspan="7" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
                                     No sellers found.
                                 </td>
                             </tr>
@@ -505,6 +538,54 @@ new class extends Component
                                 placeholder="Enter contact person name"
                             >
                             @error('contact_person') <span class="text-red-500 text-sm">{{ $errors->first('contact_person') }}</span> @enderror
+                        </div>   
+
+                        <!-- Brand Name -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Brand Name</label>
+                            <input 
+                                type="text" 
+                                wire:model="brand"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
+                                placeholder="Enter brand name"
+                            >
+                            @error('brand') <span class="text-red-500 text-sm">{{ $errors->first('brand') }}</span> @enderror
+                        </div>
+
+                        <!-- Brand Logo -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Brand Logo</label>
+                            
+                            @if($editMode && $brand_logo)
+                                <div class="mb-3 p-3 bg-gray-50 dark:bg-zinc-800 rounded-lg">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-2">
+                                            <img src="{{ Storage::url($brand_logo) }}" alt="Brand Logo" class="w-10 h-10 rounded object-cover">
+                                            <span class="text-sm text-gray-700 dark:text-gray-300">Current brand logo</span>
+                                        </div>
+                                        <a href="{{ Storage::url($brand_logo) }}" target="_blank" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm">
+                                            View Logo
+                                        </a>
+                                    </div>
+                                </div>
+                            @endif
+                            
+                            <input 
+                                type="file" 
+                                wire:model="brand_logo_file"
+                                accept=".jpg,.jpeg,.png,.gif"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
+                            >
+                            <p class="text-xs text-gray-500 mt-1">Upload JPG, JPEG, PNG, or GIF files (max 2MB)</p>
+                            
+                            @if($brand_logo_file)
+                                <div class="mt-2 p-2 bg-green-50 border border-green-200 rounded text-sm text-green-700">
+                                    Logo selected: {{ $brand_logo_file->getClientOriginalName() }}
+                                </div>
+                            @endif
+                            @error('brand_logo_file') 
+                                <span class="text-red-500 text-sm">{{ $errors->first('brand_logo_file') }}</span> 
+                            @enderror
                         </div>   
 
                         <!-- Product Category -->
@@ -633,6 +714,20 @@ new class extends Component
                                     <label class="text-sm font-medium text-gray-600 dark:text-gray-300">Contact Person</label>
                                     <p class="text-gray-900 dark:text-white">{{ $viewingSeller->contact_person }}</p>
                                 </div>
+                                @if($viewingSeller->brand)
+                                    <div>
+                                        <label class="text-sm font-medium text-gray-600 dark:text-gray-300">Brand Name</label>
+                                        <p class="text-gray-900 dark:text-white">{{ $viewingSeller->brand }}</p>
+                                    </div>
+                                @endif
+                                @if($viewingSeller->brand_logo)
+                                    <div>
+                                        <label class="text-sm font-medium text-gray-600 dark:text-gray-300">Brand Logo</label>
+                                        <div class="mt-2">
+                                            <img src="{{ Storage::url($viewingSeller->brand_logo) }}" alt="Brand Logo" class="w-16 h-16 rounded object-cover border border-gray-300 dark:border-gray-600">
+                                        </div>
+                                    </div>
+                                @endif
                                 <div>
                                     <label class="text-sm font-medium text-gray-600 dark:text-gray-300">Commission Rate</label>
                                     <p class="text-gray-900 dark:text-white">{{ $viewingSeller->commission }}%</p>
