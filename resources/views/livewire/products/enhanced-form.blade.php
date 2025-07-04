@@ -41,7 +41,7 @@
 
         <!-- Price -->
         @if(!$has_variants)
-            <div>
+            <div class="md:col-span-2">
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Base Price ($)</label>
                 <input 
                     type="number" 
@@ -51,6 +51,43 @@
                     placeholder="0.00"
                 >
                 @error('price') <span class="text-red-500 text-sm">{{ $errors->first('price') }}</span> @enderror
+            </div>
+
+            <!-- User Type Pricing -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Gym Owner/Trainer/Influencer Price ($)</label>
+                <input 
+                    type="number" 
+                    step="0.01"
+                    wire:model="gym_owner_price"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
+                    placeholder="0.00"
+                >
+                @error('gym_owner_price') <span class="text-red-500 text-sm">{{ $errors->first('gym_owner_price') }}</span> @enderror
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Regular User Price ($)</label>
+                <input 
+                    type="number" 
+                    step="0.01"
+                    wire:model="regular_user_price"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
+                    placeholder="0.00"
+                >
+                @error('regular_user_price') <span class="text-red-500 text-sm">{{ $errors->first('regular_user_price') }}</span> @enderror
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Shop Owner Price ($)</label>
+                <input 
+                    type="number" 
+                    step="0.01"
+                    wire:model="shop_owner_price"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
+                    placeholder="0.00"
+                >
+                @error('shop_owner_price') <span class="text-red-500 text-sm">{{ $errors->first('shop_owner_price') }}</span> @enderror
             </div>
         @endif
 
@@ -356,35 +393,84 @@
                                                 @endforeach
                                             </span>
                                         </div>
+                                        
+                                        <!-- Base Pricing Row -->
                                         <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-                                            <input 
-                                                type="number" 
-                                                step="0.01"
-                                                wire:model="variant_combinations.{{ $combIndex }}.price"
-                                                placeholder="Price ($)"
-                                                class="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
-                                            >
-                                            <input 
-                                                type="number" 
-                                                step="0.01"
-                                                max="100"
-                                                wire:model="variant_combinations.{{ $combIndex }}.discount_percentage"
-                                                placeholder="Discount (%)"
-                                                class="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
-                                            >
-                                            <input 
-                                                type="number" 
-                                                step="0.01"
-                                                wire:model="variant_combinations.{{ $combIndex }}.discounted_price"
-                                                placeholder="Final Price ($)"
-                                                class="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
-                                            >
-                                            <input 
-                                                type="number" 
-                                                wire:model="variant_combinations.{{ $combIndex }}.stock_quantity"
-                                                placeholder="Stock"
-                                                class="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
-                                            >
+                                            <div>
+                                                <label class="text-xs text-gray-600 dark:text-gray-400">Base Price ($)</label>
+                                                <input 
+                                                    type="number" 
+                                                    step="0.01"
+                                                    wire:model="variant_combinations.{{ $combIndex }}.price"
+                                                    placeholder="0.00"
+                                                    class="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
+                                                >
+                                            </div>
+                                            <div>
+                                                <label class="text-xs text-gray-600 dark:text-gray-400">Gym Owner ($)</label>
+                                                <input 
+                                                    type="number" 
+                                                    step="0.01"
+                                                    wire:model="variant_combinations.{{ $combIndex }}.gym_owner_price"
+                                                    placeholder="0.00"
+                                                    class="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
+                                                >
+                                            </div>
+                                            <div>
+                                                <label class="text-xs text-gray-600 dark:text-gray-400">Regular User ($)</label>
+                                                <input 
+                                                    type="number" 
+                                                    step="0.01"
+                                                    wire:model="variant_combinations.{{ $combIndex }}.regular_user_price"
+                                                    placeholder="0.00"
+                                                    class="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
+                                                >
+                                            </div>
+                                            <div>
+                                                <label class="text-xs text-gray-600 dark:text-gray-400">Shop Owner ($)</label>
+                                                <input 
+                                                    type="number" 
+                                                    step="0.01"
+                                                    wire:model="variant_combinations.{{ $combIndex }}.shop_owner_price"
+                                                    placeholder="0.00"
+                                                    class="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
+                                                >
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Discount and Stock Row -->
+                                        <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                            <div>
+                                                <label class="text-xs text-gray-600 dark:text-gray-400">Discount (%)</label>
+                                                <input 
+                                                    type="number" 
+                                                    step="0.01"
+                                                    max="100"
+                                                    wire:model.live="variant_combinations.{{ $combIndex }}.discount_percentage"
+                                                    placeholder="0"
+                                                    class="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
+                                                >
+                                            </div>
+                                            <div>
+                                                <label class="text-xs text-gray-600 dark:text-gray-400">Final Price ($)</label>
+                                                <input 
+                                                    type="number" 
+                                                    step="0.01"
+                                                    wire:model="variant_combinations.{{ $combIndex }}.discounted_price"
+                                                    placeholder="Auto calculated"
+                                                    class="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-gray-100 dark:bg-zinc-600 text-gray-700 dark:text-gray-300"
+                                                    readonly
+                                                >
+                                            </div>
+                                            <div>
+                                                <label class="text-xs text-gray-600 dark:text-gray-400">Stock</label>
+                                                <input 
+                                                    type="number" 
+                                                    wire:model="variant_combinations.{{ $combIndex }}.stock_quantity"
+                                                    placeholder="0"
+                                                    class="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
+                                                >
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

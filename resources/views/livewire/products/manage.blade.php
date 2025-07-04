@@ -29,6 +29,9 @@ new class extends Component
     public $name = '';
     public $description = '';
     public $price = '';
+    public $gym_owner_price = '';
+    public $regular_user_price = '';
+    public $shop_owner_price = '';
     public $stock_quantity = '';
     public $weight = '';
     public $category_id = '';
@@ -59,6 +62,9 @@ new class extends Component
         'name' => 'required|string|max:255',
         'description' => 'nullable|string',
         'price' => 'required_if:has_variants,false|numeric|min:0',
+        'gym_owner_price' => 'nullable|numeric|min:0',
+        'regular_user_price' => 'nullable|numeric|min:0',
+        'shop_owner_price' => 'nullable|numeric|min:0',
         'stock_quantity' => 'required_if:has_variants,false|integer|min:0',
         'weight' => 'nullable|string|max:50',
         'category_id' => 'required|exists:categories,id',
@@ -142,6 +148,9 @@ new class extends Component
         $this->name = '';
         $this->description = '';
         $this->price = '';
+        $this->gym_owner_price = '';
+        $this->regular_user_price = '';
+        $this->shop_owner_price = '';
         $this->stock_quantity = '';
         $this->weight = '';
         $this->category_id = '';
@@ -175,6 +184,9 @@ new class extends Component
             'name' => $this->name,
             'description' => $this->description,
             'price' => $this->price,
+            'gym_owner_price' => $this->gym_owner_price,
+            'regular_user_price' => $this->regular_user_price,
+            'shop_owner_price' => $this->shop_owner_price,
             'stock_quantity' => $this->stock_quantity,
             'weight' => $this->weight,
             'category_id' => $this->category_id,
@@ -286,6 +298,9 @@ new class extends Component
                     'product_id' => $product->id,
                     'variant_options' => $actualOptionIds,
                     'price' => $combination['price'] ?: $product->price,
+                    'gym_owner_price' => $combination['gym_owner_price'] ?: $product->gym_owner_price,
+                    'regular_user_price' => $combination['regular_user_price'] ?: $product->regular_user_price,
+                    'shop_owner_price' => $combination['shop_owner_price'] ?: $product->shop_owner_price,
                     'discount_percentage' => $combination['discount_percentage'] ?: 0,
                     'discounted_price' => $combination['discounted_price'] ?: null,
                     'stock_quantity' => $combination['stock_quantity'] ?: 0,
@@ -304,6 +319,9 @@ new class extends Component
         $this->name = $product->name;
         $this->description = $product->description;
         $this->price = $product->price;
+        $this->gym_owner_price = $product->gym_owner_price;
+        $this->regular_user_price = $product->regular_user_price;
+        $this->shop_owner_price = $product->shop_owner_price;
         $this->stock_quantity = $product->stock_quantity;
         $this->weight = $product->weight;
         $this->category_id = $product->category_id;
@@ -355,6 +373,9 @@ new class extends Component
                     ];
                 })->toArray(),
                 'price' => $combination->price,
+                'gym_owner_price' => $combination->gym_owner_price,
+                'regular_user_price' => $combination->regular_user_price,
+                'shop_owner_price' => $combination->shop_owner_price,
                 'discount_percentage' => $combination->discount_percentage,
                 'discounted_price' => $combination->discounted_price,
                 'stock_quantity' => $combination->stock_quantity,
@@ -507,6 +528,9 @@ new class extends Component
                 'options' => $combination,
                 'sku' => '',
                 'price' => $this->price,
+                'gym_owner_price' => $this->gym_owner_price,
+                'regular_user_price' => $this->regular_user_price,
+                'shop_owner_price' => $this->shop_owner_price,
                 'discount_percentage' => 0,
                 'discounted_price' => null,
                 'stock_quantity' => 0,
@@ -558,6 +582,24 @@ new class extends Component
     public function toggleVariantModal()
     {
         $this->show_variant_modal = !$this->show_variant_modal;
+    }
+
+    public function updatedVariantCombinations($value, $key)
+    {
+        // Check if discount percentage was updated
+        if (strpos($key, '.discount_percentage') !== false) {
+            $parts = explode('.', $key);
+            $index = $parts[0];
+            
+            $discountPercentage = $this->variant_combinations[$index]['discount_percentage'] ?? 0;
+            $basePrice = $this->variant_combinations[$index]['price'] ?? 0;
+            
+            if ($discountPercentage > 0 && $basePrice > 0) {
+                $this->variant_combinations[$index]['discounted_price'] = $basePrice * (1 - ($discountPercentage / 100));
+            } else {
+                $this->variant_combinations[$index]['discounted_price'] = null;
+            }
+        }
     }
 }; ?>
 
