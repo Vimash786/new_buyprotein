@@ -6,6 +6,7 @@ use App\Models\orders;
 use App\Models\User;
 use App\Models\Category;
 use App\Models\SubCategory;
+use App\Models\Banner;
 use Livewire\Volt\Component;
 
 new class extends Component
@@ -21,6 +22,8 @@ new class extends Component
             'totalUsers' => User::count(),
             'totalCategories' => Category::count(),
             'totalSubCategories' => SubCategory::count(),
+            'totalBanners' => Banner::count(),
+            'activeBanners' => Banner::where('status', 'active')->count(),
         ];
     }
 }; ?>
@@ -75,6 +78,19 @@ new class extends Component
                             <div>
                                 <h3 class="font-semibold text-gray-900 dark:text-white">Manage Categories</h3>
                                 <p class="text-sm text-gray-600 dark:text-gray-300">Add, edit categories & sub-categories</p>
+                            </div>
+                        </a>
+
+                        <a href="{{ route('banners.manage') }}" wire:navigate 
+                           class="bg-cyan-50 dark:bg-cyan-900/20 hover:bg-cyan-100 dark:hover:bg-cyan-900/30 border border-cyan-200 dark:border-cyan-800 rounded-lg p-4 flex items-center space-x-3 transition-colors">
+                            <div class="bg-cyan-500 p-2 rounded-lg">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-900 dark:text-white">Manage Banners</h3>
+                                <p class="text-sm text-gray-600 dark:text-gray-300">Add, edit, and manage banners</p>
                             </div>
                         </a>
 
@@ -155,6 +171,22 @@ new class extends Component
                         <div class="w-12 h-12 bg-orange-100 dark:bg-orange-900/50 rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Total Banners -->
+                <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="flex-1">
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Banners</h3>
+                            <p class="text-3xl font-bold text-cyan-600">{{ $totalBanners }}</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">{{ $activeBanners }} active banners</p>
+                        </div>
+                        <div class="w-12 h-12 bg-cyan-100 dark:bg-cyan-900/50 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
                         </div>
                     </div>
