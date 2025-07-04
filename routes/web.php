@@ -32,6 +32,7 @@ Route::middleware(['auth'])->group(function () {
     Volt::route('users', 'users.manage')->name('users.manage');
     Volt::route('categories', 'categories.manage')->name('categories.manage');
     Volt::route('banners', 'banners.manage')->name('banners.manage');
+    Route::get('coupons', \App\Livewire\Coupons\ManageCoupons::class)->name('coupons.manage');
 });
 
 require __DIR__.'/auth.php';

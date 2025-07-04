@@ -94,18 +94,20 @@ new class extends Component
                             </div>
                         </a>
 
-                        <a href="{{ route('orders.manage') }}" wire:navigate 
-                           class="bg-indigo-50 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800 rounded-lg p-4 flex items-center space-x-3 transition-colors">
-                            <div class="bg-indigo-500 p-2 rounded-lg">
+                        @if(auth()->user()->role === 'Super')
+                        <a href="{{ route('coupons.manage') }}" wire:navigate 
+                           class="bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-lg p-4 flex items-center space-x-3 transition-colors">
+                            <div class="bg-amber-500 p-2 rounded-lg">
                                 <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
                                 </svg>
                             </div>
                             <div>
-                                <h3 class="font-semibold text-gray-900 dark:text-white">Manage Orders</h3>
-                                <p class="text-sm text-gray-600 dark:text-gray-300">View, edit, and manage orders</p>
+                                <h3 class="font-semibold text-gray-900 dark:text-white">Manage Coupons</h3>
+                                <p class="text-sm text-gray-600 dark:text-gray-300">Create, assign, and manage coupons</p>
                             </div>
                         </a>
+                        @endif
                     </div>
                 </div>
             </div>
