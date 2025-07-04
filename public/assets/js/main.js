@@ -220,68 +220,68 @@
             }
           });
           
-          const countDown = {
-            endDate: [],
-            validElements: [],
-            display: [],
-            initialHeight: undefined,
-            initialInnerDivMarginTop: undefined,
-            originalBorderTopStyle: undefined,
+          // const countDown = {
+          //   endDate: [],
+          //   validElements: [],
+          //   display: [],
+          //   initialHeight: undefined,
+          //   initialInnerDivMarginTop: undefined,
+          //   originalBorderTopStyle: undefined,
           
-            init: function() {
-              $('.countDown').each(function() {
-                const regex_match = $(this).text().match(/([0-9]{1,2})\/([0-9]{1,2})\/([0-9]{4}) ([0-9]{2}):([0-9]{2}):([0-9]{2})/);
-                if (!regex_match) return;
+          //   init: function() {
+          //     $('.countDown').each(function() {
+          //       const regex_match = $(this).text().match(/([0-9]{1,2})\/([0-9]{1,2})\/([0-9]{4}) ([0-9]{2}):([0-9]{2}):([0-9]{2})/);
+          //       if (!regex_match) return;
           
-                const end = new Date(regex_match[3], regex_match[2] - 1, regex_match[1], regex_match[4], regex_match[5], regex_match[6]);
+          //       const end = new Date(regex_match[3], regex_match[2] - 1, regex_match[1], regex_match[4], regex_match[5], regex_match[6]);
           
-                if (end > new Date()) {
-                  countDown.validElements.push($(this));
-                  countDown.endDate.push(end);
-                  countDown.changeTime($(this), end, countDown.validElements.length - 1);
-                  $(this).html(countDown.display.next.map(item => `<div class='container'><div class='a'><div>${item}</div></div></div>`).join(''));
-                } else {
-                  // Display your message when the countdown expires
-                  $(this).html("<p class='end'>Sorry, your session has expired.</p>");
-                }
-              });
-            },
+          //       if (end > new Date()) {
+          //         countDown.validElements.push($(this));
+          //         countDown.endDate.push(end);
+          //         countDown.changeTime($(this), end, countDown.validElements.length - 1);
+          //         $(this).html(countDown.display.next.map(item => `<div class='container'><div class='a'><div>${item}</div></div></div>`).join(''));
+          //       } else {
+          //         // Display your message when the countdown expires
+          //         $(this).html("<p class='end'>Sorry, your session has expired.</p>");
+          //       }
+          //     });
+          //   },
           
-            reset: function(element) {
-              // This function appears to be incomplete, as it currently doesn't do anything.
-            },
+          //   reset: function(element) {
+          //     // This function appears to be incomplete, as it currently doesn't do anything.
+          //   },
           
-            changeTime: function(element, endTime) {
-              if (!endTime) return;
+          //   changeTime: function(element, endTime) {
+          //     if (!endTime) return;
           
-              const today = new Date();
-              if (today.getTime() <= endTime.getTime()) {
-                countDown.display = {
-                  'last': this.calcTime(endTime.getTime() - today.getTime() + 1000),
-                  'next': this.calcTime(endTime.getTime() - today.getTime())
-                };
-                countDown.display.next = countDown.display.next.map(item => item.toString().padStart(2, '0'));
-                countDown.display.last = countDown.display.last.map(item => item.toString().padStart(2, '0'));
+          //     const today = new Date();
+          //     if (today.getTime() <= endTime.getTime()) {
+          //       countDown.display = {
+          //         'last': this.calcTime(endTime.getTime() - today.getTime() + 1000),
+          //         'next': this.calcTime(endTime.getTime() - today.getTime())
+          //       };
+          //       countDown.display.next = countDown.display.next.map(item => item.toString().padStart(2, '0'));
+          //       countDown.display.last = countDown.display.last.map(item => item.toString().padStart(2, '0'));
           
-                element.find('div.container div.a div').each((index, div) => {
-                  $(div).text(countDown.display.last[index]);
-                });
+          //       element.find('div.container div.a div').each((index, div) => {
+          //         $(div).text(countDown.display.last[index]);
+          //       });
           
-                this.reset(element.find('div.container'));
-              } else {
-                element.html("<p class='end'>Sorry, your session has expired.</p>");
-              }
-            },
+          //       this.reset(element.find('div.container'));
+          //     } else {
+          //       element.html("<p class='end'>Sorry, your session has expired.</p>");
+          //     }
+          //   },
           
-            calcTime: function(milliseconds) {
-              const secondsTotal = Math.floor(milliseconds / 1000);
-              const days = Math.floor(secondsTotal / 86400);
-              const hours = Math.floor((secondsTotal % 86400) / 3600);
-              const minutes = Math.floor((secondsTotal % 3600) / 60);
-              const seconds = secondsTotal % 60;
-              return [days, hours, minutes, seconds];
-            }
-          };
+          //   calcTime: function(milliseconds) {
+          //     const secondsTotal = Math.floor(milliseconds / 1000);
+          //     const days = Math.floor(secondsTotal / 86400);
+          //     const hours = Math.floor((secondsTotal % 86400) / 3600);
+          //     const minutes = Math.floor((secondsTotal % 3600) / 60);
+          //     const seconds = secondsTotal % 60;
+          //     return [days, hours, minutes, seconds];
+          //   }
+          // };
           
         },
 

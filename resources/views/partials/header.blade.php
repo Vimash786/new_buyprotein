@@ -28,7 +28,7 @@
             <div class="row">
                 <div class="col-lg-12">
                     <div class="logo-search-category-wrapper">
-                        <a href="index.html" class="logo-area">
+                        <a href="{{ route('home') }}" class="logo-area">
                             <img src="{{ asset('buy-protein.jpg') }}" height="auto" style="width: 288px;"
                                 alt="logo-main" class="logo">
                         </a>

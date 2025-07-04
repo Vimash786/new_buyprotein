@@ -53,7 +53,8 @@
                                     <!-- single swiper start -->
                                     <!-- single swiper start -->
                                     <div class="swiper-slide">
-                                        <div class="banner-bg-image bg_image bg_one-banner two  ptb--120 ptb_md--80 ptb_sm--60">
+                                        <div
+                                            class="banner-bg-image bg_image bg_one-banner two  ptb--120 ptb_md--80 ptb_sm--60">
 
                                         </div>
                                     </div>
@@ -115,7 +116,8 @@
                                     <!-- single swiper start -->
                                     @foreach ($categories as $category)
                                         <div class="swiper-slide">
-                                            <a href="#" class="single-category-one">
+                                            <a href="{{ route('shop', ['type' => 'category', 'id' => Crypt::encrypt($category->id)]) }}"
+                                                class="single-category-one">
                                                 <img src="{{ asset('storage/' . $category->image) }}" alt="category">
                                                 <p>{{ $category->name }}</p>
                                             </a>
@@ -142,10 +144,13 @@
                         <h2 class="title-left">
                             Everyday essential
                         </h2>
-                        <div class="next-prev-swiper-wrapper">
+                        <div class="countdown">
+                            <div class="countDown"><a href="{{ route('shop', ['type' => 'everyday-essential']) }}" class="bg-light p-3">View All ></a></div>
+                        </div>
+                        {{-- <div class="next-prev-swiper-wrapper">
                             <div class="swiper-button-prev"><i class="fa-regular fa-chevron-left"></i></div>
                             <div class="swiper-button-next"><i class="fa-regular fa-chevron-right"></i></div>
-                        </div>
+                        </div> --}}
                     </div>
                 </div>
             </div>
@@ -282,7 +287,7 @@
                             Popular Picks
                         </h2>
                         <div class="countdown">
-                            <div class="countDown">10/05/2025 10:20:00</div>
+                            <div class="countDown"><a href="{{ route('shop', ['type' => 'popular-picks']) }}" class="bg-light p-3">View All ></a></div>
                         </div>
                     </div>
                 </div>
@@ -362,6 +367,9 @@
                         <h2 class="title-left">
                             New Arrival
                         </h2>
+                        <div class="countdown">
+                            <div class="countDown"><a href="{{ route('shop', ['type' => 'new-arrivals']) }}" class="bg-light p-3">View All ></a></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -559,6 +567,9 @@
                         <h2 class="title-left mb--10">
                             Exclusive deal & offers
                         </h2>
+                        <div class="countdown">
+                            <div class="countDown"><a href="{{ route('shop', ['type' => 'exclusive-deal']) }}" class="bg-light p-3">View All ></a></div>
+                        </div>
                     </div>
                 </div>
             </div>

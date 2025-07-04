@@ -18355,7 +18355,7 @@ li.with-megamenu:hover .rts-megamenu {
 }
 
 .single-category-one:hover {
-    border: 1px solid #629d23;
+    border: 1px solid #009ec9;
 }
 
 .cover-card-main-over {
@@ -19194,7 +19194,7 @@ li.with-megamenu:hover .rts-megamenu {
 .product-with-discount {
     background: rgba(229, 62, 62, 0.05);
     padding: 30px;
-    border: 1px solid #e53e3e;
+    border: 1px solid #009ec9;
     border-radius: 6px;
 }
 
@@ -30168,3 +30168,34 @@ header.header-three .sub-dropdown .submenu.third-lvl.base {
 }
 
 /*# sourceMappingURL=../maps/style.css.map */
+
+.title-area-between {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.view-more-btn {
+    text-decoration: none;
+    font-weight: 500;
+    padding: 6px 12px;
+    background-color: #f0f0f0;
+    border-radius: 4px;
+    color: #333;
+    transition: all 0.3s ease;
+    margin-right: 86px;
+    margin-top: 30px;
+}
+
+.view-more-btn:hover {
+    background-color: #ddd;
+}
+
+.next-prev-swiper-wrapper .swiper-button-prev,
+.next-prev-swiper-wrapper .swiper-button-next {
+    cursor: pointer;
+    margin: 0 5px;
+    font-size: 16px;
+    color: #333;
+}

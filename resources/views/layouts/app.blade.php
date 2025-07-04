@@ -9,7 +9,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="keywords" content="Grocery, Store, stores">
     <title>@yield('title', 'Buy Protein Store (e-Commerce)')</title>
-    <link rel="shortcut icon" type="image/x-icon" href="{{ asset('buy-protein-pro.svg') }}">
+    <link rel="shortcut icon" type="image/x-icon/svg+xml" href="{{ asset('buy-protein-pro.png') }}">
+
     <!-- plugins css -->
     <link rel="stylesheet preload" href="{{ asset('assets/css/plugins.css') }}" as="style">
     <link rel="stylesheet preload" href="{{ asset('assets/css/style.css') }}" as="style">

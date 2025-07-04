@@ -39,7 +39,7 @@ class products extends Model
         'price' => 'decimal:2',
         'stock_quantity' => 'integer',
         'status' => 'string',
-        'discount_percentage' => 'decimal:2',
+        'discount_percentage' => 'integer',
         'discounted_price' => 'decimal:2',
         'has_variants' => 'boolean',
     ];
