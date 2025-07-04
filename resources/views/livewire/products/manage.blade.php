@@ -1254,6 +1254,7 @@ new class extends Component
                                     <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Has Variants</p>
                                     <p class="text-sm text-gray-900 dark:text-white">{{ $selectedProduct->has_variants ? 'Yes' : 'No' }}</p>
                                 </div>
+                                @if($selectedProduct->has_variants != 1)
                                 <div>
                                     <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Weight</p>
                                     <p class="text-sm text-gray-900 dark:text-white">{{ $selectedProduct->weight ?: 'N/A' }}</p>
@@ -1264,50 +1265,51 @@ new class extends Component
                                         {{ $selectedProduct->stock_quantity }}
                                     </p>
                                 </div>
+                                @endif
                             </div>
-
-                            <div class="mt-4">
-                                <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Price Information</p>
-                                <div class="grid grid-cols-2 gap-3">
-                                    <div>
-                                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Base Price</p>
-                                        <p class="text-sm text-gray-900 dark:text-white">${{ number_format($selectedProduct->price, 2) }}</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Discount</p>
-                                        <p class="text-sm text-gray-900 dark:text-white">{{ $selectedProduct->discount_percentage }}%</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Discounted Price</p>
-                                        <p class="text-sm text-green-600 dark:text-green-400">{{ $selectedProduct->discounted_price ? '$' . number_format($selectedProduct->discounted_price, 2) : 'N/A' }}</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            @if($selectedProduct->gym_owner_price || $selectedProduct->regular_user_price || $selectedProduct->shop_owner_price)
+                            @if($selectedProduct->has_variants != 1)
                                 <div class="mt-4">
-                                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Special Pricing</p>
-                                    <div class="grid grid-cols-3 gap-3">
-                                        @if($selectedProduct->gym_owner_price)
-                                            <div>
-                                                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Gym Owner</p>
-                                                <p class="text-sm text-gray-900 dark:text-white">${{ number_format($selectedProduct->gym_owner_price, 2) }}</p>
-                                            </div>
-                                        @endif
-                                        @if($selectedProduct->regular_user_price)
-                                            <div>
-                                                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Regular User</p>
-                                                <p class="text-sm text-gray-900 dark:text-white">${{ number_format($selectedProduct->regular_user_price, 2) }}</p>
-                                            </div>
-                                        @endif
-                                        @if($selectedProduct->shop_owner_price)
-                                            <div>
-                                                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Shop Owner</p>
-                                                <p class="text-sm text-gray-900 dark:text-white">${{ number_format($selectedProduct->shop_owner_price, 2) }}</p>
-                                            </div>
-                                        @endif
+                                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Price Information</p>
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Base Price</p>
+                                            <p class="text-sm text-gray-900 dark:text-white">${{ number_format($selectedProduct->price, 2) }}</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Discount</p>
+                                            <p class="text-sm text-gray-900 dark:text-white">{{ $selectedProduct->discount_percentage }}%</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Discounted Price</p>
+                                            <p class="text-sm text-green-600 dark:text-green-400">{{ $selectedProduct->discounted_price ? '$' . number_format($selectedProduct->discounted_price, 2) : 'N/A' }}</p>
+                                        </div>
                                     </div>
                                 </div>
+                                @if($selectedProduct->gym_owner_price || $selectedProduct->regular_user_price || $selectedProduct->shop_owner_price)
+                                    <div class="mt-4">
+                                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Special Pricing</p>
+                                        <div class="grid grid-cols-3 gap-3">
+                                            @if($selectedProduct->gym_owner_price)
+                                                <div>
+                                                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Gym Owner</p>
+                                                    <p class="text-sm text-gray-900 dark:text-white">${{ number_format($selectedProduct->gym_owner_price, 2) }}</p>
+                                                </div>
+                                            @endif
+                                            @if($selectedProduct->regular_user_price)
+                                                <div>
+                                                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Regular User</p>
+                                                    <p class="text-sm text-gray-900 dark:text-white">${{ number_format($selectedProduct->regular_user_price, 2) }}</p>
+                                                </div>
+                                            @endif
+                                            @if($selectedProduct->shop_owner_price)
+                                                <div>
+                                                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Shop Owner</p>
+                                                    <p class="text-sm text-gray-900 dark:text-white">${{ number_format($selectedProduct->shop_owner_price, 2) }}</p>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                @endif
                             @endif
                         </div>
                     </div>
