@@ -17,6 +17,8 @@ return new class extends Migration
             $table->string('gst_number')->unique();
             $table->json('product_category');
             $table->string('contact_person');
+            $table->string('brand')->nullable();
+            $table->string('brand_logo')->nullable();
             $table->string('brand_certificate')->nullable();
             $table->enum('status', ['approved', 'not_approved'])->default('not_approved');
             $table->timestamps();

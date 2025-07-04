@@ -21,6 +21,8 @@ new #[Layout('components.layouts.auth')] class extends Component {
     public string $gst_number = '';
     public array $product_category = [];
     public string $contact_person = '';
+    public string $brand = '';
+    public $brand_logo = null;
     public $brand_certificate = null;
     public $document_proof = null;
     public string $social_media_link = '';
@@ -108,6 +110,8 @@ new #[Layout('components.layouts.auth')] class extends Component {
                 'product_category' => ['required', 'array', 'min:1'],
                 'product_category.*' => ['string'],
                 'contact_person' => ['required', 'string', 'max:255'],
+                'brand' => ['required', 'string', 'max:255'],
+                'brand_logo' => ['nullable', 'file', 'image', 'max:10240'],
                 'brand_certificate' => ['required', 'file', 'max:10240'], // 10MB max
             ]);
             
@@ -118,6 +122,8 @@ new #[Layout('components.layouts.auth')] class extends Component {
                 'gst_number' => $validated['gst_number'],
                 'product_category' => implode(', ', $validated['product_category']), // Convert array to comma-separated string
                 'contact_person' => $validated['contact_person'],
+                'brand' => $validated['brand'],
+                'brand_logo' => isset($validated['brand_logo']) ? $validated['brand_logo']->store('brand_logos', 'public') : null,
                 // Store brand certificate path
                 'brand_certificate' => $validated['brand_certificate']->store('seller_certificates', 'public'),
             ]);
@@ -228,6 +234,24 @@ new #[Layout('components.layouts.auth')] class extends Component {
                 type="text"
                 required
                 placeholder="Enter name of contact person"
+            />
+
+            <!-- Brand Name -->
+            <flux:input
+                wire:model="brand"
+                label="Brand Name"
+                type="text"
+                required
+                placeholder="Enter your brand name"
+            />
+
+            <!-- Brand Logo -->
+            <flux:input 
+                type="file" 
+                wire:model="brand_logo" 
+                label="Brand Logo" 
+                accept="image/*"
+                description="Upload your brand logo (optional)"
             />
 
             <!-- Brand Certificate -->

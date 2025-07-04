@@ -19,6 +19,8 @@ class Sellers extends Model
         'product_category',
         'contact_person',
         'commission',
+        'brand',
+        'brand_logo',
         'brand_certificate',
         'status',
     ];

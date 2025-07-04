@@ -23,7 +23,6 @@ class products extends Model
         'stock_quantity',
         'category',
         'old_category',
-        'brand',
         'status',
         'section_category',
         'thumbnail_image',

@@ -50,7 +50,6 @@ class ProductsFactory extends Factory
             'category_id' => $this->faker->numberBetween(1, 9), // 9 main categories will be created by CategorySeeder
             'sub_category_id' => $this->faker->optional(0.7)->numberBetween(1, 45), // About 45 total subcategories
             'section_category' => $this->faker->randomElement(['everyday_essential', 'popular_pick', 'exclusive_deal']),
-            'brand' => $this->faker->randomElement(['MuscleTech', 'Optimum Nutrition', 'BSN', 'Dymatize', 'ProteinWorks', 'MyProtein', 'Universal', 'BioTech']),
             'thumbnail_image' => $thumbnailImage,
             'status' => $this->faker->randomElement(['active', 'inactive']),
             'has_variants' => $this->faker->boolean(30), // 30% chance of having variants

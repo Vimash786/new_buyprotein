@@ -19,7 +19,6 @@ return new class extends Migration
             $table->decimal('price', 10, 2);
             $table->integer('stock_quantity')->default(0);
             $table->string('category');
-            $table->string('brand')->nullable();
             $table->enum('status', ['active', 'inactive'])->default('active');
             $table->timestamps();
         });

@@ -27,6 +27,8 @@ class SellersFactory extends Factory
                 $this->faker->numberBetween(1, 3)
             )),
             'contact_person' => $this->faker->name(),
+            'brand' => $this->faker->randomElement(['MuscleTech', 'Optimum Nutrition', 'BSN', 'Dymatize', 'ProteinWorks', 'MyProtein', 'Universal', 'BioTech']),
+            
             'brand_certificate' => $this->faker->optional()->word() . '_certificate.pdf',
             'status' => $this->faker->randomElement(['approved', 'not_approved']),
         ];
