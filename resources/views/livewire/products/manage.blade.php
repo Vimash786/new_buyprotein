@@ -30,6 +30,7 @@ new class extends Component
     public $description = '';
     public $price = '';
     public $stock_quantity = '';
+    public $weight = '';
     public $category_id = '';
     public $sub_category_id = '';
     public $status = 'active';
@@ -57,8 +58,9 @@ new class extends Component
         'seller_id' => 'required|exists:sellers,id',
         'name' => 'required|string|max:255',
         'description' => 'nullable|string',
-        'price' => 'required|numeric|min:0',
-        'stock_quantity' => 'required|integer|min:0',
+        'price' => 'required_if:has_variants,false|numeric|min:0',
+        'stock_quantity' => 'required_if:has_variants,false|integer|min:0',
+        'weight' => 'nullable|string|max:50',
         'category_id' => 'required|exists:categories,id',
         'sub_category_id' => 'nullable|exists:sub_categories,id',
         'status' => 'required|in:active,inactive',
@@ -141,6 +143,7 @@ new class extends Component
         $this->description = '';
         $this->price = '';
         $this->stock_quantity = '';
+        $this->weight = '';
         $this->category_id = '';
         $this->sub_category_id = '';
         $this->status = 'active';
@@ -173,6 +176,7 @@ new class extends Component
             'description' => $this->description,
             'price' => $this->price,
             'stock_quantity' => $this->stock_quantity,
+            'weight' => $this->weight,
             'category_id' => $this->category_id,
             'sub_category_id' => $this->sub_category_id ?: null,
             'status' => $this->status,
@@ -251,7 +255,6 @@ new class extends Component
                     'product_variant_id' => $variant->id,
                     'value' => $optionData['value'],
                     'display_value' => $optionData['display_value'] ?: $optionData['value'],
-                    'price_adjustment' => $optionData['price_adjustment'] ?: 0,
                     'sort_order' => $optionIndex,
                     'is_active' => true,
                 ]);
@@ -283,6 +286,8 @@ new class extends Component
                     'product_id' => $product->id,
                     'variant_options' => $actualOptionIds,
                     'price' => $combination['price'] ?: $product->price,
+                    'discount_percentage' => $combination['discount_percentage'] ?: 0,
+                    'discounted_price' => $combination['discounted_price'] ?: null,
                     'stock_quantity' => $combination['stock_quantity'] ?: 0,
                     'is_active' => $combination['is_active'] ?? true,
                 ]);
@@ -300,6 +305,7 @@ new class extends Component
         $this->description = $product->description;
         $this->price = $product->price;
         $this->stock_quantity = $product->stock_quantity;
+        $this->weight = $product->weight;
         $this->category_id = $product->category_id;
         $this->sub_category_id = $product->sub_category_id;
         $this->status = $product->status;
@@ -331,7 +337,6 @@ new class extends Component
                         'id' => $option->id,
                         'value' => $option->value,
                         'display_value' => $option->display_value,
-                        'price_adjustment' => $option->price_adjustment,
                     ];
                 })->toArray()
             ];
@@ -347,10 +352,11 @@ new class extends Component
                         'id' => $option->id,
                         'value' => $option->value,
                         'display_value' => $option->display_value,
-                        'price_adjustment' => $option->price_adjustment,
                     ];
                 })->toArray(),
                 'price' => $combination->price,
+                'discount_percentage' => $combination->discount_percentage,
+                'discounted_price' => $combination->discounted_price,
                 'stock_quantity' => $combination->stock_quantity,
                 'is_active' => $combination->is_active,
             ];
@@ -444,7 +450,7 @@ new class extends Component
             'display_name' => '',
             'is_required' => true,
             'options' => [
-                ['id' => null, 'value' => '', 'display_value' => '', 'price_adjustment' => 0]
+                ['id' => null, 'value' => '', 'display_value' => '']
             ]
         ];
     }
@@ -462,7 +468,6 @@ new class extends Component
             'id' => null,
             'value' => '',
             'display_value' => '',
-            'price_adjustment' => 0
         ];
         $this->generateVariantCombinations();
     }
@@ -502,6 +507,8 @@ new class extends Component
                 'options' => $combination,
                 'sku' => '',
                 'price' => $this->price,
+                'discount_percentage' => 0,
+                'discounted_price' => null,
                 'stock_quantity' => 0,
                 'is_active' => true
             ];

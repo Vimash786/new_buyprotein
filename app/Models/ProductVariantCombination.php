@@ -15,6 +15,8 @@ class ProductVariantCombination extends Model
         'variant_options',
         'sku',
         'price',
+        'discount_percentage',
+        'discounted_price',
         'stock_quantity',
         'is_active',
     ];
@@ -23,6 +25,8 @@ class ProductVariantCombination extends Model
         'product_id' => 'integer',
         'variant_options' => 'array',
         'price' => 'decimal:2',
+        'discount_percentage' => 'decimal:2',
+        'discounted_price' => 'decimal:2',
         'stock_quantity' => 'integer',
         'is_active' => 'boolean',
     ];

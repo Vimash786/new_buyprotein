@@ -40,56 +40,78 @@
         </div>
 
         <!-- Price -->
-        <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Base Price ($)</label>
-            <input 
-                type="number" 
-                step="0.01"
-                wire:model="price"
-                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-                placeholder="0.00"
-            >
-            @error('price') <span class="text-red-500 text-sm">{{ $errors->first('price') }}</span> @enderror
-        </div>
+        @if(!$has_variants)
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Base Price ($)</label>
+                <input 
+                    type="number" 
+                    step="0.01"
+                    wire:model="price"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
+                    placeholder="0.00"
+                >
+                @error('price') <span class="text-red-500 text-sm">{{ $errors->first('price') }}</span> @enderror
+            </div>
+        @endif
 
         <!-- Stock Quantity -->
-        <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Stock Quantity</label>
-            <input 
-                type="number" 
-                wire:model="stock_quantity"
-                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-                placeholder="0"
-            >
-            @error('stock_quantity') <span class="text-red-500 text-sm">{{ $errors->first('stock_quantity') }}</span> @enderror
-        </div>
+        @if(!$has_variants)
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Stock Quantity</label>
+                <input 
+                    type="number" 
+                    wire:model="stock_quantity"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
+                    placeholder="0"
+                >
+                @error('stock_quantity') <span class="text-red-500 text-sm">{{ $errors->first('stock_quantity') }}</span> @enderror
+            </div>
+        @endif
+
+        <!-- Weight -->
+        @if(!$has_variants)
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Weight</label>
+                <input 
+                    type="text" 
+                    wire:model="weight"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
+                    placeholder="e.g., 1kg, 500g, 2.5lbs"
+                >
+                @error('weight') <span class="text-red-500 text-sm">{{ $errors->first('weight') }}</span> @enderror
+            </div>
+        @endif
 
         <!-- Discount Percentage -->
-        <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Discount (%)</label>
-            <input 
-                type="number" 
-                step="0.01"
-                max="100"
-                wire:model="discount_percentage"
-                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-                placeholder="0.00"
-            >
-            @error('discount_percentage') <span class="text-red-500 text-sm">{{ $errors->first('discount_percentage') }}</span> @enderror
-        </div>
+        @if(!$has_variants)
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Discount (%)</label>
+                <input 
+                    type="number" 
+                    step="0.01"
+                    max="100"
+                    wire:model="discount_percentage"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
+                    placeholder="0.00"
+                >
+                @error('discount_percentage') <span class="text-red-500 text-sm">{{ $errors->first('discount_percentage') }}</span> @enderror
+            </div>
+        @endif
 
         <!-- Discounted Price -->
-        <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Final Price ($)</label>
-            <input 
-                type="number" 
-                step="0.01"
-                wire:model="discounted_price"
-                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-                placeholder="Leave empty to calculate from discount %"
-            >
-            @error('discounted_price') <span class="text-red-500 text-sm">{{ $errors->first('discounted_price') }}</span> @enderror
-        </div>
+        @if(!$has_variants)
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Final Price ($)</label>
+                <input 
+                    type="number" 
+                    step="0.01"
+                    wire:model="discounted_price"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
+                    placeholder="Leave empty to calculate from discount %"
+                >
+                @error('discounted_price') <span class="text-red-500 text-sm">{{ $errors->first('discounted_price') }}</span> @enderror
+            </div>
+        @endif
 
         <!-- Category -->
         <div>
@@ -282,7 +304,7 @@
                             </div>
                             
                             @foreach($variant['options'] as $optionIndex => $option)
-                                <div class="grid grid-cols-3 gap-2 mb-2">
+                                <div class="grid grid-cols-2 gap-2 mb-2">
                                     <input 
                                         type="text" 
                                         wire:model="variants.{{ $variantIndex }}.options.{{ $optionIndex }}.value"
@@ -290,18 +312,11 @@
                                         placeholder="Value (e.g., 1kg, Chocolate)"
                                         class="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
                                     >
-                                    <input 
-                                        type="text" 
-                                        wire:model="variants.{{ $variantIndex }}.options.{{ $optionIndex }}.display_value"
-                                        placeholder="Display (optional)"
-                                        class="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
-                                    >
                                     <div class="flex items-center gap-1">
                                         <input 
-                                            type="number" 
-                                            step="0.01"
-                                            wire:model="variants.{{ $variantIndex }}.options.{{ $optionIndex }}.price_adjustment"
-                                            placeholder="Price +/-"
+                                            type="text" 
+                                            wire:model="variants.{{ $variantIndex }}.options.{{ $optionIndex }}.display_value"
+                                            placeholder="Display (optional)"
                                             class="flex-1 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
                                         >
                                         @if(count($variant['options']) > 1)
@@ -333,27 +348,44 @@
                         <div class="max-h-60 overflow-y-auto">
                             @foreach($variant_combinations as $combIndex => $combination)
                                 <div class="bg-white dark:bg-zinc-900 p-3 rounded border mb-2">
-                                    <div class="grid grid-cols-3 gap-2 items-center">
-                                        <div>
+                                    <div class="grid grid-cols-1 gap-2">
+                                        <div class="flex items-center justify-between">
                                             <span class="text-sm font-medium">
                                                 @foreach($combination['options'] as $option)
                                                     {{ $option['value'] }}{{ !$loop->last ? ' × ' : '' }}
                                                 @endforeach
                                             </span>
                                         </div>
-                                        <input 
-                                            type="number" 
-                                            step="0.01"
-                                            wire:model="variant_combinations.{{ $combIndex }}.price"
-                                            placeholder="Price"
-                                            class="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
-                                        >
-                                        <input 
-                                            type="number" 
-                                            wire:model="variant_combinations.{{ $combIndex }}.stock_quantity"
-                                            placeholder="Stock"
-                                            class="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
-                                        >
+                                        <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                            <input 
+                                                type="number" 
+                                                step="0.01"
+                                                wire:model="variant_combinations.{{ $combIndex }}.price"
+                                                placeholder="Price ($)"
+                                                class="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
+                                            >
+                                            <input 
+                                                type="number" 
+                                                step="0.01"
+                                                max="100"
+                                                wire:model="variant_combinations.{{ $combIndex }}.discount_percentage"
+                                                placeholder="Discount (%)"
+                                                class="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
+                                            >
+                                            <input 
+                                                type="number" 
+                                                step="0.01"
+                                                wire:model="variant_combinations.{{ $combIndex }}.discounted_price"
+                                                placeholder="Final Price ($)"
+                                                class="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
+                                            >
+                                            <input 
+                                                type="number" 
+                                                wire:model="variant_combinations.{{ $combIndex }}.stock_quantity"
+                                                placeholder="Stock"
+                                                class="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
+                                            >
+                                        </div>
                                     </div>
                                 </div>
                             @endforeach

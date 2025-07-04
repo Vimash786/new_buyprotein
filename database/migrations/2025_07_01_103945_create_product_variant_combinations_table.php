@@ -17,6 +17,8 @@ return new class extends Migration
             $table->json('variant_options'); // Store array of variant option IDs
             $table->string('sku')->unique()->nullable(); // Product variant SKU
             $table->decimal('price', 10, 2)->nullable(); // Specific price for this combination
+            $table->decimal('discount_percentage', 5, 2)->default(0);
+            $table->decimal('discounted_price', 10, 2)->nullable();
             $table->integer('stock_quantity')->default(0);
             $table->boolean('is_active')->default(true);
             $table->timestamps();

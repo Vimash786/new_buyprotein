@@ -21,6 +21,7 @@ class products extends Model
         'description',
         'price',
         'stock_quantity',
+        'weight',
         'category',
         'old_category',
         'status',

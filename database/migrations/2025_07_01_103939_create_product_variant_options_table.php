@@ -16,7 +16,6 @@ return new class extends Migration
             $table->foreignId('product_variant_id')->constrained('product_variants')->onDelete('cascade');
             $table->string('value'); // e.g., '1kg', 'Chocolate', 'Large'
             $table->string('display_value')->nullable(); // e.g., '1 Kilogram', 'Chocolate Flavor'
-            $table->decimal('price_adjustment', 10, 2)->default(0); // Price difference from base price
             $table->integer('stock_quantity')->default(0);
             $table->integer('sort_order')->default(0);
             $table->boolean('is_active')->default(true);

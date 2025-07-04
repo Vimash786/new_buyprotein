@@ -14,7 +14,6 @@ class ProductVariantOption extends Model
         'product_variant_id',
         'value',
         'display_value',
-        'price_adjustment',
         'stock_quantity',
         'sort_order',
         'is_active',
@@ -22,7 +21,6 @@ class ProductVariantOption extends Model
 
     protected $casts = [
         'product_variant_id' => 'integer',
-        'price_adjustment' => 'decimal:2',
         'stock_quantity' => 'integer',
         'sort_order' => 'integer',
         'is_active' => 'boolean',
