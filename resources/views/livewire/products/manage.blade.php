@@ -913,7 +913,7 @@ new class extends Component
                                                     <div class="text-xs text-red-600">{{ $product->discount_percentage }}% off</div>
                                                 @endif
                                             @else
-                                                <div class="font-medium">${{ number_format($product->price, 2) }}</div>
+                                                <div class="font-medium">₹{{ number_format($product->price, 2) }}</div>
                                             @endif
                                         @endif
                                     </div>
@@ -1089,7 +1089,7 @@ new class extends Component
                                 @foreach($variantPrices as $variant)
                                     <tr class="hover:bg-gray-50 dark:hover:bg-zinc-800">
                                         <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-white">{{ $variant['variant_name'] }}</td>
-                                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-white">${{ number_format($variant['price'], 2) }}</td>
+                                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-white">₹{{ number_format($variant['price'], 2) }}</td>
                                         <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                                             @if($variant['discount_percentage'] > 0)
                                                 <span class="text-red-600">{{ $variant['discount_percentage'] }}%</span>
@@ -1099,7 +1099,7 @@ new class extends Component
                                         </td>
                                         <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                                             @if($variant['discounted_price'])
-                                                <span class="font-medium text-green-600">${{ number_format($variant['discounted_price'], 2) }}</span>
+                                                <span class="font-medium text-green-600">₹{{ number_format($variant['discounted_price'], 2) }}</span>
                                             @else
                                                 -
                                             @endif
@@ -1107,13 +1107,13 @@ new class extends Component
                                         <td class="px-4 py-2 text-sm text-gray-900 dark:text-white">
                                             <div class="flex flex-col gap-1">
                                                 @if($variant['gym_owner_price'])
-                                                    <div>Gym Owner: ${{ number_format($variant['gym_owner_price'], 2) }}</div>
+                                                    <div>Gym Owner: ₹{{ number_format($variant['gym_owner_price'], 2) }}</div>
                                                 @endif
                                                 @if($variant['regular_user_price'])
-                                                    <div>Regular User: ${{ number_format($variant['regular_user_price'], 2) }}</div>
+                                                    <div>Regular User: ₹{{ number_format($variant['regular_user_price'], 2) }}</div>
                                                 @endif
                                                 @if($variant['shop_owner_price'])
-                                                    <div>Shop Owner: ${{ number_format($variant['shop_owner_price'], 2) }}</div>
+                                                    <div>Shop Owner: ₹{{ number_format($variant['shop_owner_price'], 2) }}</div>
                                                 @endif
                                             </div>
                                         </td>
@@ -1273,7 +1273,7 @@ new class extends Component
                                     <div class="grid grid-cols-2 gap-3">
                                         <div>
                                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Base Price</p>
-                                            <p class="text-sm text-gray-900 dark:text-white">${{ number_format($selectedProduct->price, 2) }}</p>
+                                            <p class="text-sm text-gray-900 dark:text-white">₹{{ number_format($selectedProduct->price, 2) }}</p>
                                         </div>
                                         <div>
                                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Discount</p>
@@ -1281,7 +1281,7 @@ new class extends Component
                                         </div>
                                         <div>
                                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Discounted Price</p>
-                                            <p class="text-sm text-green-600 dark:text-green-400">{{ $selectedProduct->discounted_price ? '$' . number_format($selectedProduct->discounted_price, 2) : 'N/A' }}</p>
+                                            <p class="text-sm text-green-600 dark:text-green-400">{{ $selectedProduct->discounted_price ? '₹' . number_format($selectedProduct->discounted_price, 2) : 'N/A' }}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -1292,19 +1292,19 @@ new class extends Component
                                             @if($selectedProduct->gym_owner_price)
                                                 <div>
                                                     <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Gym Owner</p>
-                                                    <p class="text-sm text-gray-900 dark:text-white">${{ number_format($selectedProduct->gym_owner_price, 2) }}</p>
+                                                    <p class="text-sm text-gray-900 dark:text-white">₹{{ number_format($selectedProduct->gym_owner_price, 2) }}</p>
                                                 </div>
                                             @endif
                                             @if($selectedProduct->regular_user_price)
                                                 <div>
                                                     <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Regular User</p>
-                                                    <p class="text-sm text-gray-900 dark:text-white">${{ number_format($selectedProduct->regular_user_price, 2) }}</p>
+                                                    <p class="text-sm text-gray-900 dark:text-white">₹{{ number_format($selectedProduct->regular_user_price, 2) }}</p>
                                                 </div>
                                             @endif
                                             @if($selectedProduct->shop_owner_price)
                                                 <div>
                                                     <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Shop Owner</p>
-                                                    <p class="text-sm text-gray-900 dark:text-white">${{ number_format($selectedProduct->shop_owner_price, 2) }}</p>
+                                                    <p class="text-sm text-gray-900 dark:text-white">₹{{ number_format($selectedProduct->shop_owner_price, 2) }}</p>
                                                 </div>
                                             @endif
                                         </div>

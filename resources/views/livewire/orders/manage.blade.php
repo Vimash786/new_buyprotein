@@ -234,7 +234,7 @@ new class extends Component
             <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-4">
                 <div class="text-center">
                     <h3 class="text-sm font-medium text-gray-900 dark:text-white dark:text-white">Revenue</h3>
-                    <p class="text-xl font-bold text-green-600">${{ number_format($totalRevenue, 2) }}</p>
+                    <p class="text-xl font-bold text-green-600">₹{{ number_format($totalRevenue, 2) }}</p>
                 </div>
             </div>
         </div>
@@ -329,7 +329,7 @@ new class extends Component
                                     {{ $order->quantity }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white dark:text-white">
-                                    ${{ number_format($order->total_amount, 2) }}
+                                    ₹{{ number_format($order->total_amount, 2) }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="relative inline-block">
@@ -425,7 +425,7 @@ new class extends Component
                                 >
                                     <option value="">Select a product</option>
                                     @foreach($products as $product)
-                                        <option value="{{ $product->id }}">{{ $product->name }} - ${{ $product->price }}</option>
+                                        <option value="{{ $product->id }}">{{ $product->name }} - ₹{{ $product->price }}</option>
                                     @endforeach
                                 </select>
                                 @error('product_id') <span class="text-red-500 text-sm">{{ $errors->first('product_id') }}</span> @enderror
@@ -461,7 +461,7 @@ new class extends Component
 
                             <!-- Unit Price -->
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Unit Price ($)</label>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Unit Price (₹)</label>
                                 <input 
                                     type="number" 
                                     step="0.01"
@@ -474,7 +474,7 @@ new class extends Component
 
                             <!-- Total Amount -->
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Total Amount ($)</label>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Total Amount (₹)</label>
                                 <input 
                                     type="number" 
                                     step="0.01"

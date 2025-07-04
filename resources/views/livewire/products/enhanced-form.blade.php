@@ -42,7 +42,7 @@
         <!-- Price -->
         @if(!$has_variants)
             <div class="md:col-span-2">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Base Price ($)</label>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Base Price (₹)</label>
                 <input 
                     type="number" 
                     step="0.01"
@@ -55,7 +55,7 @@
 
             <!-- User Type Pricing -->
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Gym Owner/Trainer/Influencer Price ($)</label>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Gym Owner/Trainer/Influencer Price (₹)</label>
                 <input 
                     type="number" 
                     step="0.01"
@@ -67,7 +67,7 @@
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Regular User Price ($)</label>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Regular User Price (₹)</label>
                 <input 
                     type="number" 
                     step="0.01"
@@ -79,7 +79,7 @@
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Shop Owner Price ($)</label>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Shop Owner Price (₹)</label>
                 <input 
                     type="number" 
                     step="0.01"
@@ -138,7 +138,7 @@
         <!-- Discounted Price -->
         @if(!$has_variants)
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Final Price ($)</label>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Final Price (₹)</label>
                 <input 
                     type="number" 
                     step="0.01"
@@ -397,7 +397,7 @@
                                         <!-- Base Pricing Row -->
                                         <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
                                             <div>
-                                                <label class="text-xs text-gray-600 dark:text-gray-400">Base Price ($)</label>
+                                                <label class="text-xs text-gray-600 dark:text-gray-400">Base Price (₹)</label>
                                                 <input 
                                                     type="number" 
                                                     step="0.01"
@@ -407,7 +407,7 @@
                                                 >
                                             </div>
                                             <div>
-                                                <label class="text-xs text-gray-600 dark:text-gray-400">Gym Owner ($)</label>
+                                                <label class="text-xs text-gray-600 dark:text-gray-400">Gym Owner (₹)</label>
                                                 <input 
                                                     type="number" 
                                                     step="0.01"
@@ -417,7 +417,7 @@
                                                 >
                                             </div>
                                             <div>
-                                                <label class="text-xs text-gray-600 dark:text-gray-400">Regular User ($)</label>
+                                                <label class="text-xs text-gray-600 dark:text-gray-400">Regular User (₹)</label>
                                                 <input 
                                                     type="number" 
                                                     step="0.01"
@@ -427,7 +427,7 @@
                                                 >
                                             </div>
                                             <div>
-                                                <label class="text-xs text-gray-600 dark:text-gray-400">Shop Owner ($)</label>
+                                                <label class="text-xs text-gray-600 dark:text-gray-400">Shop Owner (₹)</label>
                                                 <input 
                                                     type="number" 
                                                     step="0.01"
@@ -452,7 +452,7 @@
                                                 >
                                             </div>
                                             <div>
-                                                <label class="text-xs text-gray-600 dark:text-gray-400">Final Price ($)</label>
+                                                <label class="text-xs text-gray-600 dark:text-gray-400">Final Price (₹)</label>
                                                 <input 
                                                     type="number" 
                                                     step="0.01"
