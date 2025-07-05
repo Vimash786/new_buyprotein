@@ -58,9 +58,9 @@ class SellersSeeder extends Seeder
                 orders::factory($orderCount)->create([
                     'product_id' => $product->id,
                     'user_id' => User::factory()->create()->id,
-                    'unit_price' => $product->price,
+                    'unit_price' => $product->gym_owner_price,
                     'total_amount' => function (array $attributes) use ($product) {
-                        return $attributes['quantity'] * $product->price;
+                        return $attributes['quantity'] * $product->gym_owner_price;
                     }
                 ]);
             });

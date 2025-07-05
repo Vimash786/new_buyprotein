@@ -28,18 +28,21 @@ new class extends Component
     public $seller_id = '';
     public $name = '';
     public $description = '';
-    public $price = '';
     public $gym_owner_price = '';
     public $regular_user_price = '';
     public $shop_owner_price = '';
+    public $gym_owner_discount = 0;
+    public $regular_user_discount = 0;
+    public $shop_owner_discount = 0;
+    public $gym_owner_final_price = '';
+    public $regular_user_final_price = '';
+    public $shop_owner_final_price = '';
     public $stock_quantity = '';
     public $weight = '';
     public $category_id = '';
     public $sub_category_id = '';
     public $status = 'active';
     public $section_category = 'everyday_essential';
-    public $discount_percentage = 0;
-    public $discounted_price = '';
     public $has_variants = false;
     
     // Image upload properties
@@ -70,18 +73,21 @@ new class extends Component
         'seller_id' => 'required|exists:sellers,id',
         'name' => 'required|string|max:255',
         'description' => 'nullable|string',
-        'price' => 'required_if:has_variants,false|nullable|numeric|min:0',
-        'gym_owner_price' => 'nullable|numeric|min:0',
-        'regular_user_price' => 'nullable|numeric|min:0',
-        'shop_owner_price' => 'nullable|numeric|min:0',
+        'gym_owner_price' => 'required_if:has_variants,false|nullable|numeric|min:0',
+        'regular_user_price' => 'required_if:has_variants,false|nullable|numeric|min:0',
+        'shop_owner_price' => 'required_if:has_variants,false|nullable|numeric|min:0',
+        'gym_owner_discount' => 'nullable|numeric|min:0|max:100',
+        'regular_user_discount' => 'nullable|numeric|min:0|max:100',
+        'shop_owner_discount' => 'nullable|numeric|min:0|max:100',
+        'gym_owner_final_price' => 'nullable|numeric|min:0',
+        'regular_user_final_price' => 'nullable|numeric|min:0',
+        'shop_owner_final_price' => 'nullable|numeric|min:0',
         'stock_quantity' => 'required_if:has_variants,false|nullable|integer|min:0',
         'weight' => 'nullable|string|max:50',
         'category_id' => 'required|exists:categories,id',
         'sub_category_id' => 'nullable|exists:sub_categories,id',
         'status' => 'required|in:active,inactive',
         'section_category' => 'required|in:everyday_essential,popular_pick,exclusive_deal',
-        'discount_percentage' => 'nullable|numeric|min:0|max:100',
-        'discounted_price' => 'nullable|numeric|min:0',
         'has_variants' => 'boolean',
         'thumbnail_image' => 'nullable|image|max:2048',
         'product_images.*' => 'nullable|image|max:2048',
@@ -156,18 +162,21 @@ new class extends Component
         $this->seller_id = '';
         $this->name = '';
         $this->description = '';
-        $this->price = '';
         $this->gym_owner_price = '';
         $this->regular_user_price = '';
         $this->shop_owner_price = '';
+        $this->gym_owner_discount = 0;
+        $this->regular_user_discount = 0;
+        $this->shop_owner_discount = 0;
+        $this->gym_owner_final_price = '';
+        $this->regular_user_final_price = '';
+        $this->shop_owner_final_price = '';
         $this->stock_quantity = '';
         $this->weight = '';
         $this->category_id = '';
         $this->sub_category_id = '';
         $this->status = 'active';
         $this->section_category = 'everyday_essential';
-        $this->discount_percentage = 0;
-        $this->discounted_price = '';
         $this->has_variants = false;
         $this->thumbnail_image = null;
         $this->product_images = [];
@@ -179,23 +188,79 @@ new class extends Component
         $this->resetValidation();
     }
 
+    public function calculateFinalPrices()
+    {
+        // Calculate gym owner final price
+        if ($this->gym_owner_price && $this->gym_owner_discount > 0) {
+            $this->gym_owner_final_price = $this->gym_owner_price * (1 - ($this->gym_owner_discount / 100));
+        } else {
+            $this->gym_owner_final_price = $this->gym_owner_price;
+        }
+
+        // Calculate regular user final price
+        if ($this->regular_user_price && $this->regular_user_discount > 0) {
+            $this->regular_user_final_price = $this->regular_user_price * (1 - ($this->regular_user_discount / 100));
+        } else {
+            $this->regular_user_final_price = $this->regular_user_price;
+        }
+
+        // Calculate shop owner final price
+        if ($this->shop_owner_price && $this->shop_owner_discount > 0) {
+            $this->shop_owner_final_price = $this->shop_owner_price * (1 - ($this->shop_owner_discount / 100));
+        } else {
+            $this->shop_owner_final_price = $this->shop_owner_price;
+        }
+    }
+
+    public function updatedGymOwnerDiscount()
+    {
+        $this->calculateFinalPrices();
+    }
+
+    public function updatedRegularUserDiscount()
+    {
+        $this->calculateFinalPrices();
+    }
+
+    public function updatedShopOwnerDiscount()
+    {
+        $this->calculateFinalPrices();
+    }
+
+    public function updatedGymOwnerPrice()
+    {
+        $this->calculateFinalPrices();
+    }
+
+    public function updatedRegularUserPrice()
+    {
+        $this->calculateFinalPrices();
+    }
+
+    public function updatedShopOwnerPrice()
+    {
+        $this->calculateFinalPrices();
+    }
+
     public function save()
     {
         $this->validate();
 
-        // Calculate discounted price if discount percentage is provided
-        if ($this->discount_percentage > 0) {
-            $this->discounted_price = $this->price * (1 - ($this->discount_percentage / 100));
-        }
+        // Calculate final prices based on discounts
+        $this->calculateFinalPrices();
 
         // Set default values for empty numeric fields
-        $numericFields = ['price', 'gym_owner_price', 'regular_user_price', 'shop_owner_price', 'stock_quantity', 'discount_percentage', 'discounted_price'];
+        $numericFields = [
+            'gym_owner_price', 'regular_user_price', 'shop_owner_price', 
+            'gym_owner_discount', 'regular_user_discount', 'shop_owner_discount',
+            'gym_owner_final_price', 'regular_user_final_price', 'shop_owner_final_price',
+            'stock_quantity'
+        ];
+        
         foreach ($numericFields as $field) {
             if ($this->$field === '' || $this->$field === null) {
-                if ($field === 'price' || $field === 'stock_quantity') {
+                if (in_array($field, ['gym_owner_price', 'regular_user_price', 'shop_owner_price', 'stock_quantity'])) {
                     // Required fields must have a default value of 0
-                    $this->$field = 0;
-                } else if ($field === 'discount_percentage') {
                     $this->$field = 0;
                 } else {
                     // Optional fields can be 0 or null depending on database schema
@@ -208,18 +273,21 @@ new class extends Component
             'seller_id' => $this->seller_id,
             'name' => $this->name,
             'description' => $this->description,
-            'price' => $this->price,
             'gym_owner_price' => $this->gym_owner_price,
             'regular_user_price' => $this->regular_user_price,
             'shop_owner_price' => $this->shop_owner_price,
+            'gym_owner_discount' => $this->gym_owner_discount ?: 0,
+            'regular_user_discount' => $this->regular_user_discount ?: 0,
+            'shop_owner_discount' => $this->shop_owner_discount ?: 0,
+            'gym_owner_final_price' => $this->gym_owner_final_price,
+            'regular_user_final_price' => $this->regular_user_final_price,
+            'shop_owner_final_price' => $this->shop_owner_final_price,
             'stock_quantity' => $this->stock_quantity,
             'weight' => $this->weight,
             'category_id' => $this->category_id,
             'sub_category_id' => $this->sub_category_id ?: null,
             'status' => $this->status,
             'section_category' => $this->section_category,
-            'discount_percentage' => $this->discount_percentage ?: 0,
-            'discounted_price' => $this->discounted_price ?: 0,
             'has_variants' => $this->has_variants,
         ];
 
@@ -322,7 +390,6 @@ new class extends Component
                 ProductVariantCombination::create([
                     'product_id' => $product->id,
                     'variant_options' => $actualOptionIds,
-                    'price' => $combination['price'] ?: 0,
                     'gym_owner_price' => $combination['gym_owner_price'] ?: 0,
                     'regular_user_price' => $combination['regular_user_price'] ?: 0,
                     'shop_owner_price' => $combination['shop_owner_price'] ?: 0,
@@ -332,8 +399,6 @@ new class extends Component
                     'gym_owner_final_price' => $combination['gym_owner_final_price'] ?: 0,
                     'regular_user_final_price' => $combination['regular_user_final_price'] ?: 0,
                     'shop_owner_final_price' => $combination['shop_owner_final_price'] ?: 0,
-                    'discount_percentage' => $combination['discount_percentage'] ?: 0,
-                    'discounted_price' => $combination['discounted_price'] ?: 0,
                     'stock_quantity' => $combination['stock_quantity'] ?: 0,
                     'is_active' => $combination['is_active'] ?? true,
                 ]);
@@ -349,18 +414,21 @@ new class extends Component
         $this->seller_id = $product->seller_id;
         $this->name = $product->name;
         $this->description = $product->description;
-        $this->price = $product->price;
         $this->gym_owner_price = $product->gym_owner_price;
         $this->regular_user_price = $product->regular_user_price;
         $this->shop_owner_price = $product->shop_owner_price;
+        $this->gym_owner_discount = $product->gym_owner_discount;
+        $this->regular_user_discount = $product->regular_user_discount;
+        $this->shop_owner_discount = $product->shop_owner_discount;
+        $this->gym_owner_final_price = $product->gym_owner_final_price;
+        $this->regular_user_final_price = $product->regular_user_final_price;
+        $this->shop_owner_final_price = $product->shop_owner_final_price;
         $this->stock_quantity = $product->stock_quantity;
         $this->weight = $product->weight;
         $this->category_id = $product->category_id;
         $this->sub_category_id = $product->sub_category_id;
         $this->status = $product->status;
         $this->section_category = $product->section_category;
-        $this->discount_percentage = $product->discount_percentage;
-        $this->discounted_price = $product->discounted_price;
         $this->has_variants = $product->has_variants;
         
         // Load existing images
@@ -403,7 +471,6 @@ new class extends Component
                         'display_value' => $option->display_value,
                     ];
                 })->toArray(),
-                'price' => $combination->price,
                 'gym_owner_price' => $combination->gym_owner_price,
                 'regular_user_price' => $combination->regular_user_price,
                 'shop_owner_price' => $combination->shop_owner_price,
@@ -413,8 +480,6 @@ new class extends Component
                 'gym_owner_final_price' => $combination->gym_owner_final_price,
                 'regular_user_final_price' => $combination->regular_user_final_price,
                 'shop_owner_final_price' => $combination->shop_owner_final_price,
-                'discount_percentage' => $combination->discount_percentage,
-                'discounted_price' => $combination->discounted_price,
                 'stock_quantity' => $combination->stock_quantity,
                 'is_active' => $combination->is_active,
             ];
@@ -564,7 +629,6 @@ new class extends Component
                 'id' => null,
                 'options' => $combination,
                 'sku' => '',
-                'price' => $this->price ?: 0,
                 'gym_owner_price' => $this->gym_owner_price ?: 0,
                 'regular_user_price' => $this->regular_user_price ?: 0,
                 'shop_owner_price' => $this->shop_owner_price ?: 0,
@@ -574,8 +638,6 @@ new class extends Component
                 'gym_owner_final_price' => $this->gym_owner_price ?: 0,
                 'regular_user_final_price' => $this->regular_user_price ?: 0,
                 'shop_owner_final_price' => $this->shop_owner_price ?: 0,
-                'discount_percentage' => 0,
-                'discounted_price' => 0,
                 'stock_quantity' => 0,
                 'is_active' => true
             ];
@@ -667,21 +729,6 @@ new class extends Component
                 $this->variant_combinations[$index]['shop_owner_final_price'] = $shopOwnerPrice;
             }
         }
-        
-        // Legacy discount percentage calculation (keeping for backward compatibility)
-        if (strpos($key, '.discount_percentage') !== false) {
-            $parts = explode('.', $key);
-            $index = $parts[0];
-            
-            $discountPercentage = $this->variant_combinations[$index]['discount_percentage'] ?? 0;
-            $basePrice = $this->variant_combinations[$index]['price'] ?? 0;
-            
-            if ($discountPercentage > 0 && $basePrice > 0) {
-                $this->variant_combinations[$index]['discounted_price'] = $basePrice * (1 - ($discountPercentage / 100));
-            } else {
-                $this->variant_combinations[$index]['discounted_price'] = null;
-            }
-        }
     }
 
     public function viewVariantPrices($productId)
@@ -701,9 +748,6 @@ new class extends Component
             return [
                 'id' => $combination->id,
                 'variant_name' => implode(' / ', $optionNames),
-                'price' => $combination->price,
-                'discount_percentage' => $combination->discount_percentage,
-                'discounted_price' => $combination->discounted_price,
                 'gym_owner_price' => $combination->gym_owner_price,
                 'regular_user_price' => $combination->regular_user_price,
                 'shop_owner_price' => $combination->shop_owner_price,
@@ -969,15 +1013,11 @@ new class extends Component
                                                 View Variant Prices
                                             </button>
                                         @else
-                                            @if($product->has_discount)
-                                                <div class="line-through text-gray-500">${{ number_format($product->price, 2) }}</div>
-                                                <div class="font-medium text-green-600">${{ number_format($product->final_price, 2) }}</div>
-                                                @if($product->discount_percentage > 0)
-                                                    <div class="text-xs text-red-600">{{ $product->discount_percentage }}% off</div>
-                                                @endif
-                                            @else
-                                                <div class="font-medium">₹{{ number_format($product->price, 2) }}</div>
-                                            @endif
+                                            <div class="space-y-1">
+                                                <div class="text-xs text-gray-500">Gym Owner: ₹{{ number_format($product->gym_owner_price, 2) }}</div>
+                                                <div class="text-xs text-gray-500">Regular User: ₹{{ number_format($product->regular_user_price, 2) }}</div>
+                                                <div class="text-xs text-gray-500">Shop Owner: ₹{{ number_format($product->shop_owner_price, 2) }}</div>
+                                            </div>
                                         @endif
                                     </div>
                                 </td>
@@ -1133,7 +1173,6 @@ new class extends Component
                         <button wire:click="closeVariantPricesModal" class="text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-gray-100">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
                         </button>
                     </div>
 
@@ -1356,47 +1395,34 @@ new class extends Component
                             </div>
                             @if($selectedProduct->has_variants != 1)
                                 <div class="mt-4">
-                                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Price Information</p>
-                                    <div class="grid grid-cols-2 gap-3">
+                                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">User Type Pricing</p>
+                                    <div class="grid grid-cols-3 gap-3">
                                         <div>
-                                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Base Price</p>
-                                            <p class="text-sm text-gray-900 dark:text-white">₹{{ number_format($selectedProduct->price, 2) }}</p>
+                                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Gym Owner Price</p>
+                                            <p class="text-sm text-gray-900 dark:text-white">₹{{ number_format($selectedProduct->gym_owner_price, 2) }}</p>
+                                            @if($selectedProduct->gym_owner_discount > 0)
+                                                <p class="text-xs text-red-600">{{ $selectedProduct->gym_owner_discount }}% off</p>
+                                                <p class="text-xs text-green-600 font-medium">Final: ₹{{ number_format($selectedProduct->gym_owner_final_price, 2) }}</p>
+                                            @endif
                                         </div>
                                         <div>
-                                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Discount</p>
-                                            <p class="text-sm text-gray-900 dark:text-white">{{ $selectedProduct->discount_percentage }}%</p>
+                                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Regular User Price</p>
+                                            <p class="text-sm text-gray-900 dark:text-white">₹{{ number_format($selectedProduct->regular_user_price, 2) }}</p>
+                                            @if($selectedProduct->regular_user_discount > 0)
+                                                <p class="text-xs text-red-600">{{ $selectedProduct->regular_user_discount }}% off</p>
+                                                <p class="text-xs text-green-600 font-medium">Final: ₹{{ number_format($selectedProduct->regular_user_final_price, 2) }}</p>
+                                            @endif
                                         </div>
                                         <div>
-                                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Discounted Price</p>
-                                            <p class="text-sm text-green-600 dark:text-green-400">{{ $selectedProduct->discounted_price ? '₹' . number_format($selectedProduct->discounted_price, 2) : 'N/A' }}</p>
+                                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Shop Owner Price</p>
+                                            <p class="text-sm text-gray-900 dark:text-white">₹{{ number_format($selectedProduct->shop_owner_price, 2) }}</p>
+                                            @if($selectedProduct->shop_owner_discount > 0)
+                                                <p class="text-xs text-red-600">{{ $selectedProduct->shop_owner_discount }}% off</p>
+                                                <p class="text-xs text-green-600 font-medium">Final: ₹{{ number_format($selectedProduct->shop_owner_final_price, 2) }}</p>
+                                            @endif
                                         </div>
                                     </div>
                                 </div>
-                                @if($selectedProduct->gym_owner_price || $selectedProduct->regular_user_price || $selectedProduct->shop_owner_price)
-                                    <div class="mt-4">
-                                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Special Pricing</p>
-                                        <div class="grid grid-cols-3 gap-3">
-                                            @if($selectedProduct->gym_owner_price)
-                                                <div>
-                                                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Gym Owner</p>
-                                                    <p class="text-sm text-gray-900 dark:text-white">₹{{ number_format($selectedProduct->gym_owner_price, 2) }}</p>
-                                                </div>
-                                            @endif
-                                            @if($selectedProduct->regular_user_price)
-                                                <div>
-                                                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Regular User</p>
-                                                    <p class="text-sm text-gray-900 dark:text-white">₹{{ number_format($selectedProduct->regular_user_price, 2) }}</p>
-                                                </div>
-                                            @endif
-                                            @if($selectedProduct->shop_owner_price)
-                                                <div>
-                                                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Shop Owner</p>
-                                                    <p class="text-sm text-gray-900 dark:text-white">₹{{ number_format($selectedProduct->shop_owner_price, 2) }}</p>
-                                                </div>
-                                            @endif
-                                        </div>
-                                    </div>
-                                @endif
                             @endif
                         </div>
                     </div>

@@ -16,8 +16,6 @@ return new class extends Migration
                   ->default('everyday_essential')
                   ->after('sub_category_id');
             $table->string('thumbnail_image')->nullable()->after('stock_quantity');
-            $table->integer('discount_percentage')->default(0)->after('price');
-            $table->decimal('discounted_price', 10, 2)->nullable()->after('discount_percentage');
             $table->boolean('has_variants')->default(false)->after('status');
         });
     }
@@ -31,8 +29,7 @@ return new class extends Migration
             $table->dropColumn([
                 'section_category',
                 'thumbnail_image',
-                'discount_percentage',
-                'discounted_price',
+    
                 'has_variants'
             ]);
         });

@@ -19,10 +19,15 @@ class products extends Model
         'sub_category_id',
         'name',
         'description',
-        'price',
         'gym_owner_price',
         'regular_user_price',
         'shop_owner_price',
+        'gym_owner_discount',
+        'regular_user_discount',
+        'shop_owner_discount',
+        'gym_owner_final_price',
+        'regular_user_final_price',
+        'shop_owner_final_price',
         'stock_quantity',
         'weight',
         'category',
@@ -30,8 +35,6 @@ class products extends Model
         'status',
         'section_category',
         'thumbnail_image',
-        'discount_percentage',
-        'discounted_price',
         'has_variants',
     ];
 
@@ -39,14 +42,19 @@ class products extends Model
         'seller_id' => 'integer',
         'category_id' => 'integer',
         'sub_category_id' => 'integer',
-        'price' => 'decimal:2',
+        
         'gym_owner_price' => 'decimal:2',
         'regular_user_price' => 'decimal:2',
         'shop_owner_price' => 'decimal:2',
+        'gym_owner_discount' => 'decimal:2',
+        'regular_user_discount' => 'decimal:2',
+        'shop_owner_discount' => 'decimal:2',
+        'gym_owner_final_price' => 'decimal:2',
+        'regular_user_final_price' => 'decimal:2',
+        'shop_owner_final_price' => 'decimal:2',
         'stock_quantity' => 'integer',
         'status' => 'string',
-        'discount_percentage' => 'integer',
-        'discounted_price' => 'decimal:2',
+    
         'has_variants' => 'boolean',
     ];
 

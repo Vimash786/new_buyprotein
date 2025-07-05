@@ -38,13 +38,33 @@ class ProductsFactory extends Factory
             'seller_id' => sellers::factory(),
             'name' => $this->faker->randomElement($proteinProducts),
             'description' => $this->faker->paragraph(3),
-            'price' => $this->faker->randomFloat(2, 15.99, 199.99),
-            'discount_percentage' => $this->faker->randomFloat(2, 0, 30), // 0-30% discount
-            'discounted_price' => function (array $attributes) {
-                if ($attributes['discount_percentage'] > 0) {
-                    return $attributes['price'] * (1 - $attributes['discount_percentage'] / 100);
+            'gym_owner_price' => $this->faker->randomFloat(2, 15.99, 199.99),
+            'regular_user_price' => function (array $attributes) {
+                return $attributes['gym_owner_price'] * $this->faker->randomFloat(2, 1.1, 1.3); // 10-30% higher than gym owner
+            },
+            'shop_owner_price' => function (array $attributes) {
+                return $attributes['gym_owner_price'] * $this->faker->randomFloat(2, 0.85, 0.95); // 5-15% lower than gym owner
+            },
+            'gym_owner_discount' => $this->faker->randomFloat(2, 0, 25), // 0-25% discount
+            'regular_user_discount' => $this->faker->randomFloat(2, 0, 20), // 0-20% discount
+            'shop_owner_discount' => $this->faker->randomFloat(2, 0, 30), // 0-30% discount
+            'gym_owner_final_price' => function (array $attributes) {
+                if ($attributes['gym_owner_discount'] > 0) {
+                    return $attributes['gym_owner_price'] * (1 - $attributes['gym_owner_discount'] / 100);
                 }
-                return null;
+                return $attributes['gym_owner_price'];
+            },
+            'regular_user_final_price' => function (array $attributes) {
+                if ($attributes['regular_user_discount'] > 0) {
+                    return $attributes['regular_user_price'] * (1 - $attributes['regular_user_discount'] / 100);
+                }
+                return $attributes['regular_user_price'];
+            },
+            'shop_owner_final_price' => function (array $attributes) {
+                if ($attributes['shop_owner_discount'] > 0) {
+                    return $attributes['shop_owner_price'] * (1 - $attributes['shop_owner_discount'] / 100);
+                }
+                return $attributes['shop_owner_price'];
             },
             'stock_quantity' => $this->faker->numberBetween(10, 500),
             'category_id' => $this->faker->numberBetween(1, 9), // 9 main categories will be created by CategorySeeder

@@ -39,55 +39,139 @@
             @error('description') <span class="text-red-500 text-sm">{{ $errors->first('description') }}</span> @enderror
         </div>
 
-        <!-- Price -->
+        <!-- User Type Pricing -->
         @if(!$has_variants)
             <div class="md:col-span-2">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Base Price (₹)</label>
-                <input 
-                    type="number" 
-                    step="0.01"
-                    wire:model="price"
-                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-                    placeholder="0.00"
-                >
-                @error('price') <span class="text-red-500 text-sm">{{ $errors->first('price') }}</span> @enderror
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">User Type Pricing</h3>
             </div>
 
-            <!-- User Type Pricing -->
-            <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Gym Owner/Trainer/Influencer Price (₹)</label>
-                <input 
-                    type="number" 
-                    step="0.01"
-                    wire:model="gym_owner_price"
-                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-                    placeholder="0.00"
-                >
-                @error('gym_owner_price') <span class="text-red-500 text-sm">{{ $errors->first('gym_owner_price') }}</span> @enderror
+            <!-- Base Prices Row -->
+            <div class="md:col-span-2">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Gym Owner Price (₹)</label>
+                        <input 
+                            type="number" 
+                            step="0.01"
+                            wire:model="gym_owner_price"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
+                            placeholder="0.00"
+                        >
+                        @error('gym_owner_price') <span class="text-red-500 text-sm">{{ $errors->first('gym_owner_price') }}</span> @enderror
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Regular User Price (₹)</label>
+                        <input 
+                            type="number" 
+                            step="0.01"
+                            wire:model="regular_user_price"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
+                            placeholder="0.00"
+                        >
+                        @error('regular_user_price') <span class="text-red-500 text-sm">{{ $errors->first('regular_user_price') }}</span> @enderror
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Shop Owner Price (₹)</label>
+                        <input 
+                            type="number" 
+                            step="0.01"
+                            wire:model="shop_owner_price"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
+                            placeholder="0.00"
+                        >
+                        @error('shop_owner_price') <span class="text-red-500 text-sm">{{ $errors->first('shop_owner_price') }}</span> @enderror
+                    </div>
+                </div>
             </div>
 
-            <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Regular User Price (₹)</label>
-                <input 
-                    type="number" 
-                    step="0.01"
-                    wire:model="regular_user_price"
-                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-                    placeholder="0.00"
-                >
-                @error('regular_user_price') <span class="text-red-500 text-sm">{{ $errors->first('regular_user_price') }}</span> @enderror
+            <!-- Discount Percentages Row -->
+            <div class="md:col-span-2">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Gym Owner Discount (%)</label>
+                        <input 
+                            type="number" 
+                            step="0.01"
+                            max="100"
+                            wire:model.live="gym_owner_discount"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
+                            placeholder="0"
+                        >
+                        @error('gym_owner_discount') <span class="text-red-500 text-sm">{{ $errors->first('gym_owner_discount') }}</span> @enderror
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Regular User Discount (%)</label>
+                        <input 
+                            type="number" 
+                            step="0.01"
+                            max="100"
+                            wire:model.live="regular_user_discount"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
+                            placeholder="0"
+                        >
+                        @error('regular_user_discount') <span class="text-red-500 text-sm">{{ $errors->first('regular_user_discount') }}</span> @enderror
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Shop Owner Discount (%)</label>
+                        <input 
+                            type="number" 
+                            step="0.01"
+                            max="100"
+                            wire:model.live="shop_owner_discount"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
+                            placeholder="0"
+                        >
+                        @error('shop_owner_discount') <span class="text-red-500 text-sm">{{ $errors->first('shop_owner_discount') }}</span> @enderror
+                    </div>
+                </div>
             </div>
 
-            <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Shop Owner Price (₹)</label>
-                <input 
-                    type="number" 
-                    step="0.01"
-                    wire:model="shop_owner_price"
-                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-                    placeholder="0.00"
-                >
-                @error('shop_owner_price') <span class="text-red-500 text-sm">{{ $errors->first('shop_owner_price') }}</span> @enderror
+            <!-- Final Prices Row (Auto-calculated) -->
+            <div class="md:col-span-2">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Gym Owner Final Price (₹)</label>
+                        <input 
+                            type="number" 
+                            step="0.01"
+                            wire:model="gym_owner_final_price"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-100 dark:bg-zinc-600 text-gray-700 dark:text-gray-300"
+                            placeholder="Auto calculated"
+                            readonly
+                        >
+                        @error('gym_owner_final_price') <span class="text-red-500 text-sm">{{ $errors->first('gym_owner_final_price') }}</span> @enderror
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Regular User Final Price (₹)</label>
+                        <input 
+                            type="number" 
+                            step="0.01"
+                            wire:model="regular_user_final_price"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-100 dark:bg-zinc-600 text-gray-700 dark:text-gray-300"
+                            placeholder="Auto calculated"
+                            readonly
+                        >
+                        @error('regular_user_final_price') <span class="text-red-500 text-sm">{{ $errors->first('regular_user_final_price') }}</span> @enderror
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Shop Owner Final Price (₹)</label>
+                        <input 
+                            type="number" 
+                            step="0.01"
+                            wire:model="shop_owner_final_price"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-100 dark:bg-zinc-600 text-gray-700 dark:text-gray-300"
+                            placeholder="Auto calculated"
+                            readonly
+                        >
+                        @error('shop_owner_final_price') <span class="text-red-500 text-sm">{{ $errors->first('shop_owner_final_price') }}</span> @enderror
+                    </div>
+                </div>
             </div>
         @endif
 
@@ -116,37 +200,6 @@
                     placeholder="e.g., 1kg, 500g, 2.5lbs"
                 >
                 @error('weight') <span class="text-red-500 text-sm">{{ $errors->first('weight') }}</span> @enderror
-            </div>
-        @endif
-
-        <!-- Discount Percentage -->
-        @if(!$has_variants)
-            <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Discount (%)</label>
-                <input 
-                    type="number" 
-                    step="0.01"
-                    max="100"
-                    wire:model="discount_percentage"
-                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-                    placeholder="0.00"
-                >
-                @error('discount_percentage') <span class="text-red-500 text-sm">{{ $errors->first('discount_percentage') }}</span> @enderror
-            </div>
-        @endif
-
-        <!-- Discounted Price -->
-        @if(!$has_variants)
-            <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Final Price (₹)</label>
-                <input 
-                    type="number" 
-                    step="0.01"
-                    wire:model="discounted_price"
-                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-                    placeholder="Leave empty to calculate from discount %"
-                >
-                @error('discounted_price') <span class="text-red-500 text-sm">{{ $errors->first('discounted_price') }}</span> @enderror
             </div>
         @endif
 
