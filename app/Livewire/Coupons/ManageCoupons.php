@@ -86,6 +86,20 @@ class ManageCoupons extends Component
         $this->showModal = true;
     }
 
+    public function generateCode()
+    {
+        $this->code = 'COUP-' . strtoupper(Str::random(6));
+    }
+
+    public function save()
+    {
+        if ($this->editMode) {
+            $this->update();
+        } else {
+            $this->store();
+        }
+    }
+
     public function store()
     {
         $validatedData = $this->validate();
