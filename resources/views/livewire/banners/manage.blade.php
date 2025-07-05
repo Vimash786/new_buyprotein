@@ -5,6 +5,7 @@ use Livewire\WithPagination;
 use Livewire\WithFileUploads;
 use Livewire\Volt\Component;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 new class extends Component
 {
@@ -22,11 +23,13 @@ new class extends Component
     public $name = '';
     public $banner_image = '';
     public $banner_image_file = null;
+    public $redirect_link = '';
     public $status = 'active';
 
     protected $rules = [
         'name' => 'required|string|max:255',
         'banner_image_file' => 'nullable|image|mimes:jpg,jpeg,png,gif,webp|max:5120', // 5MB max
+        'redirect_link' => 'nullable|url|max:500',
         'status' => 'required|in:active,inactive',
     ];
 
@@ -82,6 +85,7 @@ new class extends Component
         $this->name = '';
         $this->banner_image = '';
         $this->banner_image_file = null;
+        $this->redirect_link = '';
         $this->status = 'active';
         $this->resetValidation();
     }    
@@ -92,6 +96,7 @@ new class extends Component
 
         $data = [
             'name' => $this->name,
+            'redirect_link' => $this->redirect_link,
             'status' => $this->status,
         ];
 
@@ -130,6 +135,7 @@ new class extends Component
         $this->name = $banner->name;
         $this->banner_image = $banner->banner_image;
         $this->banner_image_file = null; // Reset file input for edit
+        $this->redirect_link = $banner->redirect_link;
         $this->status = $banner->status;
         
         $this->editMode = true;
@@ -281,6 +287,7 @@ new class extends Component
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Banner</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Name</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Redirect Link</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Created By</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Created Date</th>
@@ -305,6 +312,17 @@ new class extends Component
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $banner->name }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-900 dark:text-white">
+                                        @if($banner->redirect_link)
+                                            <a href="{{ $banner->redirect_link }}" target="_blank" class="text-blue-600 hover:text-blue-800 underline truncate block max-w-xs" title="{{ $banner->redirect_link }}">
+                                                {{ Str::limit($banner->redirect_link, 30) }}
+                                            </a>
+                                        @else
+                                            <span class="text-gray-500 dark:text-gray-400">No link</span>
+                                        @endif
+                                    </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <button 
@@ -369,7 +387,7 @@ new class extends Component
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                                <td colspan="7" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
                                     No banners found.
                                 </td>
                             </tr>
@@ -444,6 +462,19 @@ new class extends Component
                             @endif
                         </div>
 
+                        <!-- Redirect Link -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Redirect Link (Optional)</label>
+                            <input 
+                                type="url" 
+                                wire:model="redirect_link"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
+                                placeholder="Enter redirect URL (e.g., https://example.com)"
+                            >
+                            @error('redirect_link') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">URL where users will be redirected when clicking the banner</p>
+                        </div>
+
                         <!-- Status -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Status</label>
@@ -511,6 +542,18 @@ new class extends Component
                                 <div>
                                     <label class="text-sm font-medium text-gray-600 dark:text-gray-300">Banner Name</label>
                                     <p class="text-gray-900 dark:text-white">{{ $viewingBanner->name }}</p>
+                                </div>
+                                <div>
+                                    <label class="text-sm font-medium text-gray-600 dark:text-gray-300">Redirect Link</label>
+                                    <p class="text-gray-900 dark:text-white">
+                                        @if($viewingBanner->redirect_link)
+                                            <a href="{{ $viewingBanner->redirect_link }}" target="_blank" class="text-blue-600 hover:text-blue-800 underline">
+                                                {{ $viewingBanner->redirect_link }}
+                                            </a>
+                                        @else
+                                            <span class="text-gray-500 dark:text-gray-400">No redirect link set</span>
+                                        @endif
+                                    </p>
                                 </div>
                                 <div>
                                     <label class="text-sm font-medium text-gray-600 dark:text-gray-300">Status</label>

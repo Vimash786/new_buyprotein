@@ -13,6 +13,7 @@ class Banner extends Model
     protected $fillable = [
         'name',
         'banner_image',
+        'redirect_link',
         'status',
         'created_by',
         'updated_by',
