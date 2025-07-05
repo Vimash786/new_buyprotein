@@ -202,7 +202,7 @@
                                         <div class="single-shopping-card-one">
                                             <!-- iamge and sction area start -->
                                             <div class="image-and-action-area-wrapper">
-                                                <a href="shop-details.html" class="thumbnail-preview">
+                                                <a href="{{ route('product.details', Crypt::encrypt($everyDayProduct->id)) }}" class="thumbnail-preview">
                                                     @if ($everyDayProduct->discount_percentage > 0)
                                                         <div class="badge">
                                                             <span>{{ $everyDayProduct->discount_percentage }}% <br>
@@ -234,7 +234,7 @@
 
                                             <div class="body-content">
 
-                                                <a href="shop-details.html">
+                                                <a href="{{ route('product.details', Crypt::encrypt($everyDayProduct->id)) }}">
                                                     <h4 class="title">{{ $everyDayProduct->name }}</h4>
                                                 </a>
                                                 <span class="availability">500g Pack</span>
@@ -300,7 +300,7 @@
                                 @foreach ($populerProducts as $populerProduct)
                                     <div class="col-lg-4">
                                         <div class="single-shopping-card-one discount-offer">
-                                            <a href="shop-details.html" class="thumbnail-preview">
+                                            <a href="{{ route('product.details', Crypt::encrypt($populerProduct->id)) }}" class="thumbnail-preview">
                                                 @if ($populerProduct->discount_percentage > 0)
                                                     <div class="badge">
                                                         <span>{{ $populerProduct->discount_percentage }}% <br>
@@ -314,7 +314,7 @@
                                             </a>
                                             <div class="body-content">
 
-                                                <a href="shop-details.html">
+                                                <a href="{{ route('product.details', Crypt::encrypt($populerProduct->id)) }}">
                                                     <h4 class="title">{{ $populerProduct->name }}</h4>
                                                 </a>
                                                 <span class="availability">500g Pack</span>
@@ -385,7 +385,7 @@
                                         <div class="single-shopping-card-one">
                                             <!-- iamge and sction area start -->
                                             <div class="image-and-action-area-wrapper">
-                                                <a href="shop-details.html" class="thumbnail-preview">
+                                                <a href="{{ route('product.details', Crypt::encrypt($lat_pro->id)) }}" class="thumbnail-preview">
                                                     @if ($lat_pro->discount_percentage > 0)
                                                         <div class="badge">
                                                             <span>{{ $lat_pro->discount_percentage }}% <br>
@@ -416,7 +416,7 @@
                                             <!-- iamge and sction area start -->
                                             <div class="body-content">
 
-                                                <a href="shop-details.html">
+                                                <a href="{{ route('product.details', Crypt::encrypt($lat_pro->id)) }}">
                                                     <h4 class="title">{{ $lat_pro->name }}</h4>
                                                 </a>
                                                 <span class="availability">500g Pack</span>
@@ -580,7 +580,7 @@
                             @foreach ($offers as $offer)
                                 <div class="col-xl-3 col-md-6 col-sm-12 col-12">
                                     <div class="single-shopping-card-one tranding-product">
-                                        <a href="shop-details.html" class="thumbnail-preview">
+                                        <a href="{{ route('product.details', Crypt::encrypt($offer->id)) }}" class="thumbnail-preview">
                                             @if ($offer->discount_percentage > 0)
                                                 <div class="badge">
                                                     <span>{{ $offer->discount_percentage }}% <br>
@@ -593,7 +593,7 @@
                                         </a>
                                         <div class="body-content">
 
-                                            <a href="shop-details.html">
+                                            <a href="{{ route('product.details', Crypt::encrypt($offer->id)) }}">
                                                 <h4 class="title">{{ $offer->name }}</h4>
                                             </a>
                                             <span class="availability">500g Pack</span>
