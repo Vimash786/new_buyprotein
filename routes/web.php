@@ -10,6 +10,7 @@ Route::get('/dash', function () {
 
 Route::get('/', [DashboardController::class, 'index'])->name('home');
 Route::get('/shop/{type?}/{id?}', [DashboardController::class , 'shop'])->name('shop');
+Route::get('/product-details/{id}', [DashboardController::class, 'productDetails'])->name('product.details');
 
 // Route::get('/', function () {
 //     return view('dashboard');

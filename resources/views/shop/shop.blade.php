@@ -8,25 +8,30 @@
                 <div class="col-xl-3 col-lg-12 pr--70 pr_lg--10 pr_sm--10 pr_md--5 rts-sticky-column-item">
                     <div class="sidebar-filter-main theiaStickySidebar">
                         <div class="single-filter-box">
-                            <h5 class="title">Widget Price Filter</h5>
+                            <h5 class="title">Price Filter</h5>
                             <div class="filterbox-body">
-                                <form action="#" class="price-input-area">
+                                <form method="GET" action="{{ url()->current() }}" class="price-input-area">
+                                    <input type="hidden" name="type" value="{{ request('type') }}">
+                                    <input type="hidden" name="id" value="{{ request('id') }}">
+
                                     <div class="half-input-wrapper">
                                         <div class="single">
                                             <label for="min">Min price</label>
-                                            <input id="min" type="text" value="0">
+                                            <input id="min" name="min_price" type="number"
+                                                value="{{ request('min_price', 0) }}">
                                         </div>
                                         <div class="single">
                                             <label for="max">Max price</label>
-                                            <input id="max" type="text" value="150">
+                                            <input id="max" name="max_price" type="number"
+                                                value="{{ request('max_price', 1000) }}">
                                         </div>
                                     </div>
-                                    <input type="range" class="range">
+
                                     <div class="filter-value-min-max">
-                                        <span>Price: $10 — $90</span>
-                                        <button class="rts-btn btn-primary">Filter</button>
+                                        <button type="submit" class="rts-btn btn-primary mt-5 mx-auto">Filter</button>
                                     </div>
                                 </form>
+
                             </div>
                         </div>
                         <div class="single-filter-box">
@@ -39,7 +44,7 @@
                                                 value="{{ $cat->id }}"
                                                 {{ request()->route('type') === 'category' && request()->route('id') == $cat->id ? 'checked' : '' }}
                                                 onchange="window.location.href='{{ url('/shop/category') }}/{{ Crypt::encrypt($cat->id) }}'">
-                                            <label for="cat{{ $cat->id }}">{{ $cat->name }}</label> 
+                                            <label for="cat{{ $cat->id }}">{{ $cat->name }}</label>
                                         </div>
                                     @endforeach
                                 </div>
@@ -73,7 +78,8 @@
                                         <div class="col-lg-20 col-lg-4 col-md-6 col-sm-6 col-12">
                                             <div class="single-shopping-card-one">
                                                 <div class="image-and-action-area-wrapper">
-                                                    <a href="shop-details.html" class="thumbnail-preview">
+                                                    <a href="{{ route('product.details', Crypt::encrypt($product->id)) }}"
+                                                        class="thumbnail-preview">
                                                         @if ($product->discount_percentage > 0)
                                                             <div class="badge">
                                                                 <span>{{ $product->discount_percentage }}% <br>
@@ -103,7 +109,7 @@
 
                                                 <div class="body-content">
 
-                                                    <a href="shop-details.html">
+                                                    <a href="{{ route('product.details', Crypt::encrypt($product->id)) }}">
                                                         <h4 class="title">{{ $product->name }}</h4>
                                                     </a>
                                                     <span class="availability">500g Pack</span>
