@@ -117,7 +117,7 @@
             <div class="col-lg-12">
                 <div class="copyright-between-1">
                     <p class="disc">
-                        Copyright 2024 <a href="#">©Ekomart</a>. All rights reserved.
+                        Copyright 2025 <a href="#">©BuyProtein</a>. All rights reserved.
                     </p>
                     <a href="#" class="playstore-app-area">
                         <span>Download App</span>

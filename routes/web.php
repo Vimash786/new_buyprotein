@@ -9,6 +9,7 @@ Route::get('/dash', function () {
 })->name('welcome');
 
 Route::get('/', [DashboardController::class, 'index'])->name('home');
+Route::get('/shop/{type?}/{id?}', [DashboardController::class , 'shop'])->name('shop');
 
 // Route::get('/', function () {
 //     return view('dashboard');
