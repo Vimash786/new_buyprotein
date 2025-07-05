@@ -1031,7 +1031,7 @@ new class extends Component
                                         </button>
                                     @else
                                         <span class="text-sm font-medium 
-                                            {{ $product->stock_quantity <= 10 ? 'text-red-600' : 'text-gray-900' }}">
+                                            {{ $product->stock_quantity <= 10 ? 'text-red-600' : 'dark:text-white' }}">
                                             {{ $product->stock_quantity }}
                                         </span>
                                         @if($product->stock_quantity <= 10)
@@ -1173,6 +1173,7 @@ new class extends Component
                         <button wire:click="closeVariantPricesModal" class="text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-gray-100">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
                         </button>
                     </div>
 
