@@ -14,12 +14,15 @@ class ProductVariantCombination extends Model
         'product_id',
         'variant_options',
         'sku',
-        'price',
         'gym_owner_price',
         'regular_user_price',
         'shop_owner_price',
-        'discount_percentage',
-        'discounted_price',
+        'gym_owner_discount',
+        'regular_user_discount',
+        'shop_owner_discount',
+        'gym_owner_final_price',
+        'regular_user_final_price',
+        'shop_owner_final_price',
         'stock_quantity',
         'is_active',
     ];
@@ -27,12 +30,15 @@ class ProductVariantCombination extends Model
     protected $casts = [
         'product_id' => 'integer',
         'variant_options' => 'array',
-        'price' => 'decimal:2',
         'gym_owner_price' => 'decimal:2',
         'regular_user_price' => 'decimal:2',
         'shop_owner_price' => 'decimal:2',
-        'discount_percentage' => 'decimal:2',
-        'discounted_price' => 'decimal:2',
+        'gym_owner_discount' => 'decimal:2',
+        'regular_user_discount' => 'decimal:2',
+        'shop_owner_discount' => 'decimal:2',
+        'gym_owner_final_price' => 'decimal:2',
+        'regular_user_final_price' => 'decimal:2',
+        'shop_owner_final_price' => 'decimal:2',
         'stock_quantity' => 'integer',
         'is_active' => 'boolean',
     ];
@@ -81,5 +87,48 @@ class ProductVariantCombination extends Model
         }
         
         return implode('-', $skuParts);
+    }
+
+    /**
+     * Calculate final price for gym owner based on discount.
+     */
+    public function calculateGymOwnerFinalPrice()
+    {
+        if ($this->gym_owner_discount > 0 && $this->gym_owner_price > 0) {
+            return $this->gym_owner_price * (1 - ($this->gym_owner_discount / 100));
+        }
+        return $this->gym_owner_price;
+    }
+
+    /**
+     * Calculate final price for regular user based on discount.
+     */
+    public function calculateRegularUserFinalPrice()
+    {
+        if ($this->regular_user_discount > 0 && $this->regular_user_price > 0) {
+            return $this->regular_user_price * (1 - ($this->regular_user_discount / 100));
+        }
+        return $this->regular_user_price;
+    }
+
+    /**
+     * Calculate final price for shop owner based on discount.
+     */
+    public function calculateShopOwnerFinalPrice()
+    {
+        if ($this->shop_owner_discount > 0 && $this->shop_owner_price > 0) {
+            return $this->shop_owner_price * (1 - ($this->shop_owner_discount / 100));
+        }
+        return $this->shop_owner_price;
+    }
+
+    /**
+     * Auto-calculate and update all final prices.
+     */
+    public function updateFinalPrices()
+    {
+        $this->gym_owner_final_price = $this->calculateGymOwnerFinalPrice();
+        $this->regular_user_final_price = $this->calculateRegularUserFinalPrice();
+        $this->shop_owner_final_price = $this->calculateShopOwnerFinalPrice();
     }
 }

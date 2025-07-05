@@ -394,20 +394,10 @@
                                             </span>
                                         </div>
                                         
-                                        <!-- Base Pricing Row -->
-                                        <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                        <!-- User Type Pricing Row -->
+                                        <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
                                             <div>
-                                                <label class="text-xs text-gray-600 dark:text-gray-400">Base Price (₹)</label>
-                                                <input 
-                                                    type="number" 
-                                                    step="0.01"
-                                                    wire:model="variant_combinations.{{ $combIndex }}.price"
-                                                    placeholder="0.00"
-                                                    class="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
-                                                >
-                                            </div>
-                                            <div>
-                                                <label class="text-xs text-gray-600 dark:text-gray-400">Gym Owner (₹)</label>
+                                                <label class="text-xs text-gray-600 dark:text-gray-400">Gym Owner Price (₹)</label>
                                                 <input 
                                                     type="number" 
                                                     step="0.01"
@@ -417,7 +407,7 @@
                                                 >
                                             </div>
                                             <div>
-                                                <label class="text-xs text-gray-600 dark:text-gray-400">Regular User (₹)</label>
+                                                <label class="text-xs text-gray-600 dark:text-gray-400">Regular User Price (₹)</label>
                                                 <input 
                                                     type="number" 
                                                     step="0.01"
@@ -427,7 +417,7 @@
                                                 >
                                             </div>
                                             <div>
-                                                <label class="text-xs text-gray-600 dark:text-gray-400">Shop Owner (₹)</label>
+                                                <label class="text-xs text-gray-600 dark:text-gray-400">Shop Owner Price (₹)</label>
                                                 <input 
                                                     type="number" 
                                                     step="0.01"
@@ -438,25 +428,73 @@
                                             </div>
                                         </div>
                                         
-                                        <!-- Discount and Stock Row -->
-                                        <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                        <!-- Discount Percentage Row -->
+                                        <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
                                             <div>
-                                                <label class="text-xs text-gray-600 dark:text-gray-400">Discount (%)</label>
+                                                <label class="text-xs text-gray-600 dark:text-gray-400">Gym Owner Discount (%)</label>
                                                 <input 
                                                     type="number" 
                                                     step="0.01"
                                                     max="100"
-                                                    wire:model.live="variant_combinations.{{ $combIndex }}.discount_percentage"
+                                                    wire:model.live="variant_combinations.{{ $combIndex }}.gym_owner_discount"
                                                     placeholder="0"
                                                     class="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
                                                 >
                                             </div>
                                             <div>
-                                                <label class="text-xs text-gray-600 dark:text-gray-400">Final Price (₹)</label>
+                                                <label class="text-xs text-gray-600 dark:text-gray-400">Regular User Discount (%)</label>
                                                 <input 
                                                     type="number" 
                                                     step="0.01"
-                                                    wire:model="variant_combinations.{{ $combIndex }}.discounted_price"
+                                                    max="100"
+                                                    wire:model.live="variant_combinations.{{ $combIndex }}.regular_user_discount"
+                                                    placeholder="0"
+                                                    class="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
+                                                >
+                                            </div>
+                                            <div>
+                                                <label class="text-xs text-gray-600 dark:text-gray-400">Shop Owner Discount (%)</label>
+                                                <input 
+                                                    type="number" 
+                                                    step="0.01"
+                                                    max="100"
+                                                    wire:model.live="variant_combinations.{{ $combIndex }}.shop_owner_discount"
+                                                    placeholder="0"
+                                                    class="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
+                                                >
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Final Price Row -->
+                                        <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
+                                            <div>
+                                                <label class="text-xs text-gray-600 dark:text-gray-400">Gym Owner Final Price (₹)</label>
+                                                <input 
+                                                    type="number" 
+                                                    step="0.01"
+                                                    wire:model="variant_combinations.{{ $combIndex }}.gym_owner_final_price"
+                                                    placeholder="Auto calculated"
+                                                    class="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-gray-100 dark:bg-zinc-600 text-gray-700 dark:text-gray-300"
+                                                    readonly
+                                                >
+                                            </div>
+                                            <div>
+                                                <label class="text-xs text-gray-600 dark:text-gray-400">Regular User Final Price (₹)</label>
+                                                <input 
+                                                    type="number" 
+                                                    step="0.01"
+                                                    wire:model="variant_combinations.{{ $combIndex }}.regular_user_final_price"
+                                                    placeholder="Auto calculated"
+                                                    class="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-gray-100 dark:bg-zinc-600 text-gray-700 dark:text-gray-300"
+                                                    readonly
+                                                >
+                                            </div>
+                                            <div>
+                                                <label class="text-xs text-gray-600 dark:text-gray-400">Shop Owner Final Price (₹)</label>
+                                                <input 
+                                                    type="number" 
+                                                    step="0.01"
+                                                    wire:model="variant_combinations.{{ $combIndex }}.shop_owner_final_price"
                                                     placeholder="Auto calculated"
                                                     class="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-gray-100 dark:bg-zinc-600 text-gray-700 dark:text-gray-300"
                                                     readonly

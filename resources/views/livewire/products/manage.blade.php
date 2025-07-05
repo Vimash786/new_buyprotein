@@ -326,6 +326,12 @@ new class extends Component
                     'gym_owner_price' => $combination['gym_owner_price'] ?: 0,
                     'regular_user_price' => $combination['regular_user_price'] ?: 0,
                     'shop_owner_price' => $combination['shop_owner_price'] ?: 0,
+                    'gym_owner_discount' => $combination['gym_owner_discount'] ?: 0,
+                    'regular_user_discount' => $combination['regular_user_discount'] ?: 0,
+                    'shop_owner_discount' => $combination['shop_owner_discount'] ?: 0,
+                    'gym_owner_final_price' => $combination['gym_owner_final_price'] ?: 0,
+                    'regular_user_final_price' => $combination['regular_user_final_price'] ?: 0,
+                    'shop_owner_final_price' => $combination['shop_owner_final_price'] ?: 0,
                     'discount_percentage' => $combination['discount_percentage'] ?: 0,
                     'discounted_price' => $combination['discounted_price'] ?: 0,
                     'stock_quantity' => $combination['stock_quantity'] ?: 0,
@@ -401,6 +407,12 @@ new class extends Component
                 'gym_owner_price' => $combination->gym_owner_price,
                 'regular_user_price' => $combination->regular_user_price,
                 'shop_owner_price' => $combination->shop_owner_price,
+                'gym_owner_discount' => $combination->gym_owner_discount,
+                'regular_user_discount' => $combination->regular_user_discount,
+                'shop_owner_discount' => $combination->shop_owner_discount,
+                'gym_owner_final_price' => $combination->gym_owner_final_price,
+                'regular_user_final_price' => $combination->regular_user_final_price,
+                'shop_owner_final_price' => $combination->shop_owner_final_price,
                 'discount_percentage' => $combination->discount_percentage,
                 'discounted_price' => $combination->discounted_price,
                 'stock_quantity' => $combination->stock_quantity,
@@ -556,6 +568,12 @@ new class extends Component
                 'gym_owner_price' => $this->gym_owner_price ?: 0,
                 'regular_user_price' => $this->regular_user_price ?: 0,
                 'shop_owner_price' => $this->shop_owner_price ?: 0,
+                'gym_owner_discount' => 0,
+                'regular_user_discount' => 0,
+                'shop_owner_discount' => 0,
+                'gym_owner_final_price' => $this->gym_owner_price ?: 0,
+                'regular_user_final_price' => $this->regular_user_price ?: 0,
+                'shop_owner_final_price' => $this->shop_owner_price ?: 0,
                 'discount_percentage' => 0,
                 'discounted_price' => 0,
                 'stock_quantity' => 0,
@@ -611,7 +629,46 @@ new class extends Component
 
     public function updatedVariantCombinations($value, $key)
     {
-        // Check if discount percentage was updated
+        // Check if any discount percentage was updated
+        if (strpos($key, '.gym_owner_discount') !== false || 
+            strpos($key, '.regular_user_discount') !== false || 
+            strpos($key, '.shop_owner_discount') !== false) {
+            
+            $parts = explode('.', $key);
+            $index = $parts[0];
+            
+            // Calculate gym owner final price
+            $gymOwnerDiscount = $this->variant_combinations[$index]['gym_owner_discount'] ?? 0;
+            $gymOwnerPrice = $this->variant_combinations[$index]['gym_owner_price'] ?? 0;
+            
+            if ($gymOwnerDiscount > 0 && $gymOwnerPrice > 0) {
+                $this->variant_combinations[$index]['gym_owner_final_price'] = $gymOwnerPrice * (1 - ($gymOwnerDiscount / 100));
+            } else {
+                $this->variant_combinations[$index]['gym_owner_final_price'] = $gymOwnerPrice;
+            }
+            
+            // Calculate regular user final price
+            $regularUserDiscount = $this->variant_combinations[$index]['regular_user_discount'] ?? 0;
+            $regularUserPrice = $this->variant_combinations[$index]['regular_user_price'] ?? 0;
+            
+            if ($regularUserDiscount > 0 && $regularUserPrice > 0) {
+                $this->variant_combinations[$index]['regular_user_final_price'] = $regularUserPrice * (1 - ($regularUserDiscount / 100));
+            } else {
+                $this->variant_combinations[$index]['regular_user_final_price'] = $regularUserPrice;
+            }
+            
+            // Calculate shop owner final price
+            $shopOwnerDiscount = $this->variant_combinations[$index]['shop_owner_discount'] ?? 0;
+            $shopOwnerPrice = $this->variant_combinations[$index]['shop_owner_price'] ?? 0;
+            
+            if ($shopOwnerDiscount > 0 && $shopOwnerPrice > 0) {
+                $this->variant_combinations[$index]['shop_owner_final_price'] = $shopOwnerPrice * (1 - ($shopOwnerDiscount / 100));
+            } else {
+                $this->variant_combinations[$index]['shop_owner_final_price'] = $shopOwnerPrice;
+            }
+        }
+        
+        // Legacy discount percentage calculation (keeping for backward compatibility)
         if (strpos($key, '.discount_percentage') !== false) {
             $parts = explode('.', $key);
             $index = $parts[0];
@@ -650,6 +707,12 @@ new class extends Component
                 'gym_owner_price' => $combination->gym_owner_price,
                 'regular_user_price' => $combination->regular_user_price,
                 'shop_owner_price' => $combination->shop_owner_price,
+                'gym_owner_discount' => $combination->gym_owner_discount,
+                'regular_user_discount' => $combination->regular_user_discount,
+                'shop_owner_discount' => $combination->shop_owner_discount,
+                'gym_owner_final_price' => $combination->gym_owner_final_price,
+                'regular_user_final_price' => $combination->regular_user_final_price,
+                'shop_owner_final_price' => $combination->shop_owner_final_price,
             ];
         })->toArray();
         
@@ -1061,7 +1124,7 @@ new class extends Component
     <!-- Variant Prices Modal -->
     @if($showVariantPricesModal && $selectedProduct)
         <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div class="bg-white dark:bg-zinc-900 rounded-lg max-w-3xl w-full max-h-[80vh] overflow-y-auto">
+            <div class="bg-white dark:bg-zinc-900 rounded-lg max-w-6xl w-full max-h-[80vh] overflow-y-auto">
                 <div class="p-6">
                     <div class="flex items-center justify-between mb-6">
                         <h2 class="text-xl font-bold text-gray-900 dark:text-white">
@@ -1079,41 +1142,65 @@ new class extends Component
                             <thead class="bg-gray-50 dark:bg-zinc-800">
                                 <tr>
                                     <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Variant</th>
-                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Price</th>
-                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Discount</th>
-                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Final Price</th>
-                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Special Prices</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">User Type Prices</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Discounts</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Final Prices</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white dark:bg-zinc-900 divide-y divide-gray-200 dark:divide-gray-700">
                                 @foreach($variantPrices as $variant)
                                     <tr class="hover:bg-gray-50 dark:hover:bg-zinc-800">
-                                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-white">{{ $variant['variant_name'] }}</td>
-                                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-white">₹{{ number_format($variant['price'], 2) }}</td>
-                                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                                            @if($variant['discount_percentage'] > 0)
-                                                <span class="text-red-600">{{ $variant['discount_percentage'] }}%</span>
-                                            @else
-                                                -
-                                            @endif
-                                        </td>
-                                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                                            @if($variant['discounted_price'])
-                                                <span class="font-medium text-green-600">₹{{ number_format($variant['discounted_price'], 2) }}</span>
-                                            @else
-                                                -
-                                            @endif
+                                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-white font-medium">
+                                            {{ $variant['variant_name'] }}
                                         </td>
                                         <td class="px-4 py-2 text-sm text-gray-900 dark:text-white">
                                             <div class="flex flex-col gap-1">
                                                 @if($variant['gym_owner_price'])
-                                                    <div>Gym Owner: ₹{{ number_format($variant['gym_owner_price'], 2) }}</div>
+                                                    <div><span class="font-medium text-blue-600">Gym Owner:</span> ₹{{ number_format($variant['gym_owner_price'], 2) }}</div>
                                                 @endif
                                                 @if($variant['regular_user_price'])
-                                                    <div>Regular User: ₹{{ number_format($variant['regular_user_price'], 2) }}</div>
+                                                    <div><span class="font-medium text-green-600">Regular User:</span> ₹{{ number_format($variant['regular_user_price'], 2) }}</div>
                                                 @endif
                                                 @if($variant['shop_owner_price'])
-                                                    <div>Shop Owner: ₹{{ number_format($variant['shop_owner_price'], 2) }}</div>
+                                                    <div><span class="font-medium text-purple-600">Shop Owner:</span> ₹{{ number_format($variant['shop_owner_price'], 2) }}</div>
+                                                @endif
+                                            </div>
+                                        </td>
+                                        <td class="px-4 py-2 text-sm text-gray-900 dark:text-white">
+                                            <div class="flex flex-col gap-1">
+                                                <div><span class="font-medium text-blue-600">Gym Owner:</span> 
+                                                    @if($variant['gym_owner_discount'] > 0)
+                                                        <span class="text-red-600">{{ $variant['gym_owner_discount'] }}%</span>
+                                                    @else
+                                                        <span class="text-gray-500">-</span>
+                                                    @endif
+                                                </div>
+                                                <div><span class="font-medium text-green-600">Regular User:</span> 
+                                                    @if($variant['regular_user_discount'] > 0)
+                                                        <span class="text-red-600">{{ $variant['regular_user_discount'] }}%</span>
+                                                    @else
+                                                        <span class="text-gray-500">-</span>
+                                                    @endif
+                                                </div>
+                                                <div><span class="font-medium text-purple-600">Shop Owner:</span> 
+                                                    @if($variant['shop_owner_discount'] > 0)
+                                                        <span class="text-red-600">{{ $variant['shop_owner_discount'] }}%</span>
+                                                    @else
+                                                        <span class="text-gray-500">-</span>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-4 py-2 text-sm text-gray-900 dark:text-white">
+                                            <div class="flex flex-col gap-1">
+                                                @if($variant['gym_owner_final_price'])
+                                                    <div><span class="font-medium text-blue-600">Gym Owner:</span> <span class="font-bold text-green-600">₹{{ number_format($variant['gym_owner_final_price'], 2) }}</span></div>
+                                                @endif
+                                                @if($variant['regular_user_final_price'])
+                                                    <div><span class="font-medium text-green-600">Regular User:</span> <span class="font-bold text-green-600">₹{{ number_format($variant['regular_user_final_price'], 2) }}</span></div>
+                                                @endif
+                                                @if($variant['shop_owner_final_price'])
+                                                    <div><span class="font-medium text-purple-600">Shop Owner:</span> <span class="font-bold text-green-600">₹{{ number_format($variant['shop_owner_final_price'], 2) }}</span></div>
                                                 @endif
                                             </div>
                                         </td>
