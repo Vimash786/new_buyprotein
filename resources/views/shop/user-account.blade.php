@@ -25,10 +25,18 @@
                             data-bs-target="#v-pills-settingsa" type="button" role="tab"
                             aria-controls="v-pills-settingsa" aria-selected="false"><i class="fa-light fa-user"></i>Account
                             Details</button>
-                        <button class="nav-link" id="v-pills-settingsb-tab" data-bs-toggle="pill"
-                            data-bs-target="#v-pills-settingsb" type="button" role="tab"
-                            aria-controls="v-pills-settingsb" aria-selected="false"><a href="login.html"><i
-                                    class="fa-light fa-right-from-bracket"></i>log Out</a></button>
+                        @auth
+                            <button class="nav-link" id="v-pills-settingsb-tab" data-bs-toggle="pill"
+                                data-bs-target="#v-pills-settingsb" type="button" role="tab"
+                                aria-controls="v-pills-settingsb" aria-selected="false">
+                                <a href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                                    <i class="fa-light fa-right-from-bracket"></i>Log Out
+                                </a>
+                            </button>
+                            <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
+                                @csrf
+                            </form>
+                        @endauth
                     </div>
                 </div>
                 <div class="col-lg-9 pl--50 pl_md--10 pl_sm--10 pt_md--30 pt_sm--30">
