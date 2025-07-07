@@ -159,7 +159,7 @@
                             </div>
                         </div>
                         <div class="accont-wishlist-cart-area-header">
-                            <a href="account.html" class="btn-border-only account">
+                            <a href="{{ route('user.account') }}" class="btn-border-only account">
                                 <i class="fa-light fa-user"></i>
                                 <span>Account</span>
                             </a>

@@ -44,23 +44,16 @@
                                 }
                             }'>
                                 <div class="swiper-wrapper">
-                                    <!-- single swiper start -->
-                                    <div class="swiper-slide">
-                                        <div class="banner-bg-image bg_image bg_one-banner  ptb--120 ptb_md--80 ptb_sm--60">
-
+                                    @foreach ($banners as $banner)
+                                        <div class="swiper-slide">
+                                            <a href="{{ $banner['redirect_link'] }}">
+                                                <div class="banner-bg-image ptb--120 ptb_md--80 ptb_sm--60"
+                                                    style="background-image: url('{{ asset('storage/' . $banner['banner_image']) }}'); background-size: cover; background-position: center;">
+                                                </div>
+                                            </a>
                                         </div>
-                                    </div>
-                                    <!-- single swiper start -->
-                                    <!-- single swiper start -->
-                                    <div class="swiper-slide">
-                                        <div
-                                            class="banner-bg-image bg_image bg_one-banner two  ptb--120 ptb_md--80 ptb_sm--60">
-
-                                        </div>
-                                    </div>
-                                    <!-- single swiper start -->
+                                    @endforeach
                                 </div>
-
                                 <button class="swiper-button-next"><i class="fa-regular fa-arrow-right"></i></button>
                                 <button class="swiper-button-prev"><i class="fa-regular fa-arrow-left"></i></button>
                             </div>
@@ -145,7 +138,8 @@
                             Everyday essential
                         </h2>
                         <div class="countdown">
-                            <div class="countDown"><a href="{{ route('shop', ['type' => 'everyday-essential']) }}" class="bg-light p-3">View All ></a></div>
+                            <div class="countDown"><a href="{{ route('shop', ['type' => 'everyday-essential']) }}"
+                                    class="bg-light p-3">View All ></a></div>
                         </div>
                         {{-- <div class="next-prev-swiper-wrapper">
                             <div class="swiper-button-prev"><i class="fa-regular fa-chevron-left"></i></div>
@@ -202,7 +196,8 @@
                                         <div class="single-shopping-card-one">
                                             <!-- iamge and sction area start -->
                                             <div class="image-and-action-area-wrapper">
-                                                <a href="{{ route('product.details', Crypt::encrypt($everyDayProduct->id)) }}" class="thumbnail-preview">
+                                                <a href="{{ route('product.details', Crypt::encrypt($everyDayProduct->id)) }}"
+                                                    class="thumbnail-preview">
                                                     @if ($everyDayProduct->discount_percentage > 0)
                                                         <div class="badge">
                                                             <span>{{ $everyDayProduct->discount_percentage }}% <br>
@@ -234,7 +229,8 @@
 
                                             <div class="body-content">
 
-                                                <a href="{{ route('product.details', Crypt::encrypt($everyDayProduct->id)) }}">
+                                                <a
+                                                    href="{{ route('product.details', Crypt::encrypt($everyDayProduct->id)) }}">
                                                     <h4 class="title">{{ $everyDayProduct->name }}</h4>
                                                 </a>
                                                 <span class="availability">500g Pack</span>
@@ -287,7 +283,8 @@
                             Popular Picks
                         </h2>
                         <div class="countdown">
-                            <div class="countDown"><a href="{{ route('shop', ['type' => 'popular-picks']) }}" class="bg-light p-3">View All ></a></div>
+                            <div class="countDown"><a href="{{ route('shop', ['type' => 'popular-picks']) }}"
+                                    class="bg-light p-3">View All ></a></div>
                         </div>
                     </div>
                 </div>
@@ -300,7 +297,8 @@
                                 @foreach ($populerProducts as $populerProduct)
                                     <div class="col-lg-4">
                                         <div class="single-shopping-card-one discount-offer">
-                                            <a href="{{ route('product.details', Crypt::encrypt($populerProduct->id)) }}" class="thumbnail-preview">
+                                            <a href="{{ route('product.details', Crypt::encrypt($populerProduct->id)) }}"
+                                                class="thumbnail-preview">
                                                 @if ($populerProduct->discount_percentage > 0)
                                                     <div class="badge">
                                                         <span>{{ $populerProduct->discount_percentage }}% <br>
@@ -314,7 +312,8 @@
                                             </a>
                                             <div class="body-content">
 
-                                                <a href="{{ route('product.details', Crypt::encrypt($populerProduct->id)) }}">
+                                                <a
+                                                    href="{{ route('product.details', Crypt::encrypt($populerProduct->id)) }}">
                                                     <h4 class="title">{{ $populerProduct->name }}</h4>
                                                 </a>
                                                 <span class="availability">500g Pack</span>
@@ -368,7 +367,8 @@
                             New Arrival
                         </h2>
                         <div class="countdown">
-                            <div class="countDown"><a href="{{ route('shop', ['type' => 'new-arrivals']) }}" class="bg-light p-3">View All ></a></div>
+                            <div class="countDown"><a href="{{ route('shop', ['type' => 'new-arrivals']) }}"
+                                    class="bg-light p-3">View All ></a></div>
                         </div>
                     </div>
                 </div>
@@ -385,7 +385,8 @@
                                         <div class="single-shopping-card-one">
                                             <!-- iamge and sction area start -->
                                             <div class="image-and-action-area-wrapper">
-                                                <a href="{{ route('product.details', Crypt::encrypt($lat_pro->id)) }}" class="thumbnail-preview">
+                                                <a href="{{ route('product.details', Crypt::encrypt($lat_pro->id)) }}"
+                                                    class="thumbnail-preview">
                                                     @if ($lat_pro->discount_percentage > 0)
                                                         <div class="badge">
                                                             <span>{{ $lat_pro->discount_percentage }}% <br>
@@ -568,7 +569,8 @@
                             Exclusive deal & offers
                         </h2>
                         <div class="countdown">
-                            <div class="countDown"><a href="{{ route('shop', ['type' => 'exclusive-deal']) }}" class="bg-light p-3">View All ></a></div>
+                            <div class="countDown"><a href="{{ route('shop', ['type' => 'exclusive-deal']) }}"
+                                    class="bg-light p-3">View All ></a></div>
                         </div>
                     </div>
                 </div>
@@ -580,7 +582,8 @@
                             @foreach ($offers as $offer)
                                 <div class="col-xl-3 col-md-6 col-sm-12 col-12">
                                     <div class="single-shopping-card-one tranding-product">
-                                        <a href="{{ route('product.details', Crypt::encrypt($offer->id)) }}" class="thumbnail-preview">
+                                        <a href="{{ route('product.details', Crypt::encrypt($offer->id)) }}"
+                                            class="thumbnail-preview">
                                             @if ($offer->discount_percentage > 0)
                                                 <div class="badge">
                                                     <span>{{ $offer->discount_percentage }}% <br>
