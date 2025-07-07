@@ -54,7 +54,18 @@ new class extends Component
 
     public function with()
     {
+        $user = auth()->user();
+        $seller = \App\Models\Sellers::where('user_id', $user->id)->first();
+        $isSeller = $seller !== null;
+
         $query = orders::with(['product', 'user', 'product.seller']);
+
+        // If user is a seller, only show orders for their products
+        if ($isSeller) {
+            $query->whereHas('product', function($productQuery) use ($seller) {
+                $productQuery->where('seller_id', $seller->id);
+            });
+        }
 
         if ($this->search) {
             $query->where(function($q) {
@@ -71,13 +82,44 @@ new class extends Component
             $query->where('status', $this->statusFilter);
         }
 
-        $totalOrders = orders::count();
-        $pendingOrders = orders::where('status', 'pending')->count();
-        $confirmedOrders = orders::where('status', 'confirmed')->count();
-        $shippedOrders = orders::where('status', 'shipped')->count();
-        $deliveredOrders = orders::where('status', 'delivered')->count();
-        $cancelledOrders = orders::where('status', 'cancelled')->count();
-        $totalRevenue = orders::whereIn('status', ['confirmed', 'shipped', 'delivered'])->sum('total_amount');
+        // Calculate statistics based on user role
+        if ($isSeller) {
+            $totalOrders = orders::whereHas('product', function($productQuery) use ($seller) {
+                $productQuery->where('seller_id', $seller->id);
+            })->count();
+            
+            $pendingOrders = orders::whereHas('product', function($productQuery) use ($seller) {
+                $productQuery->where('seller_id', $seller->id);
+            })->where('status', 'pending')->count();
+            
+            $confirmedOrders = orders::whereHas('product', function($productQuery) use ($seller) {
+                $productQuery->where('seller_id', $seller->id);
+            })->where('status', 'confirmed')->count();
+            
+            $shippedOrders = orders::whereHas('product', function($productQuery) use ($seller) {
+                $productQuery->where('seller_id', $seller->id);
+            })->where('status', 'shipped')->count();
+            
+            $deliveredOrders = orders::whereHas('product', function($productQuery) use ($seller) {
+                $productQuery->where('seller_id', $seller->id);
+            })->where('status', 'delivered')->count();
+            
+            $cancelledOrders = orders::whereHas('product', function($productQuery) use ($seller) {
+                $productQuery->where('seller_id', $seller->id);
+            })->where('status', 'cancelled')->count();
+            
+            $totalRevenue = orders::whereHas('product', function($productQuery) use ($seller) {
+                $productQuery->where('seller_id', $seller->id);
+            })->whereIn('status', ['confirmed', 'shipped', 'delivered'])->sum('total_amount');
+        } else {
+            $totalOrders = orders::count();
+            $pendingOrders = orders::where('status', 'pending')->count();
+            $confirmedOrders = orders::where('status', 'confirmed')->count();
+            $shippedOrders = orders::where('status', 'shipped')->count();
+            $deliveredOrders = orders::where('status', 'delivered')->count();
+            $cancelledOrders = orders::where('status', 'cancelled')->count();
+            $totalRevenue = orders::whereIn('status', ['confirmed', 'shipped', 'delivered'])->sum('total_amount');
+        }
 
         return [
             'orders' => $query->latest()->paginate(10),
@@ -90,6 +132,8 @@ new class extends Component
             'deliveredOrders' => $deliveredOrders,
             'cancelledOrders' => $cancelledOrders,
             'totalRevenue' => $totalRevenue,
+            'isSeller' => $isSeller,
+            'currentSeller' => $seller,
         ];
     }
 
