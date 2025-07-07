@@ -12,6 +12,9 @@ Route::get('/', [DashboardController::class, 'index'])->name('home');
 Route::get('/shop/{type?}/{id?}', [DashboardController::class , 'shop'])->name('shop');
 Route::get('/product-details/{id}', [DashboardController::class, 'productDetails'])->name('product.details');
 
+// Public Blog Routes
+Volt::route('/blog', 'blogs.index')->name('blog.index');
+
 // Route::get('/', function () {
 //     return view('dashboard');
 // })->name('home');
@@ -34,6 +37,7 @@ Route::middleware(['auth'])->group(function () {
     Volt::route('users', 'users.manage')->name('users.manage');
     Volt::route('categories', 'categories.manage')->name('categories.manage');
     Volt::route('banners', 'banners.manage')->name('banners.manage');
+    Volt::route('blogs', 'blogs.manage')->name('blogs.manage');
     Route::get('coupons', \App\Livewire\Coupons\ManageCoupons::class)->name('coupons.manage');
 });
 

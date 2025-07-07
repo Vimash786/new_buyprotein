@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Category;
 use App\Models\SubCategory;
 use App\Models\Banner;
+use App\Models\Blog;
 use Livewire\Volt\Component;
 
 new class extends Component
@@ -24,6 +25,8 @@ new class extends Component
             'totalSubCategories' => SubCategory::count(),
             'totalBanners' => Banner::count(),
             'activeBanners' => Banner::where('status', 'active')->count(),
+            'totalBlogs' => Blog::count(),
+            'publishedBlogs' => Blog::where('status', 'published')->count(),
         ];
     }
 }; ?>
@@ -105,6 +108,19 @@ new class extends Component
                             <div>
                                 <h3 class="font-semibold text-gray-900 dark:text-white">Manage Coupons</h3>
                                 <p class="text-sm text-gray-600 dark:text-gray-300">Create, assign, and manage coupons</p>
+                            </div>
+                        </a>
+
+                        <a href="{{ route('blogs.manage') }}" wire:navigate 
+                           class="bg-indigo-50 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800 rounded-lg p-4 flex items-center space-x-3 transition-colors">
+                            <div class="bg-indigo-500 p-2 rounded-lg">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-900 dark:text-white">Manage Blogs</h3>
+                                <p class="text-sm text-gray-600 dark:text-gray-300">Create and manage blog posts</p>
                             </div>
                         </a>
                         @endif
@@ -189,6 +205,22 @@ new class extends Component
                         <div class="w-12 h-12 bg-cyan-100 dark:bg-cyan-900/50 rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Total Blogs -->
+                <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="flex-1">
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Blogs</h3>
+                            <p class="text-3xl font-bold text-indigo-600">{{ $totalBlogs }}</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">{{ $publishedBlogs }} published blogs</p>
+                        </div>
+                        <div class="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/50 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
                         </div>
                     </div>
