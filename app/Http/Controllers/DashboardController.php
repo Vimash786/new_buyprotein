@@ -79,7 +79,7 @@ class DashboardController extends Controller
 
     public function userAccount() {
         if (Auth::user() != null) {
-
+            return view('shop.user-account');
         } else {
             return redirect()->route('login');
         }
