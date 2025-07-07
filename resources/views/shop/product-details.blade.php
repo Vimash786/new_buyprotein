@@ -13,6 +13,7 @@
         foreach ($product->images as $image) {
             $imagesArray[] = $image->image_path;
         }
+        $allData = collect();
     @endphp
 
     <div class="rts-chop-details-area rts-section-gap bg_light-1">
@@ -96,7 +97,7 @@
                                                 {{ $product->description }}
                                             </p>
                                             <span class="product-price mb--15 d-block"
-                                                style="color: #DC2626; font-weight: 600;"> $36.25<span
+                                                style="color: #DC2626; font-weight: 600;" id="product-price"> ₹{{ $product->regular_user_price }}<span
                                                     class="old-price ml--15">$69.35</span></span>
                                             <div class="product-bottom-action">
                                                 <div class="cart-edits">
@@ -359,43 +360,58 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-lg-3  rts-sticky-column-item">
-                        <div class="theiaStickySidebar">
-                            <div class="shop-sight-sticky-sidevbar  mb--20">
-                                <h6 class="title">Varients</h6>
-                                <div class="single-offer-area">
-                                    <div class="icon">
-                                        <img src="assets/images/shop/01.svg" alt="icon">
-                                    </div>
-                                    <div class="details">
-                                        <p>Get %5 instant discount for the 1st Flipkart Order using Ekomart UPI T&C</p>
-                                    </div>
+                    @if ($product->variants && $product->variants->count() > 0)
+                        <div class="col-lg-3  rts-sticky-column-item">
+                            <div class="theiaStickySidebar">
+                                <div class="shop-sight-sticky-sidevbar  mb--20">
+                                    <h6 class="title">Varients</h6>
+                                    @foreach ($product->variants as $variant)
+                                        <h4>{{ $variant->name }}</h4>
+
+                                        @php
+                                            $allData = isset($product->variantCombinations) ? $product->variantCombinations : collect();
+                                            $allOptions = collect();
+
+                                            if (
+                                                $product->variantCombinations &&
+                                                $product->variantCombinations->count()
+                                            ) {
+                                                foreach ($product->variantCombinations as $combination) {
+                                                    $optionIds = is_array($combination->variant_options)
+                                                        ? $combination->variant_options
+                                                        : json_decode($combination->variant_options, true);
+
+                                                    $options = \App\Models\ProductVariantOption::whereIn(
+                                                        'id',
+                                                        $optionIds,
+                                                    )
+                                                        ->where('product_variant_id', $variant->id)
+                                                        ->get();
+
+                                                    $allOptions = $allOptions->merge($options);
+                                                }
+
+                                                $uniqueOptions = $allOptions->unique('id');
+                                            }
+                                        @endphp
+
+                                        @if (!empty($uniqueOptions) && $uniqueOptions->count())
+                                            @foreach ($uniqueOptions as $option)
+                                                <label>
+                                                    <input type="radio" name="variant_{{ $variant->id }}"
+                                                        value="{{ $option->id }}">
+                                                    {{ $option->value }}
+                                                </label><br>
+                                            @endforeach
+                                        @else
+                                            <p>No combinations available</p>
+                                        @endif
+                                    @endforeach
+
                                 </div>
-                                <div class="single-offer-area">
-                                    <div class="icon">
-                                        <img src="assets/images/shop/02.svg" alt="icon">
-                                    </div>
-                                    <div class="details">
-                                        <p>Flat $250 off on Citi-branded Credit Card EMI Transactions on orders of $30 and
-                                            above T&C</p>
-                                    </div>
-                                </div>
-                                <div class="single-offer-area">
-                                    <div class="icon">
-                                        <img src="assets/images/shop/03.svg" alt="icon">
-                                    </div>
-                                    <div class="details">
-                                        <p>Free Worldwide Shipping on all
-                                            orders over $100</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="our-payment-method">
-                                <h5 class="title">Guaranteed Safe Checkout</h5>
-                                <img src="assets/images/shop/03.png" alt="">
                             </div>
                         </div>
-                    </div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -459,7 +475,7 @@
                                         <div class="single-shopping-card-one">
                                             <!-- iamge and sction area start -->
                                             <div class="image-and-action-area-wrapper">
-                                                <a href="#" class="thumbnail-preview">
+                                                <a href="{{ route('product.details', Crypt::encrypt($product->id)) }}" class="thumbnail-preview">
                                                     @if ($product->discount_percentage > 0)
                                                         <div class="badge">
                                                             <span>{{ $product->discount_percentage }}% <br>
@@ -489,7 +505,7 @@
                                             <!-- iamge and sction area start -->
 
                                             <div class="body-content">
-                                                <a href="#">
+                                                <a href="{{ route('product.details', Crypt::encrypt($product->id)) }}">
                                                     <h4 class="title">{{ $product->name }}</h4>
                                                 </a>
                                                 <span class="availability">500g Pack</span>
@@ -760,3 +776,37 @@
     </div>
     <!-- successfully add in wishlist end -->
 @endsection
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const variantCombinations = @json($allData);
+        const totalVariants = {{ $product->variants->count() }};
+        const selectedOptions = {};
+
+        document.querySelectorAll('input[type=radio][name^="variant_"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                const variantId = this.name.split('_')[1];
+                const optionId = parseInt(this.value);
+                selectedOptions[variantId] = optionId;
+
+                const selectedOptionIds = Object.values(selectedOptions).map(Number).sort((a,
+                    b) => a - b);
+
+                const matchingCombination = variantCombinations.find(comb => {
+                    if (!Array.isArray(comb.variant_options)) return false;
+
+                    const combOptionIds = comb.variant_options.map(
+                    Number);
+
+                    return selectedOptionIds.every(id => combOptionIds.includes(id));
+                });
+
+                if (matchingCombination) {
+                    document.getElementById('product-price').textContent = "₹" + matchingCombination.regular_user_price;
+                } else {
+                    document.getElementById('product-price').textContent = "₹{{ $product->price }}";
+                }
+            });
+        });
+    });
+</script>

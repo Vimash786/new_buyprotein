@@ -63,18 +63,18 @@ class DashboardController extends Controller
 
     public function productDetails($id)
     {
-        try {
+        // try {
             $id = Crypt::decrypt($id);
-            $product = products::with(['subCategory', 'category', 'seller', 'images'])->findOrFail($id);
+            $product = products::with(['subCategory', 'category', 'seller', 'images', 'variants', 'variantCombinations'])->findOrFail($id);
             $relatedProducts = products::where('category_id', $product->category_id)
                 ->where('id', '!=', $id)
                 ->limit(10)
                 ->get();
 
             return view('shop.product-details', compact('product', 'relatedProducts'));
-        } catch (Exception $e) {
-            return redirect()->back()->with('error', 'Invalid product ID.');
-        }
+        // } catch (Exception $e) {
+        //     return redirect()->back()->with('error', 'Invalid product ID.');
+        // }
     }
 
     public function userAccount() {
