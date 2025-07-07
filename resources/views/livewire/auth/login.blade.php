@@ -40,11 +40,18 @@ new #[Layout('components.layouts.auth')] class extends Component {
         RateLimiter::clear($this->throttleKey());
         Session::regenerate();
         $profile_completed = Auth::user()->profile_completed;
-         if($profile_completed){
-            $this->redirectIntended(default: route('dashboard', absolute: false), navigate: false);
-         }else{
+        $user_role = Auth::user()->role;
+        if ($profile_completed) {
+            if ($user_role == 'Super') {
+            $this->redirectIntended(route('dashboard', absolute: false), navigate: true);
+            } elseif ($user_role == 'Seller') {
+            $this->redirectIntended(route('dashboard', absolute: false), navigate: true);
+            } else {
+            $this->redirectIntended(route('home', absolute: false), navigate: true);
+            }
+        } else {
             $this->redirect(route('extra.info', absolute: false), navigate: true);
-         }
+        }
     }
 
     /**

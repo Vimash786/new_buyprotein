@@ -22,6 +22,7 @@
                     <flux:navlist.item icon="photo" :href="route('banners.manage')" :current="request()->routeIs('banners.manage')" wire:navigate>{{ __('Banners') }}</flux:navlist.item>
                     <flux:navlist.item icon="ticket" :href="route('coupons.manage')" :current="request()->routeIs('coupons.manage')" wire:navigate>{{ __('Coupons') }}</flux:navlist.item>
                     <flux:navlist.item icon="users" :href="route('users.manage')" :current="request()->routeIs('users.manage')" wire:navigate>{{ __('Users') }}</flux:navlist.item>
+                    <flux:navlist.item icon="users" :href="route('blogs.manage')" :current="request()->routeIs('blogs.manage')" wire:navigate>{{ __('Blogs') }}</flux:navlist.item>
                     @endif
                 </flux:navlist.group>
             </flux:navlist>

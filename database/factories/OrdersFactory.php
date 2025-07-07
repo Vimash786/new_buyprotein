@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Models\products;
 use App\Models\User;
+
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -27,7 +28,17 @@ class OrdersFactory extends Factory
             'user_id' => User::factory(),
             'quantity' => $quantity,
             'unit_price' => $unitPrice,
-            'total_amount' => $totalAmount,
+            'total_amount' => function () use ($quantity, $unitPrice) {
+                $product = products::find($this->faker->randomElement(products::pluck('id')->toArray()));
+                $finalPrice = $product->gym_owner_final_price ?? $product->regular_user_final_price ?? $product->shop_owner_final_price;
+
+                if (is_null($finalPrice)) {
+                    $variantPrice = $product->variants()->first()->price ?? $unitPrice;
+                    return $quantity * $variantPrice;
+                }
+
+                return $quantity * $finalPrice;
+            },
             'status' => $this->faker->randomElement(['pending', 'confirmed', 'shipped', 'delivered', 'cancelled']),
             'notes' => $this->faker->optional()->sentence(),
         ];
