@@ -14,20 +14,51 @@ new class extends Component
 {
     public function with()
     {
-        return [
-            'totalSellers' => Sellers::count(),
-            'approvedSellers' => Sellers::where('status', 'approved')->count(),
-            'pendingSellers' => Sellers::where('status', 'not_approved')->count(),
-            'totalProducts' => products::count(),
-            'totalOrders' => orders::count(),
-            'totalUsers' => User::count(),
-            'totalCategories' => Category::count(),
-            'totalSubCategories' => SubCategory::count(),
-            'totalBanners' => Banner::count(),
-            'activeBanners' => Banner::where('status', 'active')->count(),
-            'totalBlogs' => Blog::count(),
-            'publishedBlogs' => Blog::where('status', 'published')->count(),
-        ];
+        $user = auth()->user();
+        $seller = Sellers::where('user_id', $user->id)->first();
+        $isSeller = $seller !== null;
+
+        if ($isSeller) {
+            // Seller-specific data
+            return [
+                'totalSellers' => 1, // Just the current seller
+                'approvedSellers' => $seller->status === 'approved' ? 1 : 0,
+                'pendingSellers' => $seller->status === 'not_approved' ? 1 : 0,
+                'totalProducts' => products::where('seller_id', $seller->id)->count(),
+                'totalOrders' => orders::whereIn('product_id', 
+                    products::where('seller_id', $seller->id)->pluck('id')
+                )->count(),
+                'totalUsers' => User::count(), // Keep global count for reference
+                'totalCategories' => Category::count(),
+                'totalSubCategories' => SubCategory::count(),
+                'totalBanners' => Banner::count(),
+                'activeBanners' => Banner::where('status', 'active')->count(),
+                'totalBlogs' => Blog::count(),
+                'publishedBlogs' => Blog::where('status', 'published')->count(),
+                'isSeller' => true,
+                'sellerName' => $seller->company_name,
+                'sellerStatus' => $seller->status,
+            ];
+        } else {
+            // Admin/Super Admin data (global)
+            return [
+                'totalSellers' => Sellers::count(),
+                'approvedSellers' => Sellers::where('status', 'approved')->count(),
+                'pendingSellers' => Sellers::where('status', 'not_approved')->count(),
+                'totalProducts' => products::count(),
+                'totalOrders' => orders::count(),
+                'totalUsers' => User::count(),
+                'totalCategories' => Category::count(),
+                'totalSubCategories' => SubCategory::count(),
+                'totalBanners' => Banner::count(),
+                'activeBanners' => Banner::where('status', 'active')->count(),
+                'totalBlogs' => Blog::count(),
+                'publishedBlogs' => Blog::where('status', 'published')->count(),
+                'isSeller' => false,
+                'sellerName' => null,
+                'sellerStatus' => null,
+            ];
+        }
     }
 }; ?>
 
@@ -36,93 +67,156 @@ new class extends Component
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Header -->
             <div class="mb-8">
-                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
-                <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">Overview of your BuyProtein platform</p>
-            </div>
-
-            <!-- Quick Actions -->
+                @if($isSeller)
+                    <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Seller Dashboard</h1>
+                    <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                        Welcome back, {{ $sellerName }}! 
+                        @if($sellerStatus === 'approved')
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300">
+                                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                </svg>
+                                Approved
+                            </span>
+                        @else
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300">
+                                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
+                                </svg>
+                                Pending Approval
+                            </span>
+                        @endif
+                    </p>
+                @else
+                    <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Admin Dashboard</h1>
+                    <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">Overview of your BuyProtein platform</p>
+                @endif
+            </div>            <!-- Quick Actions -->
             <div class="mb-8">
                 <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
                     <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h2>
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <a href="{{ route('sellers.manage') }}" wire:navigate 
-                           class="bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 flex items-center space-x-3 transition-colors">
-                            <div class="bg-blue-500 p-2 rounded-lg">
-                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                                </svg>
-                            </div>
-                            <div>
-                                <h3 class="font-semibold text-gray-900 dark:text-white">Manage Sellers</h3>
-                                <p class="text-sm text-gray-600 dark:text-gray-300">Add, edit, and approve sellers</p>
-                            </div>
-                        </a>
-                        
-                        <a href="{{ route('products.manage') }}" wire:navigate 
-                           class="bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/30 border border-purple-200 dark:border-purple-800 rounded-lg p-4 flex items-center space-x-3 transition-colors">
-                            <div class="bg-purple-500 p-2 rounded-lg">
-                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                                </svg>
-                            </div>
-                            <div>
-                                <h3 class="font-semibold text-gray-900 dark:text-white">Manage Products</h3>
-                                <p class="text-sm text-gray-600 dark:text-gray-300">Add, edit, and manage products</p>
-                            </div>
-                        </a>
+                        @if($isSeller)
+                            <!-- Seller Actions -->
+                            <a href="{{ route('products.manage') }}" wire:navigate 
+                               class="bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/30 border border-purple-200 dark:border-purple-800 rounded-lg p-4 flex items-center space-x-3 transition-colors">
+                                <div class="bg-purple-500 p-2 rounded-lg">
+                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold text-gray-900 dark:text-white">My Products</h3>
+                                    <p class="text-sm text-gray-600 dark:text-gray-300">Manage your products</p>
+                                </div>
+                            </a>
 
-                        <a href="{{ route('categories.manage') }}" wire:navigate 
-                           class="bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-lg p-4 flex items-center space-x-3 transition-colors">
-                            <div class="bg-green-500 p-2 rounded-lg">
-                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                                </svg>
-                            </div>
-                            <div>
-                                <h3 class="font-semibold text-gray-900 dark:text-white">Manage Categories</h3>
-                                <p class="text-sm text-gray-600 dark:text-gray-300">Add, edit categories & sub-categories</p>
-                            </div>
-                        </a>
+                            <a href="{{ route('orders.manage') }}" wire:navigate 
+                               class="bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-lg p-4 flex items-center space-x-3 transition-colors">
+                                <div class="bg-green-500 p-2 rounded-lg">
+                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold text-gray-900 dark:text-white">My Orders</h3>
+                                    <p class="text-sm text-gray-600 dark:text-gray-300">View product orders</p>
+                                </div>
+                            </a>
 
-                        <a href="{{ route('banners.manage') }}" wire:navigate 
-                           class="bg-cyan-50 dark:bg-cyan-900/20 hover:bg-cyan-100 dark:hover:bg-cyan-900/30 border border-cyan-200 dark:border-cyan-800 rounded-lg p-4 flex items-center space-x-3 transition-colors">
-                            <div class="bg-cyan-500 p-2 rounded-lg">
-                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                </svg>
-                            </div>
-                            <div>
-                                <h3 class="font-semibold text-gray-900 dark:text-white">Manage Banners</h3>
-                                <p class="text-sm text-gray-600 dark:text-gray-300">Add, edit, and manage banners</p>
-                            </div>
-                        </a>
+                            <a href="{{ route('settings.profile') }}" wire:navigate 
+                               class="bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 flex items-center space-x-3 transition-colors">
+                                <div class="bg-blue-500 p-2 rounded-lg">
+                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold text-gray-900 dark:text-white">Profile</h3>
+                                    <p class="text-sm text-gray-600 dark:text-gray-300">Update seller profile</p>
+                                </div>
+                            </a>
+                        @else
+                            <!-- Admin Actions -->
+                            <a href="{{ route('sellers.manage') }}" wire:navigate 
+                               class="bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 flex items-center space-x-3 transition-colors">
+                                <div class="bg-blue-500 p-2 rounded-lg">
+                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold text-gray-900 dark:text-white">Manage Sellers</h3>
+                                    <p class="text-sm text-gray-600 dark:text-gray-300">Add, edit, and approve sellers</p>
+                                </div>
+                            </a>
+                            
+                            <a href="{{ route('products.manage') }}" wire:navigate 
+                               class="bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/30 border border-purple-200 dark:border-purple-800 rounded-lg p-4 flex items-center space-x-3 transition-colors">
+                                <div class="bg-purple-500 p-2 rounded-lg">
+                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold text-gray-900 dark:text-white">Manage Products</h3>
+                                    <p class="text-sm text-gray-600 dark:text-gray-300">Add, edit, and manage products</p>
+                                </div>
+                            </a>
 
-                        @if(auth()->user()->role === 'Super')
-                        <a href="{{ route('coupons.manage') }}" wire:navigate 
-                           class="bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-lg p-4 flex items-center space-x-3 transition-colors">
-                            <div class="bg-amber-500 p-2 rounded-lg">
-                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
-                                </svg>
-                            </div>
-                            <div>
-                                <h3 class="font-semibold text-gray-900 dark:text-white">Manage Coupons</h3>
-                                <p class="text-sm text-gray-600 dark:text-gray-300">Create, assign, and manage coupons</p>
-                            </div>
-                        </a>
+                            <a href="{{ route('categories.manage') }}" wire:navigate 
+                               class="bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-lg p-4 flex items-center space-x-3 transition-colors">
+                                <div class="bg-green-500 p-2 rounded-lg">
+                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold text-gray-900 dark:text-white">Manage Categories</h3>
+                                    <p class="text-sm text-gray-600 dark:text-gray-300">Add, edit categories & sub-categories</p>
+                                </div>
+                            </a>
 
-                        <a href="{{ route('blogs.manage') }}" wire:navigate 
-                           class="bg-indigo-50 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800 rounded-lg p-4 flex items-center space-x-3 transition-colors">
-                            <div class="bg-indigo-500 p-2 rounded-lg">
-                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
-                            </div>
-                            <div>
-                                <h3 class="font-semibold text-gray-900 dark:text-white">Manage Blogs</h3>
-                                <p class="text-sm text-gray-600 dark:text-gray-300">Create and manage blog posts</p>
-                            </div>
-                        </a>
+                            <a href="{{ route('banners.manage') }}" wire:navigate 
+                               class="bg-cyan-50 dark:bg-cyan-900/20 hover:bg-cyan-100 dark:hover:bg-cyan-900/30 border border-cyan-200 dark:border-cyan-800 rounded-lg p-4 flex items-center space-x-3 transition-colors">
+                                <div class="bg-cyan-500 p-2 rounded-lg">
+                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold text-gray-900 dark:text-white">Manage Banners</h3>
+                                    <p class="text-sm text-gray-600 dark:text-gray-300">Add, edit, and manage banners</p>
+                                </div>
+                            </a>
+
+                            @if(auth()->user()->role === 'Super')
+                            <a href="{{ route('coupons.manage') }}" wire:navigate 
+                               class="bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-lg p-4 flex items-center space-x-3 transition-colors">
+                                <div class="bg-amber-500 p-2 rounded-lg">
+                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold text-gray-900 dark:text-white">Manage Coupons</h3>
+                                    <p class="text-sm text-gray-600 dark:text-gray-300">Create, assign, and manage coupons</p>
+                                </div>
+                            </a>
+
+                            <a href="{{ route('blogs.manage') }}" wire:navigate 
+                               class="bg-indigo-50 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800 rounded-lg p-4 flex items-center space-x-3 transition-colors">
+                                <div class="bg-indigo-500 p-2 rounded-lg">
+                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold text-gray-900 dark:text-white">Manage Blogs</h3>
+                                    <p class="text-sm text-gray-600 dark:text-gray-300">Create and manage blog posts</p>
+                                </div>
+                            </a>
+                            @endif
                         @endif
                     </div>
                 </div>
@@ -134,9 +228,21 @@ new class extends Component
                 <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
                     <div class="flex items-center">
                         <div class="flex-1">
-                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Total Sellers</h3>
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">
+                                @if($isSeller)
+                                    My Status
+                                @else
+                                    Total Sellers
+                                @endif
+                            </h3>
                             <p class="text-3xl font-bold text-blue-600">{{ $totalSellers }}</p>
-                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">Registered companies</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                                @if($isSeller)
+                                    {{ $sellerStatus === 'approved' ? 'Approved seller' : 'Pending approval' }}
+                                @else
+                                    Registered companies
+                                @endif
+                            </p>
                         </div>
                         <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/50 rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -150,9 +256,21 @@ new class extends Component
                 <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
                     <div class="flex items-center">
                         <div class="flex-1">
-                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Total Products</h3>
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">
+                                @if($isSeller)
+                                    My Products
+                                @else
+                                    Total Products
+                                @endif
+                            </h3>
                             <p class="text-3xl font-bold text-purple-600">{{ $totalProducts }}</p>
-                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">Available in catalog</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                                @if($isSeller)
+                                    Products in my catalog
+                                @else
+                                    Available in catalog
+                                @endif
+                            </p>
                         </div>
                         <div class="w-12 h-12 bg-purple-100 dark:bg-purple-900/50 rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -162,6 +280,7 @@ new class extends Component
                     </div>
                 </div>
 
+                @if(!$isSeller)
                 <!-- Total Categories -->
                 <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
                     <div class="flex items-center">
@@ -225,14 +344,27 @@ new class extends Component
                         </div>
                     </div>
                 </div>
+                @endif
 
                 <!-- Total Orders -->
                 <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
                     <div class="flex items-center">
                         <div class="flex-1">
-                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Total Orders</h3>
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">
+                                @if($isSeller)
+                                    My Orders
+                                @else
+                                    Total Orders
+                                @endif
+                            </h3>
                             <p class="text-3xl font-bold text-indigo-600">{{ $totalOrders }}</p>
-                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">All time orders</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                                @if($isSeller)
+                                    Orders for my products
+                                @else
+                                    All time orders
+                                @endif
+                            </p>
                         </div>
                         <div class="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/50 rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -242,6 +374,7 @@ new class extends Component
                     </div>
                 </div>
 
+                @if(!$isSeller)
                 <!-- Total Users -->
                 <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
                     <div class="flex items-center">
@@ -289,61 +422,127 @@ new class extends Component
                         </div>
                     </div>
                 </div>
+                @endif
             </div>
 
             <!-- Recent Activity -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Seller Status Breakdown -->
-                <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Seller Status</h3>
-                    <div class="space-y-3">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center">
-                                <div class="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
-                                <span class="text-sm text-gray-600 dark:text-gray-300">Approved</span>
+                @if($isSeller)
+                    <!-- Seller Performance -->
+                    <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">My Performance</h3>
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <div class="w-3 h-3 bg-purple-500 rounded-full mr-3"></div>
+                                    <span class="text-sm text-gray-600 dark:text-gray-300">Products Listed</span>
+                                </div>
+                                <span class="text-sm font-medium text-gray-900 dark:text-white">{{ $totalProducts }}</span>
                             </div>
-                            <span class="text-sm font-medium text-gray-900 dark:text-white">{{ $approvedSellers }}</span>
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <div class="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
+                                    <span class="text-sm text-gray-600 dark:text-gray-300">Orders Received</span>
+                                </div>
+                                <span class="text-sm font-medium text-gray-900 dark:text-white">{{ $totalOrders }}</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <div class="w-3 h-3 bg-blue-500 rounded-full mr-3"></div>
+                                    <span class="text-sm text-gray-600 dark:text-gray-300">Account Status</span>
+                                </div>
+                                <span class="text-sm font-medium {{ $sellerStatus === 'approved' ? 'text-green-600' : 'text-yellow-600' }}">
+                                    {{ ucfirst($sellerStatus) }}
+                                </span>
+                            </div>
                         </div>
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center">
-                                <div class="w-3 h-3 bg-yellow-500 rounded-full mr-3"></div>
-                                <span class="text-sm text-gray-600 dark:text-gray-300">Pending</span>
-                            </div>
-                            <span class="text-sm font-medium text-gray-900 dark:text-white">{{ $pendingSellers }}</span>
+                        <div class="mt-4">
+                            <a href="{{ route('products.manage') }}" wire:navigate 
+                               class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium">
+                                Manage my products →
+                            </a>
                         </div>
                     </div>
-                    <div class="mt-4">
-                        <a href="{{ route('sellers.manage') }}" wire:navigate 
-                           class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium">
-                            View all sellers →
-                        </a>
-                    </div>
-                </div>
 
-                <!-- Quick Stats -->
-                <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Platform Overview</h3>
-                    <div class="space-y-3">
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm text-gray-600 dark:text-gray-300">Products per Seller</span>
-                            <span class="text-sm font-medium text-gray-900 dark:text-white">
-                                {{ $totalSellers > 0 ? number_format($totalProducts / $totalSellers, 1) : '0' }}
-                            </span>
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm text-gray-600 dark:text-gray-300">Orders per Product</span>
-                            <span class="text-sm font-medium text-gray-900 dark:text-white">
-                                {{ $totalProducts > 0 ? number_format($totalOrders / $totalProducts, 1) : '0' }}
-                            </span>
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm text-gray-600 dark:text-gray-300">Approval Rate</span>
-                            <span class="text-sm font-medium text-gray-900 dark:text-white">
-                                {{ $totalSellers > 0 ? number_format(($approvedSellers / $totalSellers) * 100, 1) : '0' }}%
-                            </span>
+                    <!-- Quick Stats -->
+                    <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Stats</h3>
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600 dark:text-gray-300">Orders per Product</span>
+                                <span class="text-sm font-medium text-gray-900 dark:text-white">
+                                    {{ $totalProducts > 0 ? number_format($totalOrders / $totalProducts, 1) : '0' }}
+                                </span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600 dark:text-gray-300">Account Age</span>
+                                <span class="text-sm font-medium text-gray-900 dark:text-white">
+                                    {{ auth()->user()->created_at->diffForHumans() }}
+                                </span>
+                            </div>
+                            @if($sellerStatus === 'not_approved')
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm text-gray-600 dark:text-gray-300">Approval Status</span>
+                                    <span class="text-sm font-medium text-yellow-600">
+                                        Under Review
+                                    </span>
+                                </div>
+                            @endif
                         </div>
                     </div>
-                </div>
+                @else
+                    <!-- Seller Status Breakdown -->
+                    <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Seller Status</h3>
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <div class="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
+                                    <span class="text-sm text-gray-600 dark:text-gray-300">Approved</span>
+                                </div>
+                                <span class="text-sm font-medium text-gray-900 dark:text-white">{{ $approvedSellers }}</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <div class="w-3 h-3 bg-yellow-500 rounded-full mr-3"></div>
+                                    <span class="text-sm text-gray-600 dark:text-gray-300">Pending</span>
+                                </div>
+                                <span class="text-sm font-medium text-gray-900 dark:text-white">{{ $pendingSellers }}</span>
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <a href="{{ route('sellers.manage') }}" wire:navigate 
+                               class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium">
+                                View all sellers →
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Quick Stats -->
+                    <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Platform Overview</h3>
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600 dark:text-gray-300">Products per Seller</span>
+                                <span class="text-sm font-medium text-gray-900 dark:text-white">
+                                    {{ $totalSellers > 0 ? number_format($totalProducts / $totalSellers, 1) : '0' }}
+                                </span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600 dark:text-gray-300">Orders per Product</span>
+                                <span class="text-sm font-medium text-gray-900 dark:text-white">
+                                    {{ $totalProducts > 0 ? number_format($totalOrders / $totalProducts, 1) : '0' }}
+                                </span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600 dark:text-gray-300">Approval Rate</span>
+                                <span class="text-sm font-medium text-gray-900 dark:text-white">
+                                    {{ $totalSellers > 0 ? number_format(($approvedSellers / $totalSellers) * 100, 1) : '0' }}%
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                @endif
             </div>            </div>
      </div>
 </div>

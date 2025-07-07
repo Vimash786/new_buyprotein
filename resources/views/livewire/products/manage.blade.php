@@ -95,7 +95,16 @@ new class extends Component
 
     public function with()
     {
+        $user = auth()->user();
+        $seller = Sellers::where('user_id', $user->id)->first();
+        $isSeller = $seller !== null;
+
         $query = products::with(['seller', 'category', 'subCategory', 'variants', 'images']);
+
+        // If user is a seller, only show their products
+        if ($isSeller) {
+            $query->where('seller_id', $seller->id);
+        }
 
         if ($this->search) {
             $query->where(function($q) {
@@ -124,11 +133,20 @@ new class extends Component
             $query->where('sub_category_id', $this->subCategoryFilter);
         }
 
-        $totalProducts = products::count();
-        $activeProducts = products::where('status', 'active')->count();
-        $inactiveProducts = products::where('status', 'inactive')->count();
-        $lowStockProducts = products::where('stock_quantity', '<=', 10)->count();
-        $variantProducts = products::where('has_variants', true)->count();
+        // Calculate statistics based on user role
+        if ($isSeller) {
+            $totalProducts = products::where('seller_id', $seller->id)->count();
+            $activeProducts = products::where('seller_id', $seller->id)->where('status', 'active')->count();
+            $inactiveProducts = products::where('seller_id', $seller->id)->where('status', 'inactive')->count();
+            $lowStockProducts = products::where('seller_id', $seller->id)->where('stock_quantity', '<=', 10)->count();
+            $variantProducts = products::where('seller_id', $seller->id)->where('has_variants', true)->count();
+        } else {
+            $totalProducts = products::count();
+            $activeProducts = products::where('status', 'active')->count();
+            $inactiveProducts = products::where('status', 'inactive')->count();
+            $lowStockProducts = products::where('stock_quantity', '<=', 10)->count();
+            $variantProducts = products::where('has_variants', true)->count();
+        }
 
         return [
             'products' => $query->latest()->paginate(10),
@@ -140,6 +158,8 @@ new class extends Component
             'inactiveProducts' => $inactiveProducts,
             'lowStockProducts' => $lowStockProducts,
             'variantProducts' => $variantProducts,
+            'isSeller' => $isSeller,
+            'currentSeller' => $seller,
         ];
     }
 
@@ -148,6 +168,13 @@ new class extends Component
         $this->showModal = true;
         $this->editMode = false;
         $this->resetForm();
+        
+        // Auto-select seller if user is a seller
+        $user = auth()->user();
+        $seller = Sellers::where('user_id', $user->id)->first();
+        if ($seller) {
+            $this->seller_id = $seller->id;
+        }
     }
 
     public function closeModal()
@@ -410,6 +437,14 @@ new class extends Component
     {
         $product = products::with(['variants.options', 'variantCombinations', 'images'])->findOrFail($id);
         
+        // Check if user is a seller and can only edit their own products
+        $user = auth()->user();
+        $seller = Sellers::where('user_id', $user->id)->first();
+        if ($seller && $product->seller_id !== $seller->id) {
+            session()->flash('error', 'You can only edit your own products.');
+            return;
+        }
+        
         $this->productId = $product->id;
         $this->seller_id = $product->seller_id;
         $this->name = $product->name;
@@ -503,13 +538,37 @@ new class extends Component
 
     public function delete($id)
     {
-        products::findOrFail($id)->delete();
+        $product = products::findOrFail($id);
+        
+        // Check if user is a seller and can only delete their own products
+        $user = auth()->user();
+        $seller = Sellers::where('user_id', $user->id)->first();
+        if ($seller && $product->seller_id !== $seller->id) {
+            session()->flash('error', 'You can only delete your own products.');
+            return;
+        }
+        
+        $product->delete();
         session()->flash('message', 'Product deleted successfully!');
     }
 
     public function toggleStatus($id)
     {
         $product = products::findOrFail($id);
+        
+        // Check if user is a seller and can only update their own products
+        $user = auth()->user();
+        $seller = Sellers::where('user_id', $user->id)->first();
+        if ($seller) {
+            if ($product->seller_id !== $seller->id) {
+                session()->flash('error', 'You can only update your own products.');
+                return;
+            } else {
+                session()->flash('error', 'Sellers cannot change product status. Please contact an administrator.');
+                return;
+            }
+        }
+        
         $product->update([
             'status' => $product->status === 'active' ? 'inactive' : 'active'
         ]);
@@ -830,8 +889,13 @@ new class extends Component
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Header -->
         <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Products Management</h1>
-            <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">Manage product inventory, pricing, and availability</p>
+            @if($isSeller)
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">My Products</h1>
+                <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">Manage your product inventory, pricing, and availability</p>
+            @else
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Products Management</h1>
+                <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">Manage product inventory, pricing, and availability</p>
+            @endif
         </div>
 
         <!-- Stats Cards -->
@@ -839,7 +903,13 @@ new class extends Component
             <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
                 <div class="flex items-center">
                     <div class="flex-1">
-                        <h3 class="text-lg font-medium text-gray-900 dark:text-white">Total Products</h3>
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-white">
+                            @if($isSeller)
+                                My Products
+                            @else
+                                Total Products
+                            @endif
+                        </h3>
                         <p class="text-3xl font-bold text-blue-600">{{ $totalProducts }}</p>
                     </div>
                     <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/50 rounded-lg flex items-center justify-center">
@@ -959,7 +1029,11 @@ new class extends Component
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                         </svg>
-                        Add Product
+                        @if($isSeller)
+                            Add My Product
+                        @else
+                            Add Product
+                        @endif
                     </button>
                 </div>
             </div>
@@ -971,6 +1045,12 @@ new class extends Component
                 {{ session('message') }}
             </div>
         @endif
+        
+        @if (session()->has('error'))
+            <div class="bg-red-50 dark:bg-red-900/50 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg mb-6">
+                {{ session('error') }}
+            </div>
+        @endif
 
         <!-- Products Table -->
         <div class="bg-white dark:bg-zinc-900 rounded-lg shadow overflow-hidden">
@@ -979,7 +1059,9 @@ new class extends Component
                     <thead class="bg-gray-50 dark:bg-zinc-800">
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Product</th>
+                            @if(!$isSeller)
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Seller</th>
+                            @endif
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Price</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Stock</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Category</th>
@@ -1000,9 +1082,11 @@ new class extends Component
                                         @endif
                                     </div>
                                 </td>
+                                @if(!$isSeller)
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                                     {{ $product->seller->company_name ?? 'N/A' }}
                                 </td>
+                                @endif
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm text-gray-900 dark:text-white">
                                         @if($product->has_variants)
@@ -1067,25 +1151,46 @@ new class extends Component
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <button 
-                                        wire:click="toggleStatus({{ $product->id }})"
-                                        class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
+                                    @if($isSeller)
+                                        <!-- Sellers can only view status, not change it -->
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
                                                {{ $product->status === 'active' 
-                                                  ? 'bg-green-100 text-green-800 hover:bg-green-200' 
-                                                  : 'bg-red-100 text-red-800 hover:bg-red-200' }}"
-                                    >
-                                        @if($product->status === 'active')
-                                            <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                                            </svg>
-                                            Active
-                                        @else
-                                            <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-                                            </svg>
-                                            Inactive
-                                        @endif
-                                    </button>
+                                                  ? 'bg-green-100 text-green-800' 
+                                                  : 'bg-red-100 text-red-800' }}">
+                                            @if($product->status === 'active')
+                                                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                                </svg>
+                                                Active
+                                            @else
+                                                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                                                </svg>
+                                                Inactive
+                                            @endif
+                                        </span>
+                                    @else
+                                        <!-- Admins can toggle status -->
+                                        <button 
+                                            wire:click="toggleStatus({{ $product->id }})"
+                                            class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
+                                                   {{ $product->status === 'active' 
+                                                      ? 'bg-green-100 text-green-800 hover:bg-green-200' 
+                                                      : 'bg-red-100 text-red-800 hover:bg-red-200' }}"
+                                        >
+                                            @if($product->status === 'active')
+                                                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                                </svg>
+                                                Active
+                                            @else
+                                                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                                                </svg>
+                                                Inactive
+                                            @endif
+                                        </button>
+                                    @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                     <div class="flex items-center gap-2">
@@ -1123,8 +1228,12 @@ new class extends Component
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
-                                    No products found.
+                                <td colspan="{{ $isSeller ? '8' : '9' }}" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                                    @if($isSeller)
+                                        No products found. Start by adding your first product!
+                                    @else
+                                        No products found.
+                                    @endif
                                 </td>
                             </tr>
                         @endforelse
