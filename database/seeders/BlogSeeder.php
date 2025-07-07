@@ -122,9 +122,32 @@ class BlogSeeder extends Seeder
 
         // Create additional random blogs using factory
         if (User::count() > 0 && Category::count() > 0) {
-            Blog::factory(10)->published()->create();
-            Blog::factory(5)->draft()->create();
-            Blog::factory(3)->featured()->create();
+            $userIds = User::pluck('id')->toArray();
+            $categoryIds = Category::pluck('id')->toArray();
+            
+            // Create 10 published blogs
+            for ($i = 0; $i < 10; $i++) {
+                Blog::factory()->published()->create([
+                    'author_id' => $userIds[array_rand($userIds)],
+                    'category_id' => $categoryIds[array_rand($categoryIds)],
+                ]);
+            }
+            
+            // Create 5 draft blogs
+            for ($i = 0; $i < 5; $i++) {
+                Blog::factory()->draft()->create([
+                    'author_id' => $userIds[array_rand($userIds)],
+                    'category_id' => $categoryIds[array_rand($categoryIds)],
+                ]);
+            }
+            
+            // Create 3 featured blogs
+            for ($i = 0; $i < 3; $i++) {
+                Blog::factory()->featured()->create([
+                    'author_id' => $userIds[array_rand($userIds)],
+                    'category_id' => $categoryIds[array_rand($categoryIds)],
+                ]);
+            }
         }
     }
 

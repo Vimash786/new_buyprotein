@@ -45,7 +45,10 @@ class BlogFactory extends Factory
             'likes_count' => $this->faker->numberBetween(0, 500),
             'comments_count' => $this->faker->numberBetween(0, 100),
             'author_id' => User::factory(),
-            'category_id' => Category::factory(),
+            'category_id' => function() {
+                $existingCategory = Category::inRandomOrder()->first();
+                return $existingCategory ? $existingCategory->id : Category::factory();
+            },
         ];
     }
 
