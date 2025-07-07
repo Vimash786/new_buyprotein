@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Banner;
 use App\Models\Category;
 use App\Models\orders;
 use App\Models\products;
 use App\Models\Sellers;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 
@@ -23,8 +25,9 @@ class DashboardController extends Controller
         $populerProducts = products::where('section_category', 'popular_pick')->limit(6)->get();
         $latestProducts = products::orderBy('created_at', 'desc')->take(12)->get();
         $offers = products::where('section_category', 'exclusive_deal')->limit(8)->get();
+        $banners = Banner::where('status', 'active')->orderBy('created_at', 'desc')->get();
 
-        return view('dashboard', compact('categories', 'products', 'everyDayEssentials', 'populerProducts', 'latestProducts', 'offers'));
+        return view('dashboard', compact('categories', 'products', 'everyDayEssentials', 'populerProducts', 'latestProducts', 'offers', 'banners'));
     }
 
     public function shop(Request $request, $type = null, $id = null)
@@ -71,6 +74,14 @@ class DashboardController extends Controller
             return view('shop.product-details', compact('product', 'relatedProducts'));
         } catch (Exception $e) {
             return redirect()->back()->with('error', 'Invalid product ID.');
+        }
+    }
+
+    public function userAccount() {
+        if (Auth::user() != null) {
+
+        } else {
+            return redirect()->route('login');
         }
     }
 }
