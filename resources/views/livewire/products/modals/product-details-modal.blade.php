@@ -146,6 +146,103 @@
                         </div>
                     </div>
 
+                    <!-- Variant Combinations with Images -->
+                    @if(count($selectedProduct->variantCombinations) > 0)
+                        <div class="mt-6">
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Variant Combinations</h3>
+                            <div class="space-y-4">
+                                @foreach($selectedProduct->variantCombinations as $combination)
+                                    <div class="bg-gray-50 dark:bg-zinc-800 rounded-lg p-4">
+                                        <div class="flex items-center justify-between mb-3">
+                                            <h4 class="text-base font-medium text-gray-900 dark:text-white">
+                                                {{ $this->getVariantCombinationName($combination) }}
+                                            </h4>
+                                            <span class="text-sm text-gray-500 dark:text-gray-400">
+                                                Stock: {{ $combination->stock_quantity }}
+                                            </span>
+                                        </div>
+                                        
+                                        <!-- Variant Images -->
+                                        @php
+                                            $variantImages = $combination->images->where('image_type', 'variant');
+                                            $variantThumbnail = $combination->images->where('image_type', 'variant_thumbnail')->first();
+                                        @endphp
+                                        
+                                        @if($variantThumbnail || count($variantImages) > 0)
+                                            <div class="mb-3">
+                                                <h5 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Images</h5>
+                                                
+                                                @if($variantThumbnail)
+                                                    <div class="mb-2">
+                                                        <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Thumbnail:</p>
+                                                        <div class="relative inline-block">
+                                                            <img src="{{ asset('storage/' . $variantThumbnail->image_path) }}" 
+                                                                alt="Variant thumbnail" 
+                                                                class="w-20 h-20 object-cover rounded-lg border-2 border-blue-200 dark:border-blue-700">
+                                                            <div class="absolute bottom-0 left-0 right-0 bg-blue-600 bg-opacity-75 text-white text-xs p-1 rounded-b">
+                                                                Thumbnail
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                @endif
+                                                
+                                                @if(count($variantImages) > 0)
+                                                    <div>
+                                                        <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Gallery:</p>
+                                                        <div class="grid grid-cols-4 gap-2">
+                                                            @foreach($variantImages as $image)
+                                                                <div class="relative">
+                                                                    <img src="{{ asset('storage/' . $image->image_path) }}" 
+                                                                        alt="Variant image" 
+                                                                        class="w-full h-16 object-cover rounded-lg border border-gray-200 dark:border-gray-700">
+                                                                    <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-75 text-white text-xs p-1 rounded-b">
+                                                                        {{ $image->formatted_file_size }}
+                                                                    </div>
+                                                                </div>
+                                                            @endforeach
+                                                        </div>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        @else
+                                            <div class="mb-3 text-sm text-gray-500 dark:text-gray-400">
+                                                <span class="italic">No images uploaded for this variant</span>
+                                            </div>
+                                        @endif
+                                        
+                                        <!-- Variant Pricing -->
+                                        <div class="grid grid-cols-3 gap-3">
+                                            <div>
+                                                <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Gym Owner</p>
+                                                <p class="text-sm text-gray-900 dark:text-white">₹{{ number_format($combination->gym_owner_price, 2) }}</p>
+                                                @if($combination->gym_owner_discount > 0)
+                                                    <p class="text-xs text-red-600">{{ $combination->gym_owner_discount }}% off</p>
+                                                    <p class="text-xs text-green-600 font-medium">Final: ₹{{ number_format($combination->gym_owner_final_price, 2) }}</p>
+                                                @endif
+                                            </div>
+                                            <div>
+                                                <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Regular User</p>
+                                                <p class="text-sm text-gray-900 dark:text-white">₹{{ number_format($combination->regular_user_price, 2) }}</p>
+                                                @if($combination->regular_user_discount > 0)
+                                                    <p class="text-xs text-red-600">{{ $combination->regular_user_discount }}% off</p>
+                                                    <p class="text-xs text-green-600 font-medium">Final: ₹{{ number_format($combination->regular_user_final_price, 2) }}</p>
+                                                @endif
+                                            </div>
+                                            <div>
+                                                <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Shop Owner</p>
+                                                <p class="text-sm text-gray-900 dark:text-white">₹{{ number_format($combination->shop_owner_price, 2) }}</p>
+                                                @if($combination->shop_owner_discount > 0)
+                                                    <p class="text-xs text-red-600">{{ $combination->shop_owner_discount }}% off</p>
+                                                    <p class="text-xs text-green-600 font-medium">Final: ₹{{ number_format($combination->shop_owner_final_price, 2) }}</p>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+
                     <div class="mt-6">
                         <button 
                             wire:click="viewVariantPrices({{ $selectedProduct->id }})"

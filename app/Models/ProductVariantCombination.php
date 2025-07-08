@@ -52,6 +52,30 @@ class ProductVariantCombination extends Model
     }
 
     /**
+     * Get the images for this variant combination.
+     */
+    public function images()
+    {
+        return $this->hasMany(ProductImage::class, 'variant_combination_id');
+    }
+
+    /**
+     * Get the primary image for this variant combination.
+     */
+    public function primaryImage()
+    {
+        return $this->hasOne(ProductImage::class, 'variant_combination_id')->where('is_primary', true);
+    }
+
+    /**
+     * Get the thumbnail image for this variant combination.
+     */
+    public function thumbnailImage()
+    {
+        return $this->hasOne(ProductImage::class, 'variant_combination_id')->where('image_type', 'variant_thumbnail');
+    }
+
+    /**
      * Get the variant options for this combination.
      */
     public function getVariantOptionsDetails()

@@ -51,6 +51,16 @@ new class extends Component
     public $existing_images = [];
     public $images_to_delete = [];
     
+    // Variant image properties
+    public $variant_images = []; // Format: ['combination_id' => [array of uploaded files]]
+    public $existing_variant_images = []; // Format: ['combination_id' => [array of existing images]]
+    public $variant_images_to_delete = [];
+    
+    // Variant thumbnails
+    public $variant_thumbnails = []; // Format: ['combination_id' => uploaded file]
+    public $existing_variant_thumbnails = []; // Format: ['combination_id' => existing thumbnail data]
+    public $variant_thumbnails_to_delete = [];
+    
     // Variant properties
     public $variants = [];
     public $variant_combinations = [];
@@ -89,8 +99,10 @@ new class extends Component
         'status' => 'required|in:active,inactive',
         'section_category' => 'required|in:everyday_essential,popular_pick,exclusive_deal',
         'has_variants' => 'boolean',
-        'thumbnail_image' => 'nullable|image|max:2048',
-        'product_images.*' => 'nullable|image|max:2048',
+        'thumbnail_image' => 'nullable|image|min:200|max:400', // 200KB to 400KB
+        'product_images.*' => 'nullable|image|min:200|max:400', // 200KB to 400KB
+        'variant_images.*.*' => 'nullable|image|min:200|max:400', // 200KB to 400KB
+        'variant_thumbnails.*' => 'nullable|image|min:200|max:400', // 200KB to 400KB
     ];
 
     public function with()
@@ -209,6 +221,12 @@ new class extends Component
         $this->product_images = [];
         $this->existing_images = [];
         $this->images_to_delete = [];
+        $this->variant_images = [];
+        $this->existing_variant_images = [];
+        $this->variant_images_to_delete = [];
+        $this->variant_thumbnails = [];
+        $this->existing_variant_thumbnails = [];
+        $this->variant_thumbnails_to_delete = [];
         $this->variants = [];
         $this->variant_combinations = [];
         $this->availableSubCategories = [];
@@ -320,7 +338,12 @@ new class extends Component
 
         // Handle thumbnail image upload
         if ($this->thumbnail_image) {
-            $data['thumbnail_image'] = $this->thumbnail_image->store('products/thumbnails', 'public');
+            try {
+                $data['thumbnail_image'] = $this->storeImageWithValidation($this->thumbnail_image, 'products/thumbnails');
+            } catch (\Exception $e) {
+                session()->flash('error', 'Thumbnail image error: ' . $e->getMessage());
+                return;
+            }
         }
 
         if ($this->editMode) {
@@ -331,27 +354,55 @@ new class extends Component
             if (!empty($this->images_to_delete)) {
                 ProductImage::whereIn('id', $this->images_to_delete)->delete();
             }
+            
+            // Handle variant image deletions
+            if (!empty($this->variant_images_to_delete)) {
+                ProductImage::whereIn('id', $this->variant_images_to_delete)->delete();
+            }
+            
+            // Handle variant thumbnail deletions
+            if (!empty($this->variant_thumbnails_to_delete)) {
+                ProductImage::whereIn('id', $this->variant_thumbnails_to_delete)->delete();
+            }
         } else {
             $product = products::create($data);
         }
 
-        // Handle additional product images
-        if (!empty($this->product_images)) {
+        // Handle additional product images (for non-variant products)
+        if (!$this->has_variants && !empty($this->product_images)) {
             foreach ($this->product_images as $index => $image) {
                 if ($image) {
-                    ProductImage::create([
-                        'product_id' => $product->id,
-                        'image_path' => $image->store('products/images', 'public'),
-                        'sort_order' => $index + 1,
-                        'is_primary' => false
-                    ]);
+                    try {
+                        $imagePath = $this->storeImageWithValidation($image, 'products/images');
+                        ProductImage::create([
+                            'product_id' => $product->id,
+                            'image_path' => $imagePath,
+                            'sort_order' => $index + 1,
+                            'is_primary' => false,
+                            'file_size' => $image->getSize(),
+                            'image_type' => 'product'
+                        ]);
+                    } catch (\Exception $e) {
+                        session()->flash('error', 'Product image error: ' . $e->getMessage());
+                        return;
+                    }
                 }
             }
         }
 
         // Handle variants if enabled
         if ($this->has_variants && !empty($this->variants)) {
-            $this->saveVariants($product);
+            if ($this->editMode) {
+                // In edit mode, we need to handle existing combinations differently
+                $combinationMapping = $this->updateVariants($product);
+                $this->saveVariantImages($product, $combinationMapping);
+                $this->saveVariantThumbnails($product, $combinationMapping);
+            } else {
+                // In create mode, use the mapping approach
+                $combinationMapping = $this->saveVariants($product);
+                $this->saveVariantImages($product, $combinationMapping);
+                $this->saveVariantThumbnails($product, $combinationMapping);
+            }
         } else {
             // Remove all variants if variants are disabled
             $product->variants()->delete();
@@ -368,6 +419,8 @@ new class extends Component
         // Delete existing variants and combinations
         $product->variants()->delete();
         $product->variantCombinations()->delete();
+
+        $combinationMapping = []; // Map form index to database ID
 
         foreach ($this->variants as $variantIndex => $variantData) {
             if (empty(trim($variantData['name']))) continue;
@@ -393,8 +446,8 @@ new class extends Component
             }
         }
 
-        // Save variant combinations
-        foreach ($this->variant_combinations as $combination) {
+        // Save variant combinations and build mapping
+        foreach ($this->variant_combinations as $combinationIndex => $combination) {
             if (empty($combination['options'])) continue;
 
             $optionIds = array_column($combination['options'], 'id');
@@ -414,7 +467,7 @@ new class extends Component
             }
 
             if (!empty($actualOptionIds)) {
-                ProductVariantCombination::create([
+                $createdCombination = ProductVariantCombination::create([
                     'product_id' => $product->id,
                     'variant_options' => $actualOptionIds,
                     'gym_owner_price' => $combination['gym_owner_price'] ?: 0,
@@ -429,6 +482,173 @@ new class extends Component
                     'stock_quantity' => $combination['stock_quantity'] ?: 0,
                     'is_active' => $combination['is_active'] ?? true,
                 ]);
+                
+                // Map form index to database ID
+                $combinationMapping[$combinationIndex] = $createdCombination->id;
+            }
+        }
+        
+        return $combinationMapping;
+    }
+
+    private function updateVariants($product)
+    {
+        // Delete existing variants and combinations
+        $product->variants()->delete();
+        $product->variantCombinations()->delete();
+
+        $combinationMapping = []; // Map form index to new database ID
+
+        foreach ($this->variants as $variantIndex => $variantData) {
+            if (empty(trim($variantData['name']))) continue;
+
+            $variant = ProductVariant::create([
+                'product_id' => $product->id,
+                'name' => $variantData['name'],
+                'display_name' => $variantData['display_name'] ?: $variantData['name'],
+                'sort_order' => $variantIndex,
+                'is_required' => $variantData['is_required'] ?? true,
+            ]);
+
+            foreach ($variantData['options'] as $optionIndex => $optionData) {
+                if (empty(trim($optionData['value']))) continue;
+
+                ProductVariantOption::create([
+                    'product_variant_id' => $variant->id,
+                    'value' => $optionData['value'],
+                    'display_value' => $optionData['display_value'] ?: $optionData['value'],
+                    'sort_order' => $optionIndex,
+                    'is_active' => true,
+                ]);
+            }
+        }
+
+        // Save variant combinations and build mapping
+        foreach ($this->variant_combinations as $combinationIndex => $combination) {
+            if (empty($combination['options'])) continue;
+
+            $optionIds = array_column($combination['options'], 'id');
+            // For new options, we need to get the IDs from the database
+            $actualOptionIds = [];
+            
+            foreach ($combination['options'] as $option) {
+                $variantOption = ProductVariantOption::where('value', $option['value'])
+                    ->whereHas('variant', function($q) use ($product) {
+                        $q->where('product_id', $product->id);
+                    })
+                    ->first();
+                
+                if ($variantOption) {
+                    $actualOptionIds[] = $variantOption->id;
+                }
+            }
+
+            if (!empty($actualOptionIds)) {
+                $createdCombination = ProductVariantCombination::create([
+                    'product_id' => $product->id,
+                    'variant_options' => $actualOptionIds,
+                    'gym_owner_price' => $combination['gym_owner_price'] ?: 0,
+                    'regular_user_price' => $combination['regular_user_price'] ?: 0,
+                    'shop_owner_price' => $combination['shop_owner_price'] ?: 0,
+                    'gym_owner_discount' => $combination['gym_owner_discount'] ?: 0,
+                    'regular_user_discount' => $combination['regular_user_discount'] ?: 0,
+                    'shop_owner_discount' => $combination['shop_owner_discount'] ?: 0,
+                    'gym_owner_final_price' => $combination['gym_owner_final_price'] ?: 0,
+                    'regular_user_final_price' => $combination['regular_user_final_price'] ?: 0,
+                    'shop_owner_final_price' => $combination['shop_owner_final_price'] ?: 0,
+                    'stock_quantity' => $combination['stock_quantity'] ?: 0,
+                    'is_active' => $combination['is_active'] ?? true,
+                ]);
+                
+                // Map form index to new database ID
+                $combinationMapping[$combinationIndex] = $createdCombination->id;
+                
+                // Update the combination array with the new ID
+                $this->variant_combinations[$combinationIndex]['id'] = $createdCombination->id;
+            }
+        }
+        
+        return $combinationMapping;
+    }
+
+    private function saveVariantImages($product, $combinationMapping = null)
+    {
+        // Handle variant images
+        if (!empty($this->variant_images)) {
+            foreach ($this->variant_images as $combinationIndex => $images) {
+                // Determine the actual combination ID
+                $actualCombinationId = null;
+                
+                if ($this->editMode) {
+                    // In edit mode, get the actual DB ID from the variant combination
+                    if (isset($this->variant_combinations[$combinationIndex]['id'])) {
+                        $actualCombinationId = $this->variant_combinations[$combinationIndex]['id'];
+                    }
+                } else {
+                    // In create mode, use the mapping
+                    $actualCombinationId = $combinationMapping[$combinationIndex] ?? null;
+                }
+                
+                if ($actualCombinationId && !empty($images)) {
+                    foreach ($images as $index => $image) {
+                        if ($image) {
+                            try {
+                                $imagePath = $this->storeImageWithValidation($image, 'products/variants');
+                                ProductImage::create([
+                                    'product_id' => $product->id,
+                                    'variant_combination_id' => $actualCombinationId,
+                                    'image_path' => $imagePath,
+                                    'sort_order' => $index + 1,
+                                    'is_primary' => $index === 0, // First image is primary
+                                    'file_size' => $image->getSize(),
+                                    'image_type' => 'variant'
+                                ]);
+                            } catch (\Exception $e) {
+                                session()->flash('error', 'Variant image error: ' . $e->getMessage());
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private function saveVariantThumbnails($product, $combinationMapping = null)
+    {
+        // Handle variant thumbnails
+        if (!empty($this->variant_thumbnails)) {
+            foreach ($this->variant_thumbnails as $combinationIndex => $thumbnail) {
+                // Determine the actual combination ID
+                $actualCombinationId = null;
+                
+                if ($this->editMode) {
+                    // In edit mode, get the actual DB ID from the variant combination
+                    if (isset($this->variant_combinations[$combinationIndex]['id'])) {
+                        $actualCombinationId = $this->variant_combinations[$combinationIndex]['id'];
+                    }
+                } else {
+                    // In create mode, use the mapping
+                    $actualCombinationId = $combinationMapping[$combinationIndex] ?? null;
+                }
+                
+                if ($actualCombinationId && $thumbnail) {
+                    try {
+                        $imagePath = $this->storeImageWithValidation($thumbnail, 'products/variants/thumbnails');
+                        ProductImage::create([
+                            'product_id' => $product->id,
+                            'variant_combination_id' => $actualCombinationId,
+                            'image_path' => $imagePath,
+                            'sort_order' => 0, // Thumbnails have sort order 0
+                            'is_primary' => false, // Thumbnails are not primary
+                            'file_size' => $thumbnail->getSize(),
+                            'image_type' => 'variant_thumbnail'
+                        ]);
+                    } catch (\Exception $e) {
+                        session()->flash('error', 'Variant thumbnail error: ' . $e->getMessage());
+                        return;
+                    }
+                }
             }
         }
     }
@@ -466,16 +686,57 @@ new class extends Component
         $this->section_category = $product->section_category;
         $this->has_variants = $product->has_variants;
         
-        // Load existing images
-        $this->existing_images = $product->images->map(function($image) {
+        // Load existing images (product images only)
+        $this->existing_images = $product->images()->productOnly()->get()->map(function($image) {
             return [
                 'id' => $image->id,
                 'image_path' => $image->image_path,
                 'sort_order' => $image->sort_order,
                 'is_primary' => $image->is_primary,
+                'file_size' => $image->file_size,
+                'formatted_size' => $image->file_size ? $image->formatted_file_size : null, // Don't show 'Unknown' for legacy images
                 'image_url' => asset('storage/' . $image->image_path)
             ];
         })->toArray();
+        
+        // Load existing variant images
+        $this->existing_variant_images = [];
+        $this->existing_variant_thumbnails = [];
+        if ($product->has_variants) {
+            // First collect images by combination ID
+            $imagesByComboId = [];
+            $thumbnailsByComboId = [];
+            
+            foreach ($product->variantCombinations as $combination) {
+                $variantImages = $combination->images->where('image_type', 'variant')->map(function($image) {
+                    return [
+                        'id' => $image->id,
+                        'image_path' => $image->image_path,
+                        'sort_order' => $image->sort_order,
+                        'is_primary' => $image->is_primary,
+                        'file_size' => $image->file_size,
+                        'formatted_size' => $image->file_size ? $image->formatted_file_size : null, // Don't show 'Unknown' for legacy images
+                        'image_url' => asset('storage/' . $image->image_path)
+                    ];
+                })->toArray();
+                
+                if (!empty($variantImages)) {
+                    $imagesByComboId[$combination->id] = $variantImages;
+                }
+                
+                // Load existing variant thumbnails
+                $variantThumbnail = $combination->images->where('image_type', 'variant_thumbnail')->first();
+                if ($variantThumbnail) {
+                    $thumbnailsByComboId[$combination->id] = [
+                        'id' => $variantThumbnail->id,
+                        'image_path' => $variantThumbnail->image_path,
+                        'file_size' => $variantThumbnail->file_size,
+                        'formatted_size' => $variantThumbnail->file_size ? $variantThumbnail->formatted_file_size : null, // Don't show 'Unknown' for legacy images
+                        'image_url' => asset('storage/' . $variantThumbnail->image_path)
+                    ];
+                }
+            }
+        }
         
         // Load variants and options
         $this->variants = $product->variants->map(function($variant) {
@@ -519,6 +780,23 @@ new class extends Component
                 'is_active' => $combination->is_active,
             ];
         })->toArray();
+        
+        // Now map images and thumbnails to form indices (after variant_combinations is loaded)
+        if ($product->has_variants && isset($imagesByComboId, $thumbnailsByComboId)) {
+            foreach ($this->variant_combinations as $formIndex => $combination) {
+                $dbId = $combination['id'];
+                
+                // Map variant images from DB ID to form index
+                if (isset($imagesByComboId[$dbId])) {
+                    $this->existing_variant_images[$formIndex] = $imagesByComboId[$dbId];
+                }
+                
+                // Map variant thumbnails from DB ID to form index
+                if (isset($thumbnailsByComboId[$dbId])) {
+                    $this->existing_variant_thumbnails[$formIndex] = $thumbnailsByComboId[$dbId];
+                }
+            }
+        }
         
         // Load subcategories for the selected category
         if ($this->category_id) {
@@ -854,7 +1132,9 @@ new class extends Component
             'category', 
             'subCategory', 
             'variants.options', 
-            'variantCombinations',
+            'variantCombinations' => function($query) {
+                $query->with(['images']);
+            },
             'images'
         ])->findOrFail($productId);
         
@@ -882,6 +1162,100 @@ new class extends Component
         $this->showDetailsModal = false;
         $this->productDetails = [];
         $this->selectedProduct = null;
+    }
+
+    /**
+     * Validate image file size (200KB to 400KB).
+     */
+    private function validateImageSize($file)
+    {
+        if (!$file) return false;
+        
+        $minSize = 200 * 1024; // 200KB in bytes
+        $maxSize = 400 * 1024; // 400KB in bytes
+        $fileSize = $file->getSize();
+        
+        return $fileSize >= $minSize && $fileSize <= $maxSize;
+    }
+
+    /**
+     * Store image with size validation.
+     */
+    private function storeImageWithValidation($file, $path)
+    {
+        if (!$this->validateImageSize($file)) {
+            throw new \Exception('Image size must be between 200KB and 400KB. Current size: ' . $this->formatFileSize($file->getSize()));
+        }
+        
+        return $file->store($path, 'public');
+    }
+
+    /**
+     * Format file size for display.
+     */
+    private function formatFileSize($bytes)
+    {
+        $units = ['B', 'KB', 'MB', 'GB'];
+        
+        for ($i = 0; $bytes > 1024 && $i < count($units) - 1; $i++) {
+            $bytes /= 1024;
+        }
+        
+        return round($bytes, 2) . ' ' . $units[$i];
+    }
+
+    public function removeVariantImage($combinationId, $imageIndex)
+    {
+        if (isset($this->existing_variant_images[$combinationId][$imageIndex])) {
+            $this->variant_images_to_delete[] = $this->existing_variant_images[$combinationId][$imageIndex]['id'];
+            unset($this->existing_variant_images[$combinationId][$imageIndex]);
+            $this->existing_variant_images[$combinationId] = array_values($this->existing_variant_images[$combinationId]);
+            
+            // Remove the combination key if no images left
+            if (empty($this->existing_variant_images[$combinationId])) {
+                unset($this->existing_variant_images[$combinationId]);
+            }
+        }
+    }
+
+    public function removeVariantThumbnail($combinationId)
+    {
+        if (isset($this->existing_variant_thumbnails[$combinationId])) {
+            $this->variant_thumbnails_to_delete[] = $this->existing_variant_thumbnails[$combinationId]['id'];
+            unset($this->existing_variant_thumbnails[$combinationId]);
+        }
+    }
+
+    public function getVariantDisplayName($combination)
+    {
+        if (empty($combination['options'])) {
+            return 'Unknown Variant';
+        }
+        
+        $optionNames = [];
+        foreach ($combination['options'] as $option) {
+            $optionNames[] = $option['display_value'] ?? $option['value'];
+        }
+        
+        return implode(' / ', $optionNames);
+    }
+
+    public function getVariantCombinationName($combination)
+    {
+        if (!$combination || !$combination->variant_options) {
+            return 'Unknown Variant';
+        }
+        
+        $optionNames = [];
+        $options = ProductVariantOption::whereIn('id', $combination->variant_options)->with('variant')->get();
+        
+        foreach ($options as $option) {
+            $variantName = $option->variant->display_name ?? $option->variant->name;
+            $optionValue = $option->display_value ?? $option->value;
+            $optionNames[] = $variantName . ': ' . $optionValue;
+        }
+        
+        return empty($optionNames) ? 'Unknown Variant' : implode(' / ', $optionNames);
     }
 }; ?>
 

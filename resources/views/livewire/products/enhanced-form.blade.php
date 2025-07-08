@@ -259,7 +259,10 @@
 
         <!-- Thumbnail Image -->
         <div class="md:col-span-2">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Thumbnail Image</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Thumbnail Image
+                <span class="text-xs text-gray-500">(Size: 200KB - 400KB)</span>
+            </label>
             <input 
                 type="file" 
                 wire:model="thumbnail_image"
@@ -270,53 +273,69 @@
             @if($thumbnail_image)
                 <div class="mt-2">
                     <img src="{{ $thumbnail_image->temporaryUrl() }}" alt="Preview" class="w-20 h-20 object-cover rounded">
+                    <p class="text-xs text-gray-500 mt-1">Size: {{ $this->formatFileSize($thumbnail_image->getSize()) }}</p>
                 </div>
             @endif
         </div>
 
         <!-- Product Images -->
-        <div class="md:col-span-2">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Additional Images (minimum 3 required)</label>
-            <input 
-                type="file" 
-                wire:model="product_images"
-                accept="image/*"
-                multiple
-                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-            >
-            @error('product_images.*') <span class="text-red-500 text-sm">{{ $errors->first('product_images.*') }}</span> @enderror
-            
-            <!-- Show existing images -->
-            @if(!empty($existing_images))
-                <div class="mt-2">
-                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">Existing Images:</p>
-                    <div class="flex flex-wrap gap-2">
-                        @foreach($existing_images as $index => $image)
-                            <div class="relative">
-                                <img src="{{ $image['image_url'] }}" alt="Product image" class="w-20 h-20 object-cover rounded">
-                                <button 
-                                    type="button"
-                                    wire:click="removeImage({{ $index }})"
-                                    class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
-                                >×</button>
-                            </div>
-                        @endforeach
+        @if(!$has_variants)
+            <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Additional Images (minimum 3 required)
+                    <span class="text-xs text-gray-500">(Size: 200KB - 400KB each)</span>
+                </label>
+                <input 
+                    type="file" 
+                    wire:model="product_images"
+                    accept="image/*"
+                    multiple
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
+                >
+                @error('product_images.*') <span class="text-red-500 text-sm">{{ $errors->first('product_images.*') }}</span> @enderror
+                
+                <!-- Show existing images -->
+                @if(!empty($existing_images))
+                    <div class="mt-2">
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">Existing Images:</p>
+                        <div class="flex flex-wrap gap-2">
+                            @foreach($existing_images as $index => $image)
+                                <div class="relative">
+                                    <img src="{{ $image['image_url'] }}" alt="Product image" class="w-20 h-20 object-cover rounded">
+                                    @if($image['formatted_size'])
+                                        <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-75 text-white text-xs p-1 rounded-b">
+                                            {{ $image['formatted_size'] }}
+                                        </div>
+                                    @endif
+                                    <button 
+                                        type="button"
+                                        wire:click="removeImage({{ $index }})"
+                                        class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+                                    >×</button>
+                                </div>
+                            @endforeach
+                        </div>
                     </div>
-                </div>
-            @endif
-            
-            <!-- Show new image previews -->
-            @if($product_images)
-                <div class="mt-2">
-                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">New Images Preview:</p>
-                    <div class="flex flex-wrap gap-2">
-                        @foreach($product_images as $image)
-                            <img src="{{ $image->temporaryUrl() }}" alt="Preview" class="w-20 h-20 object-cover rounded">
-                        @endforeach
+                @endif
+                
+                <!-- Show new image previews -->
+                @if($product_images)
+                    <div class="mt-2">
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">New Images Preview:</p>
+                        <div class="flex flex-wrap gap-2">
+                            @foreach($product_images as $image)
+                                <div class="relative">
+                                    <img src="{{ $image->temporaryUrl() }}" alt="Preview" class="w-20 h-20 object-cover rounded">
+                                    <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-75 text-white text-xs p-1 rounded-b">
+                                        {{ $this->formatFileSize($image->getSize()) }}
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
                     </div>
-                </div>
-            @endif
-        </div>
+                @endif
+            </div>
+        @endif
 
         <!-- Has Variants Toggle -->
         <div class="md:col-span-2">
@@ -562,6 +581,115 @@
                                                     class="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
                                                 >
                                             </div>
+                                        </div>
+                                        
+                                        <!-- Variant Thumbnail Image -->
+                                        <div class="mt-3 border-t pt-3">
+                                            <div class="flex items-center justify-between mb-2">
+                                                <label class="text-xs font-medium text-gray-700 dark:text-gray-300">
+                                                    Variant Thumbnail Image
+                                                    <span class="text-xs text-gray-500">(Size: 200KB - 400KB)</span>
+                                                </label>
+                                            </div>
+                                            <input 
+                                                type="file" 
+                                                wire:model="variant_thumbnails.{{ $combIndex }}"
+                                                accept="image/*"
+                                                class="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
+                                            >
+                                            @error('variant_thumbnails.' . $combIndex) <span class="text-red-500 text-xs">{{ $errors->first('variant_thumbnails.' . $combIndex) }}</span> @enderror
+                                            
+                                            <!-- Show existing variant thumbnail -->
+                                            @if(isset($existing_variant_thumbnails[$combIndex]) && !empty($existing_variant_thumbnails[$combIndex]))
+                                                <div class="mt-2">
+                                                    <p class="text-xs text-gray-600 dark:text-gray-400 mb-1">Current Thumbnail:</p>
+                                                    <div class="relative inline-block">
+                                                        <img src="{{ $existing_variant_thumbnails[$combIndex]['image_url'] }}" alt="Variant thumbnail" class="w-20 h-20 object-cover rounded">
+                                                        @if($existing_variant_thumbnails[$combIndex]['formatted_size'])
+                                                            <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-75 text-white text-xs p-1 rounded-b">
+                                                                {{ $existing_variant_thumbnails[$combIndex]['formatted_size'] }}
+                                                            </div>
+                                                        @endif
+                                                        <button 
+                                                            type="button"
+                                                            wire:click="removeVariantThumbnail({{ $combIndex }})"
+                                                            class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs"
+                                                        >×</button>
+                                                    </div>
+                                                </div>
+                                            @endif
+                                            
+                                            <!-- Show new variant thumbnail preview -->
+                                            @if(isset($variant_thumbnails[$combIndex]) && $variant_thumbnails[$combIndex])
+                                                <div class="mt-2">
+                                                    <p class="text-xs text-gray-600 dark:text-gray-400 mb-1">New Thumbnail Preview:</p>
+                                                    <div class="relative inline-block">
+                                                        <img src="{{ $variant_thumbnails[$combIndex]->temporaryUrl() }}" alt="Preview" class="w-20 h-20 object-cover rounded">
+                                                        <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-75 text-white text-xs p-1 rounded-b">
+                                                            {{ $this->formatFileSize($variant_thumbnails[$combIndex]->getSize()) }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            @endif
+                                        </div>
+                                        
+                                        <!-- Variant Images -->
+                                        <div class="mt-3 border-t pt-3">
+                                            <div class="flex items-center justify-between mb-2">
+                                                <label class="text-xs font-medium text-gray-700 dark:text-gray-300">
+                                                    Variant Images (minimum 3 required)
+                                                    <span class="text-xs text-gray-500">(Size: 200KB - 400KB each)</span>
+                                                </label>
+                                            </div>
+                                            <input 
+                                                type="file" 
+                                                wire:model="variant_images.{{ $combIndex }}"
+                                                accept="image/*"
+                                                multiple
+                                                class="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
+                                            >
+                                            @error('variant_images.' . $combIndex . '.*') <span class="text-red-500 text-xs">{{ $errors->first('variant_images.' . $combIndex . '.*') }}</span> @enderror
+                                            
+                                            <!-- Show existing variant images -->
+                                            @if(isset($existing_variant_images[$combIndex]) && !empty($existing_variant_images[$combIndex]))
+                                                <div class="mt-2">
+                                                    <p class="text-xs text-gray-600 dark:text-gray-400 mb-1">Existing Images:</p>
+                                                    <div class="flex flex-wrap gap-2">
+                                                        @foreach($existing_variant_images[$combIndex] as $imageIndex => $image)
+                                                            <div class="relative">
+                                                                <img src="{{ $image['image_url'] }}" alt="Variant image" class="w-16 h-16 object-cover rounded">
+                                                                @if($image['formatted_size'])
+                                                                    <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-75 text-white text-xs p-1 rounded-b">
+                                                                        {{ $image['formatted_size'] }}
+                                                                    </div>
+                                                                @endif
+                                                                <button 
+                                                                    type="button"
+                                                                    wire:click="removeVariantImage({{ $combIndex }}, {{ $imageIndex }})"
+                                                                    class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs"
+                                                                >×</button>
+                                                            </div>
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+                                            @endif
+                                            
+                                            <!-- Show new variant image previews -->
+                                            @if(isset($variant_images[$combIndex]) && $variant_images[$combIndex])
+                                                <div class="mt-2">
+                                                    <p class="text-xs text-gray-600 dark:text-gray-400 mb-1">New Images Preview:</p>
+                                                    <div class="flex flex-wrap gap-2">
+                                                        @foreach($variant_images[$combIndex] as $image)
+                                                            <div class="relative">
+                                                                <img src="{{ $image->temporaryUrl() }}" alt="Preview" class="w-16 h-16 object-cover rounded">
+                                                                <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-75 text-white text-xs p-1 rounded-b">
+                                                                    {{ $this->formatFileSize($image->getSize()) }}
+                                                                </div>
+                                                            </div>
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+                                            @endif
                                         </div>
                                     </div>
                                 </div>
