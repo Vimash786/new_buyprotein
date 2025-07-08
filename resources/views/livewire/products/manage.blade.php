@@ -493,6 +493,26 @@ new class extends Component
 
     private function updateVariants($product)
     {
+        // Store existing variant images before deletion to restore them later
+        $existingVariantImages = [];
+        if ($product->variantCombinations) {
+            foreach ($product->variantCombinations as $combination) {
+                $optionValues = [];
+                $options = ProductVariantOption::whereIn('id', $combination->variant_options)->get();
+                foreach ($options as $option) {
+                    $optionValues[] = $option->value;
+                }
+                sort($optionValues); // Sort to ensure consistent matching
+                $combinationKey = implode('|', $optionValues);
+                
+                // Store images for this combination
+                $images = $combination->images;
+                if ($images && $images->count() > 0) {
+                    $existingVariantImages[$combinationKey] = $images->toArray();
+                }
+            }
+        }
+
         // Delete existing variants and combinations
         $product->variants()->delete();
         $product->variantCombinations()->delete();
@@ -530,6 +550,7 @@ new class extends Component
             $optionIds = array_column($combination['options'], 'id');
             // For new options, we need to get the IDs from the database
             $actualOptionIds = [];
+            $optionValues = [];
             
             foreach ($combination['options'] as $option) {
                 $variantOption = ProductVariantOption::where('value', $option['value'])
@@ -540,6 +561,7 @@ new class extends Component
                 
                 if ($variantOption) {
                     $actualOptionIds[] = $variantOption->id;
+                    $optionValues[] = $option['value'];
                 }
             }
 
@@ -565,6 +587,28 @@ new class extends Component
                 
                 // Update the combination array with the new ID
                 $this->variant_combinations[$combinationIndex]['id'] = $createdCombination->id;
+
+                // Restore existing variant images if they exist for this combination
+                if (!empty($optionValues)) {
+                    sort($optionValues); // Sort to match the key format used above
+                    $combinationKey = implode('|', $optionValues);
+                    if (isset($existingVariantImages[$combinationKey])) {
+                        foreach ($existingVariantImages[$combinationKey] as $imageData) {
+                            // Only restore if this image wasn't marked for deletion
+                            if (!in_array($imageData['id'], $this->variant_images_to_delete)) {
+                                ProductImage::create([
+                                    'product_id' => $product->id,
+                                    'variant_combination_id' => $createdCombination->id,
+                                    'image_path' => $imageData['image_path'],
+                                    'sort_order' => $imageData['sort_order'],
+                                    'is_primary' => $imageData['is_primary'],
+                                    'file_size' => $imageData['file_size'],
+                                    'image_type' => $imageData['image_type']
+                                ]);
+                            }
+                        }
+                    }
+                }
             }
         }
         
