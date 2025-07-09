@@ -2,6 +2,7 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <!-- Seller -->
         <div class="md:col-span-2">
+            @if(!$isSeller)
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Seller</label>
             <select 
                 wire:model="seller_id"
@@ -12,6 +13,13 @@
                     <option value="{{ $seller->id }}">{{ $seller->company_name }}</option>
                 @endforeach
             </select>
+            @else
+            <input 
+                type="hidden" 
+                wire:model="seller_id"
+                value="{{ $seller->id }}"
+            >
+            @endif
             @error('seller_id') <span class="text-red-500 text-sm">{{ $errors->first('seller_id') }}</span> @enderror
         </div>
 

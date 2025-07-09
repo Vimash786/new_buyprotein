@@ -171,6 +171,7 @@ new class extends Component
             'lowStockProducts' => $lowStockProducts,
             'variantProducts' => $variantProducts,
             'isSeller' => $isSeller,
+            'seller' => Sellers::where('user_id', $user->id)->first(),
             'currentSeller' => $seller,
         ];
     }
@@ -1317,7 +1318,7 @@ new class extends Component
         </div>
 
         <!-- Stats Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8" hidden>
             <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
                 <div class="flex items-center">
                     <div class="flex-1">

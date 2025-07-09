@@ -3,6 +3,7 @@
 use App\Models\Sellers;
 use App\Models\products;
 use App\Models\orders;
+use App\Models\Coupon;
 use App\Models\User;
 use App\Models\Category;
 use App\Models\SubCategory;
@@ -28,6 +29,17 @@ new class extends Component
                 'totalOrders' => orders::whereIn('product_id', 
                     products::where('seller_id', $seller->id)->pluck('id')
                 )->count(),
+                'totalsellers' => orders::whereIn('product_id', 
+                    products::where('seller_id', $seller->id)->pluck('id')
+                )->count(),
+                'totalSales' => orders::whereIn('product_id', 
+                    products::where('seller_id', $seller->id)->pluck('id')
+                )->where('status', 'delivered')->sum('total_amount'),
+                
+                'totalRevenue' => orders::whereIn('product_id', 
+                    products::where('seller_id', $seller->id)->pluck('id')
+                )->where('status', 'delivered')->sum(DB::raw("total_amount * {$seller->commission} / 100")),
+
                 'totalUsers' => User::count(), // Keep global count for reference
                 'totalCategories' => Category::count(),
                 'totalSubCategories' => SubCategory::count(),
@@ -35,9 +47,12 @@ new class extends Component
                 'activeBanners' => Banner::where('status', 'active')->count(),
                 'totalBlogs' => Blog::count(),
                 'publishedBlogs' => Blog::where('status', 'published')->count(),
-                'isSeller' => true,
+                'isSeller' => true, 
                 'sellerName' => $seller->company_name,
                 'sellerStatus' => $seller->status,
+                'orderCount' => orders::whereIn('product_id', 
+                    products::where('seller_id', $seller->id)->pluck('id')
+                )->with(['product', 'user'])->latest()->take(10)->get(),
             ];
         } else {
             // Admin/Super Admin data (global)
@@ -48,11 +63,14 @@ new class extends Component
                 'totalProducts' => products::count(),
                 'totalOrders' => orders::count(),
                 'totalUsers' => User::count(),
+                'totalSales' => orders::where('status', 'delivered')->sum('total_amount'),
                 'totalCategories' => Category::count(),
                 'totalSubCategories' => SubCategory::count(),
                 'totalBanners' => Banner::count(),
                 'activeBanners' => Banner::where('status', 'active')->count(),
                 'totalBlogs' => Blog::count(),
+                'activeCoupons' => Coupon::where('status', 'active')->count(),
+                'inactiveProducts'=> products::where('status', 'inactive')->count(),
                 'publishedBlogs' => Blog::where('status', 'published')->count(),
                 'isSeller' => false,
                 'sellerName' => null,
@@ -91,7 +109,266 @@ new class extends Component
                     <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Admin Dashboard</h1>
                     <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">Overview of your BuyProtein platform</p>
                 @endif
-            </div>            <!-- Quick Actions -->
+            </div>            
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+                <!-- Total Sellers -->
+                <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="flex-1">
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">
+                                @if($isSeller)
+                                    Total Sales
+                                @else
+                                    Total Sellers
+                                @endif
+                            </h3>
+                            <p class="text-3xl font-bold text-blue-600">{{ $isSeller ? '₹'.$totalSales : $totalSellers }}</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                                @if($isSeller)
+                                    My total sales
+                                @else
+                                    Registered companies
+                                @endif
+                            </p>
+                        </div>
+                        <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/50 rounded-lg flex items-center justify-center">
+                            @if($isSeller)
+                            <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                            </svg>
+                            @else       
+                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Total Products -->
+                <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="flex-1">
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">
+                                Total Products
+                            </h3>
+                            <p class="text-3xl font-bold text-purple-600">{{ $totalProducts }}</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                                @if($isSeller)
+                                    Products in my catalog
+                                @else
+                                    Available in catalog
+                                @endif
+                            </p>
+                        </div>
+                        <div class="w-12 h-12 bg-purple-100 dark:bg-purple-900/50 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+               
+                
+                @if($isSeller)
+                <!-- Total Payout Received -->
+                <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="flex-1">
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Total Payout Received</h3>
+                            <p class="text-3xl font-bold text-green-600">₹{{ $totalSales}}</p>   
+                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">Received revenue</p>
+                        </div>
+                        <div class="w-12 h-12 bg-green-100 dark:bg-green-900/50 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2zM10 8.5a.5.5 0 11-1 0 .5.5 0 011 0zm5 5a.5.5 0 11-1 0 .5.5 0 011 0z" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Total Payout pending -->
+                <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="flex-1">
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Total Payout Pending</h3>
+                            <p class="text-3xl font-bold text-orange-600">₹{{ $totalSales}}</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">Pending revenue</p>
+                        </div>
+                        <div class="w-12 h-12 bg-orange-100 dark:bg-orange-900/50 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                @endif
+
+            
+
+                @if(!$isSeller)
+                <!-- Total Orders-->
+                <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="flex-1">
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">
+                                Total Orders
+                            </h3>
+                            <p class="text-3xl font-bold text-indigo-600">{{ $totalOrders }}</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                              
+                                All time orders
+                            </p>
+                        </div>
+                        <div class="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/50 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                <!-- Total Users -->
+                <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="flex-1">
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Total Users</h3>
+                            <p class="text-3xl font-bold text-red-600">{{ User::where('role', 'User')->count() }}</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">Regular customers</p>
+                        </div>
+                        <div class="w-12 h-12 bg-red-100 dark:bg-red-900/50 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gym Owners/Trainers/Influencers -->
+                <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="flex-1">
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Gym/Trainers/Influencers</h3>
+                            <p class="text-3xl font-bold text-green-600">{{ User::where('role', 'Gym Owner/Trainer/Influencer')->count() }}</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">Fitness professionals</p>
+                        </div>
+                        <div class="w-12 h-12 bg-green-100 dark:bg-green-900/50 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Shop Owners -->
+                <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="flex-1">
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Shop Owners</h3>
+                            <p class="text-3xl font-bold text-purple-600">{{ User::where('role', 'Shop Owner')->count() }}</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">Physical store owners</p>
+                        </div>
+                        <div class="w-12 h-12 bg-purple-100 dark:bg-purple-900/50 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2zM10 8.5a.5.5 0 11-1 0 .5.5 0 011 0zm5 5a.5.5 0 11-1 0 .5.5 0 011 0z" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                <!-- Total Sales -->
+                <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="flex-1">
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Total Sales</h3>
+                            <p class="text-3xl font-bold text-emerald-600">₹{{ $totalSales }}</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">Delivered orders revenue</p>
+                        </div>
+                        <div class="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/50 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                <!-- Total Commission Earned -->
+                <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="flex-1">
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Commission Earned</h3>
+                            <p class="text-3xl font-bold text-orange-600">₹{{ $totalSales }}</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">Platform commission earned</p>
+                        </div>
+                        <div class="w-12 h-12 bg-orange-100 dark:bg-orange-900/50 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Total Seller Commission -->
+                <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="flex-1">
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Payment Due</h3>
+                            <p class="text-3xl font-bold text-pink-600">₹{{ $totalSales }}</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">Total paid to sellers</p>
+                        </div>
+                        <div class="w-12 h-12 bg-pink-100 dark:bg-pink-900/50 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                <!-- Approved Sellers -->
+                <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="flex-1">
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Active Coupons</h3>
+                            <p class="text-3xl font-bold text-teal-600">{{ $activeCoupons }}</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">Active Coupons</p>
+                        </div>
+                        <div class="w-12 h-12 bg-teal-100 dark:bg-teal-900/50 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pending Sellers -->
+                <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="flex-1">
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Pending Sellers Approval</h3>
+                            <p class="text-3xl font-bold text-yellow-600">{{ $pendingSellers }}</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">Awaiting review</p>
+                        </div>
+                        <div class="w-12 h-12 bg-yellow-100 dark:bg-yellow-900/50 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="flex-1">
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Pending Products Approval</h3>
+                            <p class="text-3xl font-bold text-red-600">{{ $inactiveProducts }}</p>
+                        </div>
+                        <div class="w-12 h-12 bg-red-100 dark:bg-red-900/50 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                @endif
+            </div>
+             <!-- Quick Actions -->
             <div class="mb-8">
                 <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
                     <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h2>
@@ -221,328 +498,84 @@ new class extends Component
                     </div>
                 </div>
             </div>
-
-            <!-- Stats Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
-                <!-- Total Sellers -->
-                <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
-                    <div class="flex items-center">
-                        <div class="flex-1">
-                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">
-                                @if($isSeller)
-                                    My Status
-                                @else
-                                    Total Sellers
-                                @endif
-                            </h3>
-                            <p class="text-3xl font-bold text-blue-600">{{ $totalSellers }}</p>
-                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">
-                                @if($isSeller)
-                                    {{ $sellerStatus === 'approved' ? 'Approved seller' : 'Pending approval' }}
-                                @else
-                                    Registered companies
-                                @endif
-                            </p>
-                        </div>
-                        <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/50 rounded-lg flex items-center justify-center">
-                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                            </svg>
-                        </div>
+            @if($isSeller)
+            <!-- Latest Orders Section -->
+            <div class="mb-8">
+                <div class="bg-white dark:bg-zinc-900 rounded-lg shadow">
+                    <div class="px-6 py-4 border-b border-gray-200 dark:border-zinc-700 flex justify-between items-center">
+                        <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Recent Orders</h2>
+                        <a href="{{ route('orders.manage') }}" wire:navigate 
+                           class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium">
+                            View All Orders →
+                        </a>
+                    </div>
+                    <div class="overflow-x-auto">
+                        @if($orderCount->count() > 0)
+                            <table class="min-w-full divide-y divide-gray-200 dark:divide-zinc-700">
+                                <thead class="bg-gray-50 dark:bg-zinc-800">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Order ID</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Product</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Customer</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Amount</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white dark:bg-zinc-900 divide-y divide-gray-200 dark:divide-zinc-700">
+                                    @foreach($orderCount as $order)
+                                        <tr class="hover:bg-gray-50 dark:hover:bg-zinc-800">
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                                                #{{ $order->id }}
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                                {{ $order->product->name ?? 'Product not found' }}
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                                {{ $order->user->name ?? 'User not found' }}
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600">
+                                                ₹{{ number_format($order->total_amount, 2) }}
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                @if($order->status === 'delivered')
+                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300">
+                                                        Delivered
+                                                    </span>
+                                                @elseif($order->status === 'pending')
+                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300">
+                                                        Pending
+                                                    </span>
+                                                @elseif($order->status === 'cancelled')
+                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300">
+                                                        Cancelled
+                                                    </span>
+                                                @else
+                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
+                                                        {{ ucfirst($order->status) }}
+                                                    </span>
+                                                @endif
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                                {{ $order->created_at->format('M d, Y') }}
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        @else
+                            <div class="px-6 py-12 text-center">
+                                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                </svg>
+                                <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No orders yet</h3>
+                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Start adding products to receive orders.</p>
+                            </div>
+                        @endif
                     </div>
                 </div>
-
-                <!-- Total Products -->
-                <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
-                    <div class="flex items-center">
-                        <div class="flex-1">
-                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">
-                                @if($isSeller)
-                                    My Products
-                                @else
-                                    Total Products
-                                @endif
-                            </h3>
-                            <p class="text-3xl font-bold text-purple-600">{{ $totalProducts }}</p>
-                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">
-                                @if($isSeller)
-                                    Products in my catalog
-                                @else
-                                    Available in catalog
-                                @endif
-                            </p>
-                        </div>
-                        <div class="w-12 h-12 bg-purple-100 dark:bg-purple-900/50 rounded-lg flex items-center justify-center">
-                            <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-
-                @if(!$isSeller)
-                <!-- Total Categories -->
-                <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
-                    <div class="flex items-center">
-                        <div class="flex-1">
-                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Categories</h3>
-                            <p class="text-3xl font-bold text-green-600">{{ $totalCategories }}</p>
-                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">Product categories</p>
-                        </div>
-                        <div class="w-12 h-12 bg-green-100 dark:bg-green-900/50 rounded-lg flex items-center justify-center">
-                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Total Sub Categories -->
-                <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
-                    <div class="flex items-center">
-                        <div class="flex-1">
-                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Sub-Categories</h3>
-                            <p class="text-3xl font-bold text-orange-600">{{ $totalSubCategories }}</p>
-                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">Product sub-categories</p>
-                        </div>
-                        <div class="w-12 h-12 bg-orange-100 dark:bg-orange-900/50 rounded-lg flex items-center justify-center">
-                            <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Total Banners -->
-                <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
-                    <div class="flex items-center">
-                        <div class="flex-1">
-                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Banners</h3>
-                            <p class="text-3xl font-bold text-cyan-600">{{ $totalBanners }}</p>
-                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">{{ $activeBanners }} active banners</p>
-                        </div>
-                        <div class="w-12 h-12 bg-cyan-100 dark:bg-cyan-900/50 rounded-lg flex items-center justify-center">
-                            <svg class="w-6 h-6 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Total Blogs -->
-                <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
-                    <div class="flex items-center">
-                        <div class="flex-1">
-                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Blogs</h3>
-                            <p class="text-3xl font-bold text-indigo-600">{{ $totalBlogs }}</p>
-                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">{{ $publishedBlogs }} published blogs</p>
-                        </div>
-                        <div class="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/50 rounded-lg flex items-center justify-center">
-                            <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-                @endif
-
-                <!-- Total Orders -->
-                <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
-                    <div class="flex items-center">
-                        <div class="flex-1">
-                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">
-                                @if($isSeller)
-                                    My Orders
-                                @else
-                                    Total Orders
-                                @endif
-                            </h3>
-                            <p class="text-3xl font-bold text-indigo-600">{{ $totalOrders }}</p>
-                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">
-                                @if($isSeller)
-                                    Orders for my products
-                                @else
-                                    All time orders
-                                @endif
-                            </p>
-                        </div>
-                        <div class="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/50 rounded-lg flex items-center justify-center">
-                            <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-
-                @if(!$isSeller)
-                <!-- Total Users -->
-                <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
-                    <div class="flex items-center">
-                        <div class="flex-1">
-                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Total Users</h3>
-                            <p class="text-3xl font-bold text-red-600">{{ $totalUsers }}</p>
-                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">Registered customers</p>
-                        </div>
-                        <div class="w-12 h-12 bg-red-100 dark:bg-red-900/50 rounded-lg flex items-center justify-center">
-                            <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Approved Sellers -->
-                <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
-                    <div class="flex items-center">
-                        <div class="flex-1">
-                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Approved Sellers</h3>
-                            <p class="text-3xl font-bold text-teal-600">{{ $approvedSellers }}</p>
-                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">Active and verified</p>
-                        </div>
-                        <div class="w-12 h-12 bg-teal-100 dark:bg-teal-900/50 rounded-lg flex items-center justify-center">
-                            <svg class="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Pending Sellers -->
-                <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
-                    <div class="flex items-center">
-                        <div class="flex-1">
-                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Pending Approval</h3>
-                            <p class="text-3xl font-bold text-yellow-600">{{ $pendingSellers }}</p>
-                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">Awaiting review</p>
-                        </div>
-                        <div class="w-12 h-12 bg-yellow-100 dark:bg-yellow-900/50 rounded-lg flex items-center justify-center">
-                            <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-                @endif
             </div>
-
-            <!-- Recent Activity -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                @if($isSeller)
-                    <!-- Seller Performance -->
-                    <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">My Performance</h3>
-                        <div class="space-y-3">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center">
-                                    <div class="w-3 h-3 bg-purple-500 rounded-full mr-3"></div>
-                                    <span class="text-sm text-gray-600 dark:text-gray-300">Products Listed</span>
-                                </div>
-                                <span class="text-sm font-medium text-gray-900 dark:text-white">{{ $totalProducts }}</span>
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center">
-                                    <div class="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
-                                    <span class="text-sm text-gray-600 dark:text-gray-300">Orders Received</span>
-                                </div>
-                                <span class="text-sm font-medium text-gray-900 dark:text-white">{{ $totalOrders }}</span>
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center">
-                                    <div class="w-3 h-3 bg-blue-500 rounded-full mr-3"></div>
-                                    <span class="text-sm text-gray-600 dark:text-gray-300">Account Status</span>
-                                </div>
-                                <span class="text-sm font-medium {{ $sellerStatus === 'approved' ? 'text-green-600' : 'text-yellow-600' }}">
-                                    {{ ucfirst($sellerStatus) }}
-                                </span>
-                            </div>
-                        </div>
-                        <div class="mt-4">
-                            <a href="{{ route('products.manage') }}" wire:navigate 
-                               class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium">
-                                Manage my products →
-                            </a>
-                        </div>
-                    </div>
-
-                    <!-- Quick Stats -->
-                    <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Stats</h3>
-                        <div class="space-y-3">
-                            <div class="flex items-center justify-between">
-                                <span class="text-sm text-gray-600 dark:text-gray-300">Orders per Product</span>
-                                <span class="text-sm font-medium text-gray-900 dark:text-white">
-                                    {{ $totalProducts > 0 ? number_format($totalOrders / $totalProducts, 1) : '0' }}
-                                </span>
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <span class="text-sm text-gray-600 dark:text-gray-300">Account Age</span>
-                                <span class="text-sm font-medium text-gray-900 dark:text-white">
-                                    {{ auth()->user()->created_at->diffForHumans() }}
-                                </span>
-                            </div>
-                            @if($sellerStatus === 'not_approved')
-                                <div class="flex items-center justify-between">
-                                    <span class="text-sm text-gray-600 dark:text-gray-300">Approval Status</span>
-                                    <span class="text-sm font-medium text-yellow-600">
-                                        Under Review
-                                    </span>
-                                </div>
-                            @endif
-                        </div>
-                    </div>
-                @else
-                    <!-- Seller Status Breakdown -->
-                    <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Seller Status</h3>
-                        <div class="space-y-3">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center">
-                                    <div class="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
-                                    <span class="text-sm text-gray-600 dark:text-gray-300">Approved</span>
-                                </div>
-                                <span class="text-sm font-medium text-gray-900 dark:text-white">{{ $approvedSellers }}</span>
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center">
-                                    <div class="w-3 h-3 bg-yellow-500 rounded-full mr-3"></div>
-                                    <span class="text-sm text-gray-600 dark:text-gray-300">Pending</span>
-                                </div>
-                                <span class="text-sm font-medium text-gray-900 dark:text-white">{{ $pendingSellers }}</span>
-                            </div>
-                        </div>
-                        <div class="mt-4">
-                            <a href="{{ route('sellers.manage') }}" wire:navigate 
-                               class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium">
-                                View all sellers →
-                            </a>
-                        </div>
-                    </div>
-
-                    <!-- Quick Stats -->
-                    <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Platform Overview</h3>
-                        <div class="space-y-3">
-                            <div class="flex items-center justify-between">
-                                <span class="text-sm text-gray-600 dark:text-gray-300">Products per Seller</span>
-                                <span class="text-sm font-medium text-gray-900 dark:text-white">
-                                    {{ $totalSellers > 0 ? number_format($totalProducts / $totalSellers, 1) : '0' }}
-                                </span>
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <span class="text-sm text-gray-600 dark:text-gray-300">Orders per Product</span>
-                                <span class="text-sm font-medium text-gray-900 dark:text-white">
-                                    {{ $totalProducts > 0 ? number_format($totalOrders / $totalProducts, 1) : '0' }}
-                                </span>
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <span class="text-sm text-gray-600 dark:text-gray-300">Approval Rate</span>
-                                <span class="text-sm font-medium text-gray-900 dark:text-white">
-                                    {{ $totalSellers > 0 ? number_format(($approvedSellers / $totalSellers) * 100, 1) : '0' }}%
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                @endif
-            </div>            </div>
+            @endif
+        </div>
      </div>
 </div>
