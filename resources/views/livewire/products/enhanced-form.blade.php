@@ -41,10 +41,23 @@
             <textarea 
                 wire:model="description"
                 rows="3"
+                id='edit'
                 class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
                 placeholder="Enter product description"
             ></textarea>
             @error('description') <span class="text-red-500 text-sm">{{ $errors->first('description') }}</span> @enderror
+        </div>
+
+        <!-- Has Variants Toggle -->
+        <div class="md:col-span-2">
+            <label class="flex items-center space-x-2">
+                <input 
+                    type="checkbox" 
+                    wire:model.live="has_variants"
+                    class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                >
+                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">This product has variants (e.g., different weights, flavors, sizes)</span>
+            </label>
         </div>
 
         <!-- User Type Pricing -->
@@ -252,6 +265,7 @@
         </div>
 
         <!-- Section Category -->
+        @if(!$isSeller)
         <div class="md:col-span-2">
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Section Category</label>
             <select 
@@ -264,6 +278,7 @@
             </select>
             @error('section_category') <span class="text-red-500 text-sm">{{ $errors->first('section_category') }}</span> @enderror
         </div>
+        @endif
 
         <!-- Thumbnail Image -->
         <div class="md:col-span-2">
@@ -344,18 +359,6 @@
                 @endif
             </div>
         @endif
-
-        <!-- Has Variants Toggle -->
-        <div class="md:col-span-2">
-            <label class="flex items-center space-x-2">
-                <input 
-                    type="checkbox" 
-                    wire:model.live="has_variants"
-                    class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-                >
-                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">This product has variants (e.g., different weights, flavors, sizes)</span>
-            </label>
-        </div>
 
         <!-- Variants Section -->
         @if($has_variants)
