@@ -461,7 +461,7 @@
                                 Regenerate
                             </button>
                         </div>
-                        <div class="max-h-60 overflow-y-auto">
+                        <div class="max-h-100 overflow-y-auto">
                             @foreach($variant_combinations as $combIndex => $combination)
                                 <div class="bg-white dark:bg-zinc-900 p-3 rounded border mb-2">
                                     <div class="grid grid-cols-1 gap-2">
