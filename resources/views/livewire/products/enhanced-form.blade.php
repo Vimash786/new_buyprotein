@@ -305,7 +305,7 @@
         @if(!$has_variants)
             <div class="md:col-span-2">
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Additional Images (minimum 3 required)
+                    Additional Images (maximum 3 images)
                     <span class="text-xs text-gray-500">(Size: 200KB - 400KB each)</span>
                 </label>
                 <input 
@@ -438,7 +438,7 @@
                                             wire:model="variants.{{ $variantIndex }}.options.{{ $optionIndex }}.display_value"
                                             placeholder="Display (optional)"
                                             class="flex-1 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
-                                        >
+                                        hidden>
                                         @if(count($variant['options']) > 1)
                                             <button 
                                                 type="button"
@@ -648,7 +648,7 @@
                                         <div class="mt-3 border-t pt-3">
                                             <div class="flex items-center justify-between mb-2">
                                                 <label class="text-xs font-medium text-gray-700 dark:text-gray-300">
-                                                    Variant Images (minimum 3 required)
+                                                    Variant Images (maximum 3 images)
                                                     <span class="text-xs text-gray-500">(Size: 200KB - 400KB each)</span>
                                                 </label>
                                             </div>

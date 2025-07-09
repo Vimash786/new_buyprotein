@@ -100,7 +100,9 @@ new class extends Component
         'section_category' => 'required|in:everyday_essential,popular_pick,exclusive_deal',
         'has_variants' => 'boolean',
         'thumbnail_image' => 'nullable|image|min:200|max:400', // 200KB to 400KB
+        'product_images' => 'nullable|array|max:3', // Maximum 3 images
         'product_images.*' => 'nullable|image|min:200|max:400', // 200KB to 400KB
+        'variant_images.*' => 'nullable|array|max:3', // Maximum 3 images per variant
         'variant_images.*.*' => 'nullable|image|min:200|max:400', // 200KB to 400KB
         'variant_thumbnails.*' => 'nullable|image|min:200|max:400', // 200KB to 400KB
     ];
