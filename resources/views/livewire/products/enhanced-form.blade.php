@@ -280,29 +280,31 @@
         </div>
         @endif
 
-        <!-- Thumbnail Image -->
-        <div class="md:col-span-2">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Thumbnail Image
-                <span class="text-xs text-gray-500">(Size: 200KB - 400KB)</span>
-            </label>
-            <input 
-                type="file" 
-                wire:model="thumbnail_image"
-                accept="image/*"
-                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-            >
-            @error('thumbnail_image') <span class="text-red-500 text-sm">{{ $errors->first('thumbnail_image') }}</span> @enderror
-            @if($thumbnail_image)
-                <div class="mt-2">
-                    <img src="{{ $thumbnail_image->temporaryUrl() }}" alt="Preview" class="w-20 h-20 object-cover rounded">
-                    <p class="text-xs text-gray-500 mt-1">Size: {{ $this->formatFileSize($thumbnail_image->getSize()) }}</p>
-                </div>
-            @endif
-        </div>
+        
 
         <!-- Product Images -->
         @if(!$has_variants)
+            <!-- Thumbnail Image -->
+            <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Thumbnail Image
+                    <span class="text-xs text-gray-500">(Size: 200KB - 400KB)</span>
+                </label>
+                <input 
+                    type="file" 
+                    wire:model="thumbnail_image"
+                    accept="image/*"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
+                >
+                @error('thumbnail_image') <span class="text-red-500 text-sm">{{ $errors->first('thumbnail_image') }}</span> @enderror
+                @if($thumbnail_image)
+                    <div class="mt-2">
+                        <img src="{{ $thumbnail_image->temporaryUrl() }}" alt="Preview" class="w-20 h-20 object-cover rounded">
+                        <p class="text-xs text-gray-500 mt-1">Size: {{ $this->formatFileSize($thumbnail_image->getSize()) }}</p>
+                    </div>
+                @endif
+            </div>
+
             <div class="md:col-span-2">
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Additional Images (maximum 3 images)
@@ -433,12 +435,6 @@
                                         class="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
                                     >
                                     <div class="flex items-center gap-1">
-                                        <input 
-                                            type="text" 
-                                            wire:model="variants.{{ $variantIndex }}.options.{{ $optionIndex }}.display_value"
-                                            placeholder="Display (optional)"
-                                            class="flex-1 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
-                                        hidden>
                                         @if(count($variant['options']) > 1)
                                             <button 
                                                 type="button"
