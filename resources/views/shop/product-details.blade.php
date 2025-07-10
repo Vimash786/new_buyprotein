@@ -20,7 +20,7 @@
         <div class="container">
             <div class="shopdetails-style-1-wrapper">
                 <div class="row g-5">
-                    <div class="col-lg-9">
+                    <div class="col-lg-12">
                         <div class="product-details-popup-wrapper in-shopdetails">
                             <div
                                 class="rts-product-details-section rts-product-details-section2 product-details-popup-section">
@@ -127,6 +127,71 @@
                                                     class="rts-btn btn-primary add-to-wishlist ml--20"><i
                                                         class="fa-light fa-heart"></i></a>
                                             </div>
+
+                                            @if ($product->variants && $product->variants->count() > 0)
+                                                <div class="col-lg-3  rts-item">
+                                                    <div class="">
+                                                        <div class="shop-sidevbar">
+                                                            <h6 class="title">Varients</h6>
+                                                            @foreach ($product->variants as $variant)
+                                                                <h4>{{ $variant->name }}</h4>
+
+                                                                @php
+                                                                    $allData = isset($product->variantCombinations)
+                                                                        ? $product->variantCombinations
+                                                                        : collect();
+                                                                    $allOptions = collect();
+
+                                                                    if (
+                                                                        $product->variantCombinations &&
+                                                                        $product->variantCombinations->count()
+                                                                    ) {
+                                                                        foreach (
+                                                                            $product->variantCombinations
+                                                                            as $combination
+                                                                        ) {
+                                                                            $optionIds = is_array(
+                                                                                $combination->variant_options,
+                                                                            )
+                                                                                ? $combination->variant_options
+                                                                                : json_decode(
+                                                                                    $combination->variant_options,
+                                                                                    true,
+                                                                                );
+
+                                                                            $options = \App\Models\ProductVariantOption::whereIn(
+                                                                                'id',
+                                                                                $optionIds,
+                                                                            )
+                                                                                ->where(
+                                                                                    'product_variant_id',
+                                                                                    $variant->id,
+                                                                                )
+                                                                                ->get();
+
+                                                                            $allOptions = $allOptions->merge($options);
+                                                                        }
+
+                                                                        $uniqueOptions = $allOptions->unique('id');
+                                                                    }
+                                                                @endphp
+
+                                                                @if (!empty($uniqueOptions) && $uniqueOptions->count())
+                                                                    @foreach ($uniqueOptions as $index => $option)
+                                                                        <label class="variant-radio mb-2 mx-2">
+                                                                            <input type="radio" name="variant_{{ $variant->id }}" value="{{ $option->id }}" {{ $loop->first ? 'checked' : '' }}>
+                                                                            {{ $option->value }}
+                                                                        </label>
+                                                                    @endforeach
+                                                                @else
+                                                                    <p>No combinations available</p>
+                                                                @endif
+                                                            @endforeach
+
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            @endif
                                         </div>
                                     </div>
                                 </div>
@@ -364,60 +429,7 @@
                             </div>
                         </div>
                     </div>
-                    @if ($product->variants && $product->variants->count() > 0)
-                        <div class="col-lg-3  rts-sticky-column-item">
-                            <div class="theiaStickySidebar">
-                                <div class="shop-sight-sticky-sidevbar  mb--20">
-                                    <h6 class="title">Varients</h6>
-                                    @foreach ($product->variants as $variant)
-                                        <h4>{{ $variant->name }}</h4>
 
-                                        @php
-                                            $allData = isset($product->variantCombinations)
-                                                ? $product->variantCombinations
-                                                : collect();
-                                            $allOptions = collect();
-
-                                            if (
-                                                $product->variantCombinations &&
-                                                $product->variantCombinations->count()
-                                            ) {
-                                                foreach ($product->variantCombinations as $combination) {
-                                                    $optionIds = is_array($combination->variant_options)
-                                                        ? $combination->variant_options
-                                                        : json_decode($combination->variant_options, true);
-
-                                                    $options = \App\Models\ProductVariantOption::whereIn(
-                                                        'id',
-                                                        $optionIds,
-                                                    )
-                                                        ->where('product_variant_id', $variant->id)
-                                                        ->get();
-
-                                                    $allOptions = $allOptions->merge($options);
-                                                }
-
-                                                $uniqueOptions = $allOptions->unique('id');
-                                            }
-                                        @endphp
-
-                                        @if (!empty($uniqueOptions) && $uniqueOptions->count())
-                                            @foreach ($uniqueOptions as $index => $option)
-                                                <label>
-                                                    <input type="radio" name="variant_{{ $variant->id }}"
-                                                        value="{{ $option->id }}" {{ $loop->first ? 'checked' : '' }}>
-                                                    {{ $option->value }}
-                                                </label><br>
-                                            @endforeach
-                                        @else
-                                            <p>No combinations available</p>
-                                        @endif
-                                    @endforeach
-
-                                </div>
-                            </div>
-                        </div>
-                    @endif
                 </div>
             </div>
         </div>

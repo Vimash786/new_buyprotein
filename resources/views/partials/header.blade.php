@@ -249,13 +249,13 @@
                                             </div>
                                         </div>
                                         <div class="button-wrapper d-flex align-items-center justify-content-between">
-                                            <a href="cart.html" class="rts-btn btn-primary ">View Cart</a>
+                                            <a href="{{ route('user.cart') }}" class="rts-btn btn-primary ">View Cart</a>
                                             <a href="checkout.html"
                                                 class="rts-btn btn-primary border-only">CheckOut</a>
                                         </div>
                                     </div>
                                 </div>
-                                <a href="cart.html" class="over_link"></a>
+                                <a href="{{ route('user.cart') }}" class="over_link"></a>
                             </div>
 
                         </div>
@@ -415,7 +415,7 @@
                 </div>
                 <div class="col-lg-12">
                     <div class="logo-search-category-wrapper after-md-device-header">
-                        <a href="index.html" class="logo-area">
+                        <a href="{{ route('home') }}" class="logo-area">
                             <img src="{{ asset('buy-protein.jpg') }}" alt="logo-main"
                                 style="height: 94px; width: 288px;" class="logo">
                         </a>
@@ -586,7 +586,7 @@
                                             </div>
                                             <div
                                                 class="button-wrapper d-flex align-items-center justify-content-between">
-                                                <a href="cart.html" class="rts-btn btn-primary ">View Cart</a>
+                                                <a href="{{ route('user.cart') }}" class="rts-btn btn-primary ">View Cart</a>
                                                 <a href="checkout.html"
                                                     class="rts-btn btn-primary border-only">CheckOut</a>
                                             </div>

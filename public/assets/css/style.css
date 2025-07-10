@@ -30216,73 +30216,87 @@ header.header-three .sub-dropdown .submenu.third-lvl.base {
 }
 
 .billing-address {
-  font-family: sans-serif;
-  max-width: 400px;
+    font-family: sans-serif;
+    max-width: 400px;
 }
 
 .billing-address h3 {
-  margin-bottom: 1rem;
-  font-size: 1rem;
-  font-weight: 600;
+    margin-bottom: 1rem;
+    font-size: 1rem;
+    font-weight: 600;
 }
 
 .option-card {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  padding: 12px;
-  margin-bottom: 10px;
-  cursor: pointer;
-  position: relative;
-  transition: border 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    position: relative;
+    transition: border 0.3s;
 }
 
 .option-card input[type="radio"] {
-  appearance: none;
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
+    appearance: none;
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
 }
 
 .custom-radio {
-  width: 16px;
-  height: 16px;
-  border: 2px solid #009ec9;
-  border-radius: 50%;
-  position: relative;
-  flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #009ec9;
+    border-radius: 50%;
+    position: relative;
+    flex-shrink: 0;
 }
 
 .custom-radio::after {
-  content: '';
-  position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #009ec9;
-  display: none;
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #009ec9;
+    display: none;
 }
 
 .option-card input[type="radio"]:checked + .custom-radio::after {
-  display: block;
+    display: block;
 }
 
 .option-card input[type="radio"]:checked ~ span {
-  font-weight: 600;
+    font-weight: 600;
 }
 
 .option-card input[type="radio"]:checked ~ .custom-radio {
-  border-color: #009ec9;
+    border-color: #009ec9;
 }
 
 .option-card input[type="radio"]:checked ~ span {
-  color: #1a1a1a;
+    color: #1a1a1a;
 }
 
 .option-card input[type="radio"]:checked ~ .option-card {
-  border: 2px solid #009ec9;
+    border: 2px solid #009ec9;
+}
+
+.variant-section {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+}
+
+.variant-group {
+    margin: 10px 0;
+}
+
+/* Label turns red when input is checked */
+.variant-radio input[type="radio"]:checked + * {
+    color: red;
 }

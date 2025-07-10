@@ -75,7 +75,7 @@
                             <div class="row g-4">
                                 @if (isset($products))
                                     @foreach ($products as $product)
-                                        <div class="col-lg-20 col-lg-4 col-md-6 col-sm-6 col-12">
+                                        <div class="col-md-3">
                                             <div class="single-shopping-card-one">
                                                 <div class="image-and-action-area-wrapper">
                                                     <a href="{{ route('product.details', Crypt::encrypt($product->id)) }}"
