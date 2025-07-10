@@ -26,7 +26,7 @@ Volt::route('/blog', 'blogs.index')->name('blog.index');
 //     return view('dashboard');
 // })->name('home');
 
-Volt::route('dashboard', 'dashboard')
+Volt::route('dashboard', 'admindash')
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
