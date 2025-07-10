@@ -3,9 +3,11 @@
 
 
 <!-- Mirrored from html.themewant.com/ekomart/index.html by HTTrack Website Copier/3.x [XR&CO'2014], Mon, 30 Jun 2025 07:19:26 GMT -->
+
 <head>
     <meta charset="UTF-8">
-    <meta name="description" content="Ekomart-Grocery-Store(e-Commerce) HTML Template: A sleek, responsive, and user-friendly HTML template designed for online grocery stores.">
+    <meta name="description"
+        content="Ekomart-Grocery-Store(e-Commerce) HTML Template: A sleek, responsive, and user-friendly HTML template designed for online grocery stores.">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="keywords" content="Grocery, Store, stores">
     <title>@yield('title', 'Buy Protein Store (e-Commerce)')</title>
@@ -14,6 +16,8 @@
     <!-- plugins css -->
     <link rel="stylesheet preload" href="{{ asset('assets/css/plugins.css') }}" as="style">
     <link rel="stylesheet preload" href="{{ asset('assets/css/style.css') }}" as="style">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
 
     @stack('styles')
 </head>
@@ -81,21 +85,34 @@
                     <div class="product-thumb-area">
                         <div class="cursor"></div>
                         <div class="thumb-wrapper one filterd-items figure">
-                            <div class="product-thumb zoom" onmousemove="zoom(event)" style="background-image: url({{ asset('assets/images/products/product-details.jpg') }})"><img src="{{ asset('assets/images/products/product-details.jpg') }}" alt="product-thumb">
+                            <div class="product-thumb zoom" onmousemove="zoom(event)"
+                                style="background-image: url({{ asset('assets/images/products/product-details.jpg') }})">
+                                <img src="{{ asset('assets/images/products/product-details.jpg') }}"
+                                    alt="product-thumb">
                             </div>
                         </div>
                         <div class="thumb-wrapper two filterd-items hide">
-                            <div class="product-thumb zoom" onmousemove="zoom(event)" style="background-image: url({{ asset('assets/images/products/product-filt2.jpg') }})"><img src="{{ asset('assets/images/products/product-filt2.jpg') }}" alt="product-thumb">
+                            <div class="product-thumb zoom" onmousemove="zoom(event)"
+                                style="background-image: url({{ asset('assets/images/products/product-filt2.jpg') }})">
+                                <img src="{{ asset('assets/images/products/product-filt2.jpg') }}" alt="product-thumb">
                             </div>
                         </div>
                         <div class="thumb-wrapper three filterd-items hide">
-                            <div class="product-thumb zoom" onmousemove="zoom(event)" style="background-image: url({{ asset('assets/images/products/product-filt3.jpg') }})"><img src="{{ asset('assets/images/products/product-filt3.jpg') }}" alt="product-thumb">
+                            <div class="product-thumb zoom" onmousemove="zoom(event)"
+                                style="background-image: url({{ asset('assets/images/products/product-filt3.jpg') }})">
+                                <img src="{{ asset('assets/images/products/product-filt3.jpg') }}" alt="product-thumb">
                             </div>
                         </div>
                         <div class="product-thumb-filter-group">
-                            <div class="thumb-filter filter-btn active" data-show=".one"><img src="{{ asset('assets/images/products/product-filt1.jpg') }}" alt="product-thumb-filter"></div>
-                            <div class="thumb-filter filter-btn" data-show=".two"><img src="{{ asset('assets/images/products/product-filt2.jpg') }}" alt="product-thumb-filter"></div>
-                            <div class="thumb-filter filter-btn" data-show=".three"><img src="{{ asset('assets/images/products/product-filt3.jpg') }}" alt="product-thumb-filter"></div>
+                            <div class="thumb-filter filter-btn active" data-show=".one"><img
+                                    src="{{ asset('assets/images/products/product-filt1.jpg') }}"
+                                    alt="product-thumb-filter"></div>
+                            <div class="thumb-filter filter-btn" data-show=".two"><img
+                                    src="{{ asset('assets/images/products/product-filt2.jpg') }}"
+                                    alt="product-thumb-filter"></div>
+                            <div class="thumb-filter filter-btn" data-show=".three"><img
+                                    src="{{ asset('assets/images/products/product-filt3.jpg') }}"
+                                    alt="product-thumb-filter"></div>
                         </div>
                     </div>
                     <div class="contents">
@@ -134,25 +151,27 @@
                                     <i class="fa-regular fa-cart-shopping"></i>
                                 </div>
                             </a>
-                            <a href="javascript:void(0);" class="rts-btn btn-primary ml--20"><i class="fa-light fa-heart"></i></a>
+                            <a href="javascript:void(0);" class="rts-btn btn-primary ml--20"><i
+                                    class="fa-light fa-heart"></i></a>
                         </div>
                         <div class="product-uniques">
                             <span class="sku product-unipue"><span>SKU: </span> BO1D0MX8SJ</span>
-                            <span class="catagorys product-unipue"><span>Categories: </span> T-Shirts, Tops, Mens</span>
+                            <span class="catagorys product-unipue"><span>Categories: </span> T-Shirts, Tops,
+                                Mens</span>
                             <span class="tags product-unipue"><span>Tags: </span> fashion, t-shirts, Men</span>
                         </div>
                         <div class="share-social">
                             <span>Share:</span>
                             <a class="platform" href="http://facebook.com/" target="_blank"><i
-                                class="fab fa-facebook-f"></i></a>
+                                    class="fab fa-facebook-f"></i></a>
                             <a class="platform" href="http://twitter.com/" target="_blank"><i
-                                class="fab fa-twitter"></i></a>
+                                    class="fab fa-twitter"></i></a>
                             <a class="platform" href="http://behance.com/" target="_blank"><i
-                                class="fab fa-behance"></i></a>
+                                    class="fab fa-behance"></i></a>
                             <a class="platform" href="http://youtube.com/" target="_blank"><i
-                                class="fab fa-youtube"></i></a>
+                                    class="fab fa-youtube"></i></a>
                             <a class="platform" href="http://linkedin.com/" target="_blank"><i
-                                class="fab fa-linkedin"></i></a>
+                                    class="fab fa-linkedin"></i></a>
                         </div>
                     </div>
                 </div>
@@ -172,7 +191,8 @@
 
 
     <!-- Modal -->
-    <div class="modal modal-compare-area-start fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal modal-compare-area-start fade" id="exampleModal" tabindex="-1"
+        aria-labelledby="exampleModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -225,13 +245,16 @@
                     <div class="compare-main-wrapper-body productname">
                         <div class="single-compare-elements name">Description</div>
                         <div class="single-compare-elements discription">
-                            <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard</p>
+                            <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum
+                                has been the industry's standard</p>
                         </div>
                         <div class="single-compare-elements discription">
-                            <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard</p>
+                            <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum
+                                has been the industry's standard</p>
                         </div>
                         <div class="single-compare-elements discription">
-                            <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard</p>
+                            <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum
+                                has been the industry's standard</p>
                         </div>
                     </div>
                     <div class="compare-main-wrapper-body productname">
@@ -391,7 +414,8 @@
         <div class="container">
             <div class="search-input-inner">
                 <div class="input-div">
-                    <input id="searchInput1" class="search-input" type="text" placeholder="Search by keyword or #">
+                    <input id="searchInput1" class="search-input" type="text"
+                        placeholder="Search by keyword or #">
                     <button><i class="far fa-search"></i></button>
                 </div>
             </div>
@@ -402,7 +426,9 @@
     <!-- progress area start -->
     <div class="progress-wrap">
         <svg class="progress-circle svg-content" width="100%" height="100%" viewBox="-1 -1 102 102">
-            <path d="M50,1 a49,49 0 0,1 0,98 a49,49 0 0,1 0,-98" style="transition: stroke-dashoffset 10ms linear 0s; stroke-dasharray: 307.919, 307.919; stroke-dashoffset: 307.919;"></path>
+            <path d="M50,1 a49,49 0 0,1 0,98 a49,49 0 0,1 0,-98"
+                style="transition: stroke-dashoffset 10ms linear 0s; stroke-dasharray: 307.919, 307.919; stroke-dashoffset: 307.919;">
+            </path>
         </svg>
     </div>
     <!-- progress area end -->
@@ -415,10 +441,38 @@
     <script defer src="{{ asset('assets/js/main.js') }}"></script>
     <!-- header style two End -->
 
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+
+    @if (session('success'))
+        <script>
+            Toastify({
+                text: "{{ session('success') }}",
+                duration: 3000,
+                gravity: "top", // top or bottom
+                position: "right", // left, center or right
+                backgroundColor: "#28a745", // green
+            }).showToast();
+        </script>
+    @endif
+
+    @if (session('error'))
+        <script>
+            Toastify({
+                text: "{{ session('error') }}",
+                duration: 3000,
+                gravity: "top",
+                position: "right",
+                backgroundColor: "#dc3545", // red
+            }).showToast();
+        </script>
+    @endif
+
+
     @stack('scripts')
 
 </body>
 
 
 <!-- Mirrored from html.themewant.com/ekomart/index.html by HTTrack Website Copier/3.x [XR&CO'2014], Mon, 30 Jun 2025 07:19:57 GMT -->
+
 </html>
