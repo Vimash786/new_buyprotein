@@ -107,9 +107,19 @@ new class extends Component
                 Storage::disk('public')->delete($this->banner_image);
             }
             
-            $fileName = time() . '_' . $this->banner_image_file->getClientOriginalName();
-            $filePath = $this->banner_image_file->storeAs('banners', $fileName, 'public');
-            $data['banner_image'] = $filePath;
+            try {
+                $fileName = time() . '_' . $this->banner_image_file->getClientOriginalName();
+                $filePath = $this->banner_image_file->storeAs('banners', $fileName, 'public');
+                
+                if (!$filePath) {
+                    throw new \Exception('Failed to store banner image');
+                }
+                
+                $data['banner_image'] = $filePath;
+            } catch (\Exception $e) {
+                $this->addError('banner_image_file', 'Failed to upload banner image. Please try again.');
+                return;
+            }
         }
         
         if ($this->editMode) {
