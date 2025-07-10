@@ -8,7 +8,7 @@
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">ProductId</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Product</th>
                     @if(!$isSeller)
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Seller</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Seller & Brand Name</th>
                     @endif
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Price</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Stock</th>
@@ -74,6 +74,9 @@
                         @if(!$isSeller)
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                             {{ $product->seller->company_name ?? 'N/A' }}
+                            @if($product->seller->brand)
+                                <div class="text-xs text-gray-500">{{ $product->seller->brand }}</div>
+                            @endif
                         </td>
                         @endif
                         <td class="px-6 py-4 whitespace-nowrap">
