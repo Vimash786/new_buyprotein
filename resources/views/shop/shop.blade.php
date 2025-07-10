@@ -114,8 +114,8 @@
                                                     </a>
                                                     <span class="availability">500g Pack</span>
                                                     <div class="price-area">
-                                                        <span class="current">₹{{ $product->price }}</span>
-                                                        <div class="previous">₹{{ $product->price }}</div>
+                                                        <span class="current">₹{{ $product->regular_user_final_price }}</span>
+                                                        <div class="previous">₹{{ $product->regular_user_price }}</div>
                                                     </div>
                                                     <div class="cart-counter-action">
                                                         <div class="quantity-edit">

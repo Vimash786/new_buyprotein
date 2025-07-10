@@ -97,19 +97,22 @@
                                                 {{ $product->description }}
                                             </p>
                                             <span class="product-price mb--15 d-block"
-                                                style="color: #DC2626; font-weight: 600;" id="product-price"> ₹{{ $product->regular_user_price }}<span
+                                                style="color: #DC2626; font-weight: 600;" id="product-price">
+                                                ₹{{ $product->regular_user_price }}<span
                                                     class="old-price ml--15">$69.35</span></span>
                                             <div class="product-bottom-action">
                                                 <div class="cart-edits">
                                                     <div class="quantity-edit action-item">
                                                         <button class="button"><i class="fal fa-minus minus"></i></button>
-                                                        <input type="text" class="input" name="quantity" id="quantity"
-                                                            value="01" />
+                                                        <input type="text" class="input quantity-input" name="quantity"
+                                                            id="quantity" value="01" />
                                                         <button class="button plus">+<i
                                                                 class="fal fa-plus plus"></i></button>
                                                     </div>
                                                 </div>
-                                                <a href="#" class="rts-btn btn-primary radious-sm with-icon">
+                                                <a href="javascript:void(0);"
+                                                    class="rts-btn btn-primary radious-sm with-icon add-to-cart-btn"
+                                                    data-product-id="{{ $product->id }}">
                                                     <div class="btn-text">
                                                         Add To Cart
                                                     </div>
@@ -120,7 +123,8 @@
                                                         <i class="fa-regular fa-cart-shopping"></i>
                                                     </div>
                                                 </a>
-                                                <a href="javascript:void(0);" class="rts-btn btn-primary ml--20"><i
+                                                <a href="javascript:void(0);" data-wish-product-id="{{ $product->id }}"
+                                                    class="rts-btn btn-primary add-to-wishlist ml--20"><i
                                                         class="fa-light fa-heart"></i></a>
                                             </div>
                                         </div>
@@ -369,7 +373,9 @@
                                         <h4>{{ $variant->name }}</h4>
 
                                         @php
-                                            $allData = isset($product->variantCombinations) ? $product->variantCombinations : collect();
+                                            $allData = isset($product->variantCombinations)
+                                                ? $product->variantCombinations
+                                                : collect();
                                             $allOptions = collect();
 
                                             if (
@@ -396,10 +402,10 @@
                                         @endphp
 
                                         @if (!empty($uniqueOptions) && $uniqueOptions->count())
-                                            @foreach ($uniqueOptions as $option)
+                                            @foreach ($uniqueOptions as $index => $option)
                                                 <label>
                                                     <input type="radio" name="variant_{{ $variant->id }}"
-                                                        value="{{ $option->id }}">
+                                                        value="{{ $option->id }}" {{ $loop->first ? 'checked' : '' }}>
                                                     {{ $option->value }}
                                                 </label><br>
                                             @endforeach
@@ -475,7 +481,8 @@
                                         <div class="single-shopping-card-one">
                                             <!-- iamge and sction area start -->
                                             <div class="image-and-action-area-wrapper">
-                                                <a href="{{ route('product.details', Crypt::encrypt($product->id)) }}" class="thumbnail-preview">
+                                                <a href="{{ route('product.details', Crypt::encrypt($product->id)) }}"
+                                                    class="thumbnail-preview">
                                                     @if ($product->discount_percentage > 0)
                                                         <div class="badge">
                                                             <span>{{ $product->discount_percentage }}% <br>
@@ -776,6 +783,7 @@
     </div>
     <!-- successfully add in wishlist end -->
 @endsection
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -783,28 +791,148 @@
         const totalVariants = {{ $product->variants->count() }};
         const selectedOptions = {};
 
+
+        function updatePriceBasedOnSelection() {
+            if (!Array.isArray(variantCombinations) || variantCombinations.length === 0) {
+                return;
+            }
+
+            const selectedOptionIds = Object.values(selectedOptions).map(Number).sort((a, b) => a - b);
+
+            const matchingCombination = variantCombinations.find(comb => {
+                if (!Array.isArray(comb.variant_options)) return false;
+                const combOptionIds = comb.variant_options.map(Number);
+                return selectedOptionIds.every(id => combOptionIds.includes(id));
+            });
+
+            const priceElement = document.getElementById('product-price');
+            if (matchingCombination) {
+                priceElement.textContent = "₹" + matchingCombination.regular_user_price;
+            } else {
+                priceElement.textContent = "₹{{ $product->regular_user_price }}";
+            }
+        }
+
+        // On change
         document.querySelectorAll('input[type=radio][name^="variant_"]').forEach(radio => {
             radio.addEventListener('change', function() {
                 const variantId = this.name.split('_')[1];
                 const optionId = parseInt(this.value);
                 selectedOptions[variantId] = optionId;
+                updatePriceBasedOnSelection();
+            });
 
-                const selectedOptionIds = Object.values(selectedOptions).map(Number).sort((a,
-                    b) => a - b);
+            // ✅ On load: prefill if already checked
+            if (radio.checked) {
+                const variantId = radio.name.split('_')[1];
+                const optionId = parseInt(radio.value);
+                selectedOptions[variantId] = optionId;
+            }
+        });
 
-                const matchingCombination = variantCombinations.find(comb => {
-                    if (!Array.isArray(comb.variant_options)) return false;
+        // ✅ Trigger once on page load
+        updatePriceBasedOnSelection();
+    });
+</script>
 
-                    const combOptionIds = comb.variant_options.map(
-                    Number);
 
-                    return selectedOptionIds.every(id => combOptionIds.includes(id));
-                });
+<script>
+    $(document).ready(function() {
+        $('.add-to-cart-btn').on('click', function(e) {
+            e.preventDefault();
 
-                if (matchingCombination) {
-                    document.getElementById('product-price').textContent = "₹" + matchingCombination.regular_user_price;
-                } else {
-                    document.getElementById('product-price').textContent = "₹{{ $product->price }}";
+            let productId = $(this).data('product-id');
+            let quantity = $('.quantity-input').val();
+            let selectedVariants = {};
+
+            $('input[type=radio][name^="variant_"]:checked').each(function() {
+                let variantId = $(this).attr('name').split('_')[1];
+                selectedVariants[variantId] = parseInt($(this).val());
+            });
+
+            $.ajax({
+                url: '{{ route('cart.add') }}',
+                method: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    product_id: productId,
+                    quantity: quantity,
+                    variant_option_ids: selectedVariants
+                },
+                success: function(response) {
+                    Toastify({
+                        text: "Product added to cart!",
+                        duration: 3000,
+                        gravity: "top",
+                        position: "right",
+                        backgroundColor: "#009ec9",
+                    }).showToast();
+                },
+                error: function(xhr) {
+                    console.log(xhr.status);
+                    if (xhr.status == 401) {
+                        Toastify({
+                            text: "Please Login to add product to cart.",
+                            duration: 3000,
+                            gravity: "top",
+                            position: "right",
+                            backgroundColor: "#dc3545",
+                        }).showToast();
+                    } else {
+                        Toastify({
+                            text: "Failed to add product to cart. Please try again.",
+                            duration: 3000,
+                            gravity: "top",
+                            position: "right",
+                            backgroundColor: "#dc3545",
+                        }).showToast();
+                    }
+                }
+            });
+        });
+    });
+</script>
+
+<script>
+    $(document).ready(function() {
+        $('.add-to-wishlist').on('click', function(e) {
+            e.preventDefault();
+
+            let productId = $(this).data('wish-product-id');
+            let quantity = $('.quantity-input').val();
+            let selectedVariants = {};
+
+            $('input[type=radio][name^="variant_"]:checked').each(function() {
+                let variantId = $(this).attr('name').split('_')[1];
+                selectedVariants[variantId] = parseInt($(this).val());
+            });
+
+            $.ajax({
+                url: '{{ route('wishlist.add') }}',
+                method: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    product_id: productId,
+                    quantity: quantity,
+                    variant_option_ids: selectedVariants
+                },
+                success: function(response) {
+                    Toastify({
+                        text: "Product added to wishlist!",
+                        duration: 3000,
+                        gravity: "top",
+                        position: "right",
+                        backgroundColor: "#009ec9",
+                    }).showToast();
+                },
+                error: function(xhr) {
+                    Toastify({
+                        text: "Failed to add product to wishlist. Please try again.",
+                        duration: 3000,
+                        gravity: "top",
+                        position: "right",
+                        backgroundColor: "#dc3545",
+                    }).showToast();
                 }
             });
         });

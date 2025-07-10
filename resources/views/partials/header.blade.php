@@ -163,80 +163,82 @@
                                 <i class="fa-light fa-user"></i>
                                 <span>Account</span>
                             </a>
-                            <a href="wishlist.html" class="btn-border-only wishlist">
+                            <a href="{{ route('user.wishlist') }}" class="btn-border-only wishlist">
                                 <i class="fa-regular fa-heart"></i>
                                 <span class="text">Wishlist</span>
                                 <span class="number">2</span>
                             </a>
+                            @php
+                                use App\Models\Cart;
+                                use App\Models\products;
+                                if (Auth::user()) {
+                                    $cartData = Cart::where('user_id', Auth::user()->id)->get();
+
+                                    $totalPrice = 0;
+                                    $products = collect();
+
+                                    if ($cartData->count() > 0) {
+                                        $productIds = $cartData->pluck('product_id');
+                                        $products = Products::whereIn('id', $productIds)->get();
+                                        foreach ($cartData as $cartItem) {
+                                            $product = $products->where('id', $cartItem->product_id)->first();
+                                            if ($product) {
+                                                $totalPrice += $cartItem->price * $cartItem->quantity;
+                                            }
+                                        }
+                                    } else {
+                                        $totalPrice = 0;
+                                    }
+                                }
+                            @endphp
                             <div class="btn-border-only cart category-hover-header">
                                 <i class="fa-sharp fa-regular fa-cart-shopping"></i>
                                 <span class="text">My Cart</span>
-                                <span class="number">2</span>
+                                <span class="number">{{ isset($cartData) ? $cartData->count() : 0 }}</span>
                                 <div class="category-sub-menu card-number-show">
-                                    <h5 class="shopping-cart-number">Shopping Cart (03)</h5>
-                                    <div class="cart-item-1 border-top">
-                                        <div class="img-name">
-                                            <div class="thumbanil">
-                                                <img src="{{ asset('assets/images/shop/cart-1.png') }}"
-                                                    alt="">
-                                            </div>
-                                            <div class="details">
-                                                <a href="shop-details.html">
-                                                    <h5 class="title">Foster Farms Breast Nuggets Shaped Chicken</h5>
-                                                </a>
-                                                <div class="number">
-                                                    1 <i class="fa-regular fa-x"></i>
-                                                    <span>$36.00</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="close-c1">
-                                            <i class="fa-regular fa-x"></i>
-                                        </div>
-                                    </div>
-                                    <div class="cart-item-1">
-                                        <div class="img-name">
-                                            <div class="thumbanil">
-                                                <img src="{{ asset('assets/images/shop/05.png') }}" alt="">
-                                            </div>
-                                            <div class="details">
-                                                <a href="shop-details.html">
-                                                    <h5 class="title">Foster Farms Breast Nuggets Shaped Chicken</h5>
-                                                </a>
-                                                <div class="number">
-                                                    1 <i class="fa-regular fa-x"></i>
-                                                    <span>$36.00</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="close-c1">
-                                            <i class="fa-regular fa-x"></i>
-                                        </div>
-                                    </div>
-                                    <div class="cart-item-1">
-                                        <div class="img-name">
-                                            <div class="thumbanil">
-                                                <img src="{{ asset('assets/images/shop/04.png') }}" alt="">
-                                            </div>
-                                            <div class="details">
-                                                <a href="shop-details.html">
-                                                    <h5 class="title">Foster Farms Breast Nuggets Shaped Chicken</h5>
-                                                </a>
-                                                <div class="number">
-                                                    1 <i class="fa-regular fa-x"></i>
-                                                    <span>$36.00</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="close-c1">
-                                            <i class="fa-regular fa-x"></i>
-                                        </div>
+                                    <h5 class="shopping-cart-number">Shopping Cart ({{ isset($cartData) ? $cartData->count() : 0 }})</h5>
+                                    <div class="cart-items-scroll-vertical">
+                                        @if (isset($cartData) && $cartData && $cartData->count() > 0)
+                                            @foreach ($cartData as $cartItem)
+                                                @php
+                                                    $product = $products->where('id', $cartItem->product_id)->first();
+                                                @endphp
+                                                @if ($product)
+                                                    <div class="cart-item-1 border-top">
+                                                        <div class="img-name">
+                                                            <div class="thumbanil">
+                                                                <img src="{{ asset('storage/' . $product->thumbnail_image) }}"
+                                                                    alt="{{ $product->name }}">
+                                                            </div>
+                                                            <div class="details">
+                                                                <a
+                                                                    href="{{ route('product.details', Crypt::encrypt($product->id)) }}">
+                                                                    <h5 class="title">{{ $product->name }}</h5>
+                                                                </a>
+                                                                <div class="number">
+                                                                    {{ $cartItem->quantity }} <i
+                                                                        class="fa-regular fa-x"></i>
+                                                                    <span>₹{{ number_format($cartItem->price * $cartItem->quantity, 2) }}</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="close-c1">
+                                                            <button class="delete-cart-item"
+                                                                data-id="{{ $cartItem->id }}"
+                                                                style="border: none; background: none;">
+                                                                <i class="fa-regular fa-x"></i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                @endif
+                                            @endforeach
+                                        @endif
                                     </div>
                                     <div class="sub-total-cart-balance">
                                         <div class="bottom-content-deals mt--10">
                                             <div class="top">
                                                 <span>Sub Total:</span>
-                                                <span class="number-c">$108.00</span>
+                                                <span class="number-c">₹{{ isset($totalPrice) ? $totalPrice : '' }}</span>
                                             </div>
                                             <div class="single-progress-area-incard">
                                                 <div class="progress">
@@ -245,7 +247,6 @@
                                                         aria-valuemax="100"></div>
                                                 </div>
                                             </div>
-                                            <p>Spend More <span>$125.00</span> to reach <span>Free Shipping</span></p>
                                         </div>
                                         <div class="button-wrapper d-flex align-items-center justify-content-between">
                                             <a href="cart.html" class="rts-btn btn-primary ">View Cart</a>
@@ -256,6 +257,7 @@
                                 </div>
                                 <a href="cart.html" class="over_link"></a>
                             </div>
+
                         </div>
                     </div>
                 </div>
@@ -395,7 +397,7 @@
                                             <li><a class="sub-b" href="blog-details.html">Blog Details</a></li>
                                         </ul>
                                     </li>
-                                    <li class="parent"><a href="about.html">About</a></li>
+                                    <li class="parent"><a href="{{ route('about.us') }}">About</a></li>
                                     <li class="parent"><a href="contact.html">Contact</a></li>
                                 </ul>
                             </nav>
@@ -414,7 +416,8 @@
                 <div class="col-lg-12">
                     <div class="logo-search-category-wrapper after-md-device-header">
                         <a href="index.html" class="logo-area">
-                            <img src="{{ asset('buy-protein.jpg') }}" alt="logo-main" style="height: 94px; width: 288px;" class="logo">
+                            <img src="{{ asset('buy-protein.jpg') }}" alt="logo-main"
+                                style="height: 94px; width: 288px;" class="logo">
                         </a>
                         <div class="category-search-wrapper">
                             <div class="category-btn category-hover-header">
@@ -510,7 +513,7 @@
                                     <i class="fa-light fa-user"></i>
                                     Account
                                 </a>
-                                <a href="wishlist.html" class="btn-border-only wishlist">
+                                <a href="{{ route('user.wishlist') }}" class="btn-border-only wishlist">
                                     <i class="fa-regular fa-heart"></i>
                                     Wishlist
                                 </a>
@@ -518,75 +521,60 @@
                                     <i class="fa-sharp fa-regular fa-cart-shopping"></i>
                                     <span class="text">My Cart</span>
                                     <div class="category-sub-menu card-number-show">
-                                        <h5 class="shopping-cart-number">Shopping Cart (03)</h5>
-                                        <div class="cart-item-1 border-top">
-                                            <div class="img-name">
-                                                <div class="thumbanil">
-                                                    <img src="{{ asset('assets/images/shop/cart-1.png') }}"
-                                                        alt="">
-                                                </div>
-                                                <div class="details">
-                                                    <a href="shop-details.html">
-                                                        <h5 class="title">Foster Farms Breast Nuggets Shaped Chicken
-                                                        </h5>
-                                                    </a>
-                                                    <div class="number">
-                                                        1 <i class="fa-regular fa-x"></i>
-                                                        <span>$36.00</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="close-c1">
-                                                <i class="fa-regular fa-x"></i>
-                                            </div>
+                                        <h5 class="shopping-cart-number">Shopping Cart
+                                            ({{ isset($cartData) ? $cartData->count() : '' }})</h5>
+                                        <div class="cart-items-scroll-vertical">
+                                            @php
+                                                $totalPrice = 0;
+                                            @endphp
+                                            @if (isset($cartData))
+                                                @foreach ($cartData as $cartItem)
+                                                    @php
+                                                        $product = $products
+                                                            ->where('id', $cartItem->product_id)
+                                                            ->first();
+                                                        if ($product) {
+                                                            $itemTotal = $cartItem->price * $cartItem->quantity;
+                                                            $totalPrice += $itemTotal;
+                                                        }
+                                                    @endphp
+                                                    @if ($product)
+                                                        <div class="cart-item-1 border-top">
+                                                            <div class="img-name">
+                                                                <div class="thumbanil">
+                                                                    <img src="{{ asset('storage/' . $product->thumbnail_image) }}"
+                                                                        alt="">
+                                                                </div>
+                                                                <div class="details">
+                                                                    <a
+                                                                        href="{{ route('product.details', Crypt::encrypt($product->id)) }}">
+                                                                        <h5 class="title">{{ $product->name }}</h5>
+                                                                    </a>
+                                                                    <div class="number">
+                                                                        {{ $cartItem->quantity }} <i
+                                                                            class="fa-regular fa-x"></i>
+                                                                        <span>₹{{ number_format($itemTotal, 2) }}</span>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="close-c1">
+                                                                    <button class="delete-cart-item"
+                                                                        data-id="{{ $cartItem->id }}"
+                                                                        style="border: none; background: none;">
+                                                                        <i class="fa-regular fa-x"></i>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    @endif
+                                                @endforeach
+                                            @endif
                                         </div>
-                                        <div class="cart-item-1">
-                                            <div class="img-name">
-                                                <div class="thumbanil">
-                                                    <img src="{{ asset('assets/images/shop/05.png') }}"
-                                                        alt="">
-                                                </div>
-                                                <div class="details">
-                                                    <a href="shop-details.html">
-                                                        <h5 class="title">Foster Farms Breast Nuggets Shaped Chicken
-                                                        </h5>
-                                                    </a>
-                                                    <div class="number">
-                                                        1 <i class="fa-regular fa-x"></i>
-                                                        <span>$36.00</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="close-c1">
-                                                <i class="fa-regular fa-x"></i>
-                                            </div>
-                                        </div>
-                                        <div class="cart-item-1">
-                                            <div class="img-name">
-                                                <div class="thumbanil">
-                                                    <img src="{{ asset('assets/images/shop/04.png') }}"
-                                                        alt="">
-                                                </div>
-                                                <div class="details">
-                                                    <a href="shop-details.html">
-                                                        <h5 class="title">Foster Farms Breast Nuggets Shaped Chicken
-                                                        </h5>
-                                                    </a>
-                                                    <div class="number">
-                                                        1 <i class="fa-regular fa-x"></i>
-                                                        <span>$36.00</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="close-c1">
-                                                <i class="fa-regular fa-x"></i>
-                                            </div>
-                                        </div>
+
                                         <div class="sub-total-cart-balance">
                                             <div class="bottom-content-deals mt--10">
                                                 <div class="top">
                                                     <span>Sub Total:</span>
-                                                    <span class="number-c">$108.00</span>
+                                                    <span class="number-c">₹{{ $totalPrice }}</span>
                                                 </div>
                                                 <div class="single-progress-area-incard">
                                                     <div class="progress">
@@ -595,8 +583,6 @@
                                                             aria-valuemax="100"></div>
                                                     </div>
                                                 </div>
-                                                <p>Spend More <span>$125.00</span> to reach <span>Free Shipping</span>
-                                                </p>
                                             </div>
                                             <div
                                                 class="button-wrapper d-flex align-items-center justify-content-between">
@@ -643,3 +629,51 @@
 <!-- rts header area start -->
 <!-- rts header area end -->
 <!-- rts header area end -->
+
+<script>
+    $(document).on('click', '.delete-cart-item', function(e) {
+        e.preventDefault();
+
+        let cartItemId = $(this).data('id');
+        let $button = $(this);
+
+        $.ajax({
+            url: `/remove-cart/${cartItemId}`, // Make sure this matches your route
+            type: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}',
+                _method: 'DELETE'
+            },
+            success: function(response) {
+                // Remove the cart item from DOM
+                $button.closest('.cart-item-1').remove();
+
+                // Optionally update subtotal, cart count, etc.
+                if (response.totalPrice !== undefined) {
+                    $('.number-c').text(`$${response.totalPrice.toFixed(2)}`);
+                }
+
+                if (response.cartCount !== undefined) {
+                    $('.cart .number').text(response.cartCount);
+                    $('.shopping-cart-number').text(`Shopping Cart (${response.cartCount})`);
+                }
+
+                // Show a toast if you're using one
+                Toastify({
+                    text: "Item removed from cart",
+                    duration: 2000,
+                    gravity: "top",
+                    position: "right",
+                    backgroundColor: "#e74c3c"
+                }).showToast();
+
+                setTimeout(() => {
+                    location.reload();
+                }, 2400);
+            },
+            error: function() {
+                alert('Something went wrong!');
+            }
+        });
+    });
+</script>
