@@ -21,8 +21,12 @@ new class extends Component
     public $categoryFilter = '';
     public $subCategoryFilter = '';
     public $showModal = false;
+    public $showDeleteModal = false;
+    public $showStatusModal = false;
     public $editMode = false;
     public $productId = null;
+    public $productToDelete = null;
+    public $productToToggle = null;
     
     // Form fields
     public $seller_id = '';
@@ -196,6 +200,30 @@ new class extends Component
     {
         $this->showModal = false;
         $this->resetForm();
+    }
+
+    public function confirmDelete($id)
+    {
+        $this->productToDelete = products::findOrFail($id);
+        $this->showDeleteModal = true;
+    }
+
+    public function closeDeleteModal()
+    {
+        $this->showDeleteModal = false;
+        $this->productToDelete = null;
+    }
+
+    public function confirmStatusToggle($id)
+    {
+        $this->productToToggle = products::findOrFail($id);
+        $this->showStatusModal = true;
+    }
+
+    public function closeStatusModal()
+    {
+        $this->showStatusModal = false;
+        $this->productToToggle = null;
     }
 
     public function resetForm()
@@ -861,52 +889,62 @@ new class extends Component
         $this->showModal = true;
     }
 
-    public function delete($id)
+    public function delete($id = null)
     {
-        $product = products::findOrFail($id);
+        $product = $id ? products::findOrFail($id) : $this->productToDelete;
         
-        // Check if user is a seller and can only delete their own products
-        $user = auth()->user();
-        $seller = Sellers::where('user_id', $user->id)->first();
-        if ($seller && $product->seller_id !== $seller->id) {
-            session()->flash('error', 'You can only delete your own products.');
-            return;
-        }
-        
-        $product->delete();
-        session()->flash('message', 'Product deleted successfully!');
-    }
-
-    public function toggleStatus($id)
-    {
-        $product = products::findOrFail($id);
-        
-        // Check if user is a seller and can only update their own products
-        $user = auth()->user();
-        $seller = Sellers::where('user_id', $user->id)->first();
-        
-        if ($seller) {
-            // Sellers can only update their own products' status (not super_status)
-            if ($product->seller_id !== $seller->id) {
-                session()->flash('error', 'You can only update your own products.');
+        if ($product) {
+            // Check if user is a seller and can only delete their own products
+            $user = auth()->user();
+            $seller = Sellers::where('user_id', $user->id)->first();
+            if ($seller && $product->seller_id !== $seller->id) {
+                session()->flash('error', 'You can only delete your own products.');
+                $this->closeDeleteModal();
                 return;
             }
             
-            // Sellers can toggle their product status (active/inactive)
-            $product->update([
-                'status' => $product->status === 'active' ? 'inactive' : 'active'
-            ]);
+            $product->delete();
+            session()->flash('message', 'Product deleted successfully!');
             
-            session()->flash('message', 'Product status updated successfully!');
-        } else {
-            // Admins can toggle super_status (approved/not_approved)
-            $newSuperStatus = $product->super_status === 'approved' ? 'not_approved' : 'approved';
+            $this->closeDeleteModal();
+        }
+    }
+
+    public function toggleStatus($id = null)
+    {
+        $product = $id ? products::findOrFail($id) : $this->productToToggle;
+        
+        if ($product) {
+            // Check if user is a seller and can only update their own products
+            $user = auth()->user();
+            $seller = Sellers::where('user_id', $user->id)->first();
             
-            $product->update([
-                'super_status' => $newSuperStatus
-            ]);
+            if ($seller) {
+                // Sellers can only update their own products' status (not super_status)
+                if ($product->seller_id !== $seller->id) {
+                    session()->flash('error', 'You can only update your own products.');
+                    $this->closeStatusModal();
+                    return;
+                }
+                
+                // Sellers can toggle their product status (active/inactive)
+                $product->update([
+                    'status' => $product->status === 'active' ? 'inactive' : 'active'
+                ]);
+                
+                session()->flash('message', 'Product status updated successfully!');
+            } else {
+                // Admins can toggle super_status (approved/not_approved)
+                $newSuperStatus = $product->super_status === 'approved' ? 'not_approved' : 'approved';
+                
+                $product->update([
+                    'super_status' => $newSuperStatus
+                ]);
+                
+                session()->flash('message', 'Product approval status updated successfully!');
+            }
             
-            session()->flash('message', 'Product approval status updated successfully!');
+            $this->closeStatusModal();
         }
     }
 
@@ -1491,4 +1529,130 @@ new class extends Component
     @include('livewire.products.modals.variant-prices-modal')
     @include('livewire.products.modals.variant-stock-modal')
     @include('livewire.products.modals.product-details-modal')
+
+    <!-- Delete Confirmation Modal -->
+    @if($showDeleteModal && $productToDelete)
+        <div class="fixed inset-0 bg-black bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div class="relative top-50 mx-auto p-5 w-120 shadow-lg rounded-md bg-white dark:bg-zinc-900">
+                <div class="mt-3 text-center">
+                    <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/50">
+                        <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white mt-2">Delete Product</h3>
+                    <div class="mt-2 px-7 py-3">
+                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                            Are you sure you want to delete the product "<strong>{{ $productToDelete->name }}</strong>"? 
+                            This action cannot be undone and will permanently remove the product, its variants, and all associated data.
+                        </p>
+                    </div>
+                    <div class="items-center px-4 py-3">
+                        <div class="flex gap-3 justify-center">
+                            <button
+                                wire:click="closeDeleteModal"
+                                class="px-4 py-2 bg-gray-500 text-white text-base font-medium rounded-md shadow-sm hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                wire:click="delete"
+                                class="px-4 py-2 bg-red-600 text-white text-base font-medium rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- Status Toggle Confirmation Modal -->
+    @if($showStatusModal && $productToToggle)
+        @php
+            $user = auth()->user();
+            $seller = \App\Models\Sellers::where('user_id', $user->id)->first();
+            $isSeller = $seller !== null;
+            
+            if ($isSeller) {
+                $currentStatus = $productToToggle->status;
+                $statusText = $currentStatus === 'active' ? 'deactivate' : 'activate';
+                $actionText = $currentStatus === 'active' ? 'Deactivate' : 'Activate';
+                $modalTitle = $actionText . ' Product';
+            } else {
+                $currentStatus = $productToToggle->super_status;
+                $statusText = $currentStatus === 'approved' ? 'remove approval from' : 'approve';
+                $actionText = $currentStatus === 'approved' ? 'Remove Approval' : 'Approve';
+                $modalTitle = $actionText . ' Product';
+            }
+        @endphp
+        
+        <div class="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-75 overflow-y-auto h-full w-full z-50">
+            <div class="relative top-50 mx-auto p-5  w-120 shadow-lg rounded-md bg-white dark:bg-zinc-900">
+                <div class="mt-3 text-center">
+                    <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full 
+                                @if($isSeller)
+                                    {{ $currentStatus === 'active' ? 'bg-red-100 dark:bg-red-900/50' : 'bg-green-100 dark:bg-green-900/50' }}
+                                @else
+                                    {{ $currentStatus === 'approved' ? 'bg-red-100 dark:bg-red-900/50' : 'bg-green-100 dark:bg-green-900/50' }}
+                                @endif">
+                        <svg class="h-6 w-6 
+                                    @if($isSeller)
+                                        {{ $currentStatus === 'active' ? 'text-red-600' : 'text-green-600' }}
+                                    @else
+                                        {{ $currentStatus === 'approved' ? 'text-red-600' : 'text-green-600' }}
+                                    @endif" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            @if(($isSeller && $currentStatus === 'active') || (!$isSeller && $currentStatus === 'approved'))
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728" />
+                            @else
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            @endif
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white mt-2">{{ $modalTitle }}</h3>
+                    <div class="mt-2 px-7 py-3">
+                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                            Are you sure you want to {{ $statusText }} the product "<strong>{{ $productToToggle->name }}</strong>"?
+                            @if($isSeller)
+                                @if($currentStatus === 'active')
+                                    This will make your product unavailable for purchase.
+                                @else
+                                    This will make your product available for purchase (subject to admin approval).
+                                @endif
+                            @else
+                                @if($currentStatus === 'approved')
+                                    This will remove admin approval and make the product unavailable for purchase.
+                                @else
+                                    This will approve the product and make it available for purchase.
+                                @endif
+                            @endif
+                        </p>
+                    </div>
+                    <div class="items-center px-4 py-3">
+                        <div class="flex gap-3 justify-center">
+                            <button
+                                wire:click="closeStatusModal"
+                                class="px-4 py-2 bg-gray-500 text-white text-base font-medium rounded-md shadow-sm hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                wire:click="toggleStatus"
+                                class="px-4 py-2 
+                                       @if(($isSeller && $currentStatus === 'active') || (!$isSeller && $currentStatus === 'approved'))
+                                           bg-red-600 hover:bg-red-700 focus:ring-red-500
+                                       @else
+                                           bg-green-600 hover:bg-green-700 focus:ring-green-500
+                                       @endif
+                                       text-white text-base font-medium rounded-md shadow-sm focus:outline-none focus:ring-2"
+                            >
+                                {{ $actionText }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
 </div>

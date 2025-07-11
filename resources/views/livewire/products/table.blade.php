@@ -43,8 +43,7 @@
                                     </svg>
                                 </button>
                                 <button 
-                                    wire:click="delete({{ $product->id }})"
-                                    wire:confirm="Are you sure you want to delete this product?"
+                                    wire:click="confirmDelete({{ $product->id }})"
                                     class="text-red-600 hover:text-red-900"
                                     title="Delete"
                                 >
@@ -146,7 +145,7 @@
                             @if($isSeller)
                                 <!-- Sellers can toggle their product status (active/inactive) -->
                                 <button 
-                                    wire:click="toggleStatus({{ $product->id }})"
+                                    wire:click="confirmStatusToggle({{ $product->id }})"
                                     class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
                                            {{ $product->status === 'active' 
                                               ? 'bg-green-100 text-green-800 hover:bg-green-200' 
@@ -177,7 +176,7 @@
                             @else
                                 <!-- Admins can toggle super_status (approved/not_approved) -->
                                 <button 
-                                    wire:click="toggleStatus({{ $product->id }})"
+                                    wire:click="confirmStatusToggle({{ $product->id }})"
                                     class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
                                            {{ $product->super_status === 'approved' 
                                               ? 'bg-green-100 text-green-800 hover:bg-green-200' 

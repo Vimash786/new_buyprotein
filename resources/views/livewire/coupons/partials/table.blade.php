@@ -46,7 +46,7 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <button 
-                                wire:click="toggleStatus({{ $coupon->id }})"
+                                wire:click="confirmStatusToggle({{ $coupon->id }})"
                                 class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
                                        {{ $coupon->status_color === 'green' 
                                           ? 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/70'
@@ -91,8 +91,7 @@
                                     </svg>
                                 </button>
                                 <button 
-                                    wire:click="delete({{ $coupon->id }})"
-                                    wire:confirm="Are you sure you want to delete this coupon and all its assignments?"
+                                    wire:click="confirmDelete({{ $coupon->id }})"
                                     class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300"
                                     title="Delete"
                                 >

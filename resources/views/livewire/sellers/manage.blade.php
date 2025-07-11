@@ -15,9 +15,13 @@ new class extends Component
     public $statusFilter = '';
     public $showModal = false;
     public $showViewModal = false;
+    public $showDeleteModal = false;
+    public $showStatusModal = false;
     public $editMode = false;
     public $sellerId = null;
     public $viewingSeller = null;
+    public $sellerToDelete = null;
+    public $sellerToToggle = null;
     
     // Form fields
     public $company_name = '';
@@ -96,6 +100,30 @@ new class extends Component
     {
         $this->showViewModal = false;
         $this->viewingSeller = null;
+    }
+
+    public function confirmDelete($id)
+    {
+        $this->sellerToDelete = Sellers::findOrFail($id);
+        $this->showDeleteModal = true;
+    }
+
+    public function closeDeleteModal()
+    {
+        $this->showDeleteModal = false;
+        $this->sellerToDelete = null;
+    }
+
+    public function confirmStatusToggle($id)
+    {
+        $this->sellerToToggle = Sellers::findOrFail($id);
+        $this->showStatusModal = true;
+    }
+
+    public function closeStatusModal()
+    {
+        $this->showStatusModal = false;
+        $this->sellerToToggle = null;
     }    
     
     public function resetForm()
@@ -185,20 +213,25 @@ new class extends Component
         $this->editMode = true;
         $this->showModal = true;
     }
-    public function delete($id)
+    public function delete($id = null)
     {
-        Sellers::findOrFail($id)->delete();
+        $seller = $this->sellerToDelete ?? Sellers::findOrFail($id);
+        $seller->delete();
         session()->flash('message', 'Seller deleted successfully!');
+        
+        $this->closeDeleteModal();
     }
 
-    public function toggleStatus($id)
+    public function toggleStatus($id = null)
     {
-        $seller = Sellers::findOrFail($id);
+        $seller = $this->sellerToToggle ?? Sellers::findOrFail($id);
         $seller->update([
             'status' => $seller->status === 'approved' ? 'not_approved' : 'approved'
         ]);
         
         session()->flash('message', 'Seller status updated successfully!');
+        
+        $this->closeStatusModal();
     }
 
     public function updatingSearch()
@@ -380,8 +413,7 @@ new class extends Component
                                             </svg>
                                         </button>
                                         <button 
-                                            wire:click="delete({{ $seller->id }})"
-                                            wire:confirm="Are you sure you want to delete this seller?"
+                                            wire:click="confirmDelete({{ $seller->id }})"
                                             class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300"
                                         >
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -451,7 +483,7 @@ new class extends Component
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <button 
-                                        wire:click="toggleStatus({{ $seller->id }})"
+                                        wire:click="confirmStatusToggle({{ $seller->id }})"
                                         class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
                                                {{ $seller->status === 'approved' 
                                                   ? 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/70' 
@@ -892,6 +924,92 @@ new class extends Component
                             class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg font-medium"
                         >
                             Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- Delete Confirmation Modal -->
+    @if($showDeleteModal && $sellerToDelete)
+        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div class="bg-white dark:bg-zinc-900 rounded-lg max-w-md w-full">
+                <div class="p-6">
+                    <div class="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 dark:bg-red-900/50 rounded-full mb-4">
+                        <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                        </svg>
+                    </div>
+                    
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white text-center mb-2">Delete Seller</h3>
+                    <p class="text-gray-600 dark:text-gray-300 text-center mb-6">
+                        Are you sure you want to delete "<strong>{{ $sellerToDelete->company_name }}</strong>"? This action cannot be undone and will remove all associated data.
+                    </p>
+                    
+                    <div class="flex justify-end gap-3">
+                        <button 
+                            wire:click="closeDeleteModal"
+                            class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-zinc-700 rounded-lg hover:bg-gray-300 dark:hover:bg-zinc-600"
+                        >
+                            Cancel
+                        </button>
+                        <button 
+                            wire:click="delete"
+                            class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700"
+                        >
+                            Delete Seller
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- Status Change Confirmation Modal -->
+    @if($showStatusModal && $sellerToToggle)
+        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div class="bg-white dark:bg-zinc-900 rounded-lg max-w-md w-full">
+                <div class="p-6">
+                    <div class="flex items-center justify-center w-12 h-12 mx-auto 
+                                {{ $sellerToToggle->status === 'approved' ? 'bg-yellow-100 dark:bg-yellow-900/50' : 'bg-green-100 dark:bg-green-900/50' }} 
+                                rounded-full mb-4">
+                        @if($sellerToToggle->status === 'approved')
+                            <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        @else
+                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        @endif
+                    </div>
+                    
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white text-center mb-2">
+                        {{ $sellerToToggle->status === 'approved' ? 'Change to Pending' : 'Approve Seller' }}
+                    </h3>
+                    <p class="text-gray-600 dark:text-gray-300 text-center mb-6">
+                        Are you sure you want to {{ $sellerToToggle->status === 'approved' ? 'change status to pending for' : 'approve' }} 
+                        "<strong>{{ $sellerToToggle->company_name }}</strong>"?
+                        @if($sellerToToggle->status !== 'approved')
+                            <br><span class="text-sm text-gray-500">This will grant them access to sell products.</span>
+                        @endif
+                    </p>
+                    
+                    <div class="flex justify-end gap-3">
+                        <button 
+                            wire:click="closeStatusModal"
+                            class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-zinc-700 rounded-lg hover:bg-gray-300 dark:hover:bg-zinc-600"
+                        >
+                            Cancel
+                        </button>
+                        <button 
+                            wire:click="toggleStatus"
+                            class="px-4 py-2 text-sm font-medium text-white 
+                                   {{ $sellerToToggle->status === 'approved' ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-green-600 hover:bg-green-700' }} 
+                                   rounded-lg"
+                        >
+                            {{ $sellerToToggle->status === 'approved' ? 'Change to Pending' : 'Approve Seller' }}
                         </button>
                     </div>
                 </div>
