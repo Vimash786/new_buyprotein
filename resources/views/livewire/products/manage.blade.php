@@ -109,9 +109,9 @@ new class extends Component
 
     public function with()
     {
-        $user = auth()->user();
-        $seller = Sellers::where('user_id', $user->id)->first();
-        $isSeller = $seller !== null;
+       $user = auth()->user();
+       $isSeller = $user && $user->role === 'Seller';
+       $seller = Sellers::where('user_id', $user->id)->first();
 
         $query = products::with(['seller', 'category', 'subCategory', 'variants', 'images']);
 

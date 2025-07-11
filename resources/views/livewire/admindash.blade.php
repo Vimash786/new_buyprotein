@@ -9,6 +9,7 @@ use App\Models\Category;
 use App\Models\SubCategory;
 use App\Models\Banner;
 use App\Models\Blog;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Volt\Component;
 
 new class extends Component
@@ -16,9 +17,9 @@ new class extends Component
     public function with()
     {
         $user = auth()->user();
+        $isSeller = $user && $user->role === 'Seller';
         $seller = Sellers::where('user_id', $user->id)->first();
-        $isSeller = $seller !== null;
-
+        
         if ($isSeller) {
             // Seller-specific data
             return [

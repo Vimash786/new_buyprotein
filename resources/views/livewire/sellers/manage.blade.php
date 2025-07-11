@@ -348,10 +348,11 @@ new class extends Component
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Seller Id</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Company</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Brand</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">GST Number</th>
+
+                            <!--<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">GST Number</th>-->
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Category</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Contact No</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Kyc Status</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
                         </tr>
                     </thead>
@@ -426,9 +427,9 @@ new class extends Component
                                         </div>
                                     </div>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                <!--<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                                     {{ $seller->gst_number }}
-                                </td>
+                                </td>-->
                                 <td class="px-6 py-4 text-sm text-gray-900 dark:text-white">
                                     @if($seller->product_category)
                                         <div class="flex flex-wrap gap-1 max-w-xs">
@@ -770,19 +771,19 @@ new class extends Component
                                 </div>
                                 <div class="bg-white dark:bg-zinc-700 rounded p-3 border dark:border-gray-600">
                                     <div class="flex items-center justify-between">
-                                        <span class="text-sm font-medium text-gray-600 dark:text-gray-300">Products Sold</span>
+                                        <span class="text-sm font-medium text-gray-600 dark:text-gray-300">Total Order</span>
                                         <span class="text-xl font-bold text-green-600 dark:text-green-400">{{ $stats['totalProductsSold'] }}</span>
                                     </div>
                                 </div>
                                 <div class="bg-white dark:bg-zinc-700 rounded p-3 border dark:border-gray-600">
                                     <div class="flex items-center justify-between">
-                                        <span class="text-sm font-medium text-gray-600 dark:text-gray-300">Total Revenue</span>
+                                        <span class="text-sm font-medium text-gray-600 dark:text-gray-300">Total Sales</span>
                                         <span class="text-xl font-bold text-purple-600 dark:text-purple-400">₹{{ number_format($stats['totalRevenue'], 2) }}</span>
                                     </div>
                                 </div>
                                 <div class="bg-white dark:bg-zinc-700 rounded p-3 border dark:border-gray-600">
                                     <div class="flex items-center justify-between">
-                                        <span class="text-sm font-medium text-gray-600 dark:text-gray-300">Seller Commission</span>
+                                        <span class="text-sm font-medium text-gray-600 dark:text-gray-300">Pending Payout</span>
                                         <span class="text-xl font-bold text-orange-600 dark:text-orange-400">₹{{ number_format($stats['sellerRevenue'], 2) }}</span>
                                     </div>
                                 </div>
