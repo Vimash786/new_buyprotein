@@ -144,11 +144,14 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             @if($isSeller)
-                                <!-- Sellers can only view status, not change it -->
-                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
-                                       {{ $product->status === 'active' 
-                                          ? 'bg-green-100 text-green-800' 
-                                          : 'bg-red-100 text-red-800' }}">
+                                <!-- Sellers can toggle their product status (active/inactive) -->
+                                <button 
+                                    wire:click="toggleStatus({{ $product->id }})"
+                                    class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
+                                           {{ $product->status === 'active' 
+                                              ? 'bg-green-100 text-green-800 hover:bg-green-200' 
+                                              : 'bg-red-100 text-red-800 hover:bg-red-200' }}"
+                                >
                                     @if($product->status === 'active')
                                         <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
@@ -160,9 +163,19 @@
                                         </svg>
                                         Inactive
                                     @endif
-                                </span>
+                                </button>
+                                
+                                <!-- Show super_status as read-only for sellers -->
+                                <div class="mt-1">
+                                    <span class="text-xs px-2 py-1 rounded-full
+                                           {{ $product->super_status === 'approved' 
+                                              ? 'bg-blue-100 text-blue-800' 
+                                              : 'bg-yellow-100 text-yellow-800' }}">
+                                        {{ $product->super_status === 'approved' ? 'Admin Approved' : 'Pending Admin Approval' }}
+                                    </span>
+                                </div>
                             @else
-                                <!-- Admins can toggle status -->
+                                <!-- Admins can toggle super_status (approved/not_approved) -->
                                 <button 
                                     wire:click="toggleStatus({{ $product->id }})"
                                     class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
@@ -182,6 +195,16 @@
                                         Pending
                                     @endif
                                 </button>
+                                
+                                <!-- Show seller status as read-only for admins -->
+                                <div class="mt-1">
+                                    <span class="text-xs px-2 py-1 rounded-full
+                                           {{ $product->status === 'active' 
+                                              ? 'bg-blue-100 text-blue-800' 
+                                              : 'bg-gray-100 text-gray-800' }}">
+                                        Seller: {{ ucfirst($product->status) }}
+                                    </span>
+                                </div>
                             @endif
                         </td>
                     </tr>

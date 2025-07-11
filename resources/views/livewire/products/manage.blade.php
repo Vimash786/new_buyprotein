@@ -884,21 +884,30 @@ new class extends Component
         // Check if user is a seller and can only update their own products
         $user = auth()->user();
         $seller = Sellers::where('user_id', $user->id)->first();
+        
         if ($seller) {
+            // Sellers can only update their own products' status (not super_status)
             if ($product->seller_id !== $seller->id) {
                 session()->flash('error', 'You can only update your own products.');
                 return;
-            } else {
-                session()->flash('error', 'Sellers cannot change product status. Please contact an administrator.');
-                return;
             }
+            
+            // Sellers can toggle their product status (active/inactive)
+            $product->update([
+                'status' => $product->status === 'active' ? 'inactive' : 'active'
+            ]);
+            
+            session()->flash('message', 'Product status updated successfully!');
+        } else {
+            // Admins can toggle super_status (approved/not_approved)
+            $newSuperStatus = $product->super_status === 'approved' ? 'not_approved' : 'approved';
+            
+            $product->update([
+                'super_status' => $newSuperStatus
+            ]);
+            
+            session()->flash('message', 'Product approval status updated successfully!');
         }
-        
-        $product->update([
-            'status' => $product->status === 'active' ? 'inactive' : 'active'
-        ]);
-        
-        session()->flash('message', 'Product status updated successfully!');
     }
 
     public function updatingSearch()
