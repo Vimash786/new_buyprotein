@@ -18395,6 +18395,7 @@ li.with-megamenu:hover .rts-megamenu {
     background-image: url(../images/category/01.jpg);
     height: 400px;
     border-radius: 6px;
+    border: 1px solid #009ec9;
     background-repeat: no-repeat;
     background-size: cover;
     padding: 40px;

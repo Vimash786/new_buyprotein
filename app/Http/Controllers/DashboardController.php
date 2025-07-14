@@ -30,8 +30,9 @@ class DashboardController extends Controller
         $latestProducts = products::orderBy('created_at', 'desc')->take(12)->get();
         $offers = products::where('section_category', 'exclusive_deal')->limit(8)->get();
         $banners = Banner::where('status', 'active')->orderBy('created_at', 'desc')->get();
+        $sellers = Sellers::where('status', 'approved')->limit(4)->get();
 
-        return view('dashboard', compact('categories', 'products', 'everyDayEssentials', 'populerProducts', 'latestProducts', 'offers', 'banners'));
+        return view('dashboard', compact('categories', 'products', 'everyDayEssentials', 'populerProducts', 'latestProducts', 'offers', 'banners', 'sellers'));
     }
 
     public function shop(Request $request, $type = null, $id = null)
@@ -331,5 +332,17 @@ class DashboardController extends Controller
     {
         dd($request->all());
         return redirect()->back()->with('success', 'Thank you for Ansking an question');
+    }
+
+    public function bulkOrder(Request $request)
+    {
+        $variantSelections = collect($request->all())
+            ->filter(function ($value, $key) {
+                return str_starts_with($key, 'variant_');
+            })
+            ->mapWithKeys(function ($value, $key) {
+                $variantId = (int) str_replace('variant_', '', $key);
+                return [$variantId => (int) $value];
+            });
     }
 }

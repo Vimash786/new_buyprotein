@@ -483,86 +483,24 @@
                 </div>
             </div>
             <div class="row g-4">
-                <div class="col-lg-3 col-md-6 col-sm-12 col-12">
-                    <div class="single-feature-card bg_image one">
-                        <div class="content-area">
-                            <a href="shop-grid-sidebar.html" class="rts-btn btn-primary">Weekend Discount</a>
-                            <h3 class="title">
-                                Drink Fresh Corn Juice <br>
-                                <span>Good Taste</span>
-                            </h3>
-                            <a href="shop-grid-sidebar.html" class="shop-now-goshop-btn">
-                                <span class="text">Shop Now</span>
-                                <div class="plus-icon">
-                                    <i class="fa-sharp fa-regular fa-plus"></i>
-                                </div>
-                                <div class="plus-icon">
-                                    <i class="fa-sharp fa-regular fa-plus"></i>
-                                </div>
-                            </a>
+                @foreach ($sellers as $seller)
+                    <div class="col-lg-3 col-md-6 col-sm-12 col-12">
+                        <div class="single-feature-card bg_image one" style="background-image: url('{{ asset('storage/' . $seller->brand_logo) }}');">
+                            <div class="content-area">
+                                <h3 class="title">{{ $seller->brand }}</h3>
+                                <a href="shop-grid-sidebar.html" class="shop-now-goshop-btn">
+                                    <span class="text">Shop Now</span>
+                                    <div class="plus-icon">
+                                        <i class="fa-sharp fa-regular fa-plus"></i>
+                                    </div>
+                                    <div class="plus-icon">
+                                        <i class="fa-sharp fa-regular fa-plus"></i>
+                                    </div>
+                                </a>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="col-lg-3 col-md-6 col-sm-12 col-12">
-                    <div class="single-feature-card bg_image two">
-                        <div class="content-area">
-                            <a href="shop-grid-sidebar.html" class="rts-btn btn-primary">Weekend Discount</a>
-                            <h3 class="title">
-                                Organic Lemon Flavored
-                                <span>Banana Chips</span>
-                            </h3>
-                            <a href="shop-grid-sidebar.html" class="shop-now-goshop-btn">
-                                <span class="text">Shop Now</span>
-                                <div class="plus-icon">
-                                    <i class="fa-sharp fa-regular fa-plus"></i>
-                                </div>
-                                <div class="plus-icon">
-                                    <i class="fa-sharp fa-regular fa-plus"></i>
-                                </div>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-3 col-md-6 col-sm-12 col-12">
-                    <div class="single-feature-card bg_image three">
-                        <div class="content-area">
-                            <a href="shop-grid-sidebar.html" class="rts-btn btn-primary">Weekend Discount</a>
-                            <h3 class="title">
-                                Nozes Pecanera Brasil
-                                <span>Chocolate Snacks</span>
-                            </h3>
-                            <a href="shop-grid-sidebar.html" class="shop-now-goshop-btn">
-                                <span class="text">Shop Now</span>
-                                <div class="plus-icon">
-                                    <i class="fa-sharp fa-regular fa-plus"></i>
-                                </div>
-                                <div class="plus-icon">
-                                    <i class="fa-sharp fa-regular fa-plus"></i>
-                                </div>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-3 col-md-6 col-sm-12 col-12">
-                    <div class="single-feature-card bg_image four">
-                        <div class="content-area">
-                            <a href="shop-grid-sidebar.html" class="rts-btn btn-primary">Weekend Discount</a>
-                            <h3 class="title">
-                                Strawberry Water Drinks
-                                <span>Flavors Awesome</span>
-                            </h3>
-                            <a href="shop-grid-sidebar.html" class="shop-now-goshop-btn">
-                                <span class="text">Shop Now</span>
-                                <div class="plus-icon">
-                                    <i class="fa-sharp fa-regular fa-plus"></i>
-                                </div>
-                                <div class="plus-icon">
-                                    <i class="fa-sharp fa-regular fa-plus"></i>
-                                </div>
-                            </a>
-                        </div>
-                    </div>
-                </div>
+                @endforeach
             </div>
         </div>
     </div>
