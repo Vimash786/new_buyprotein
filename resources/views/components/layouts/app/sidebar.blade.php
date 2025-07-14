@@ -20,7 +20,7 @@
                     <!-- Sellers -->
                     <flux:navlist.group expandable :heading="__('Sellers')" class="grid">
                         <flux:navlist.item icon="users" :href="route('sellers.manage')" :current="request()->routeIs('sellers.manage')" wire:navigate>{{ __('All Sellers') }}</flux:navlist.item>
-                        <flux:navlist.item icon="user-plus" href="#" :current="request()->routeIs('sellers.requests')" wire:navigate>{{ __('New Seller Requests') }}</flux:navlist.item>
+                        <flux:navlist.item icon="user-plus" :href="route('sellers.requests')" :current="request()->routeIs('sellers.requests')" wire:navigate>{{ __('New Seller Requests') }}</flux:navlist.item>
                     </flux:navlist.group>
                     @endif
                     
@@ -28,7 +28,7 @@
                     <flux:navlist.group expandable :heading="__('Products')" class="grid">
                         <flux:navlist.item icon="cube" :href="route('products.manage')" :current="request()->routeIs('products.manage')" wire:navigate>{{ __('All Products') }}</flux:navlist.item>
                         @if(auth()->user()->role === 'Super')
-                        <flux:navlist.item icon="plus-circle" href="#" :current="request()->routeIs('products.requests')" wire:navigate>{{ __('New Product Requests') }}</flux:navlist.item>
+                        <flux:navlist.item icon="plus-circle" :href="route('products.requests')" :current="request()->routeIs('products.requests')" wire:navigate>{{ __('New Product Requests') }}</flux:navlist.item>
                         <flux:navlist.item icon="square-3-stack-3d" :href="route('categories.manage')" :current="request()->routeIs('categories.manage')" wire:navigate>{{ __('Categories') }}</flux:navlist.item>
                         @endif
                     </flux:navlist.group>
