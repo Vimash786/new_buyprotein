@@ -208,6 +208,12 @@ new class extends Component
         $this->newStatusValue = $newStatus;
         $this->showStatusModal = true;
     }
+    public function confirmStatus($id, $newStatus)
+    {
+        $this->orderToToggle = OrderSellerProduct::findOrFail($id);
+        $this->newStatusValue = $newStatus;
+        $this->showStatusModal = true;
+    }
 
     public function closeStatusModal()
     {
@@ -334,7 +340,12 @@ new class extends Component
 
     public function updateStatus($id = null, $newStatus = null)
     {
-        $item = $this->orderToToggle ?? orders::findOrFail($id);
+        if(!$isSeller){
+            $item = $this->orderToToggle ?? orders::findOrFail($id);
+        } else {
+            $item = $this->orderToToggle ?? OrderSellerProduct::findOrFail($id);    
+        }
+        
         $status = $this->newStatusValue ?? $newStatus;
         
         // Update order status
@@ -593,23 +604,29 @@ new class extends Component
                                         ₹{{ number_format($order->total_amount, 2) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                                @if($order->status === 'delivered')
-                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300">
-                                                        Delivered
-                                                    </span>
-                                                @elseif($order->status === 'pending')
-                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300">
-                                                        Pending
-                                                    </span>
-                                                @elseif($order->status === 'cancelled')
-                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300">
-                                                        Cancelled
-                                                    </span>
-                                                @else
-                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
-                                                        {{ ucfirst($order->status) }}
-                                                    </span>
-                                                @endif
+                                        <div class="relative inline-block">
+                                            <select 
+                                                onchange="if(this.value !== '{{ $order->status }}') { @this.call('confirmStatusChange', {{ $order->id }}, this.value); } else { this.value = '{{ $order->status }}'; }"
+                                                class="appearance-none bg-transparent border-0 text-xs font-medium rounded-full px-3 py-1 pr-8
+                                                    {{ $order->status === 'pending' ? 'bg-yellow-100 text-yellow-800' : '' }}
+                                                    {{ $order->status === 'confirmed' ? 'bg-blue-100 text-blue-800' : '' }}
+                                                    {{ $order->status === 'shipped' ? 'bg-purple-100 text-purple-800' : '' }}
+                                                    {{ $order->status === 'delivered' ? 'bg-green-100 text-green-800' : '' }}
+                                                    {{ $order->status === 'cancelled' ? 'bg-red-100 text-red-800' : '' }}"
+                                            >
+                                                <option value="pending" {{ $order->status === 'pending' ? 'selected' : '' }}>Pending</option>
+                                                <option value="confirmed" {{ $order->status === 'confirmed' ? 'selected' : '' }}>Confirmed</option>
+                                                <option value="shipped" {{ $order->status === 'shipped' ? 'selected' : '' }}>Shipped</option>
+                                                <option value="delivered" {{ $order->status === 'delivered' ? 'selected' : '' }}>Delivered</option>
+                                                <option value="cancelled" {{ $order->status === 'cancelled' ? 'selected' : '' }}>Cancelled</option> 
+                                            </select>
+
+                                            <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            </div>
+                                        </div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                         {{ $order->created_at->format('M d, Y') }}
