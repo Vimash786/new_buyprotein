@@ -798,7 +798,7 @@
                     if (response.status == 'success') {
                         Toastify({
                             text: "Product added to cart!",
-                            duration: 2000,
+                            duration: 1500,
                             gravity: "top",
                             position: "right",
                             backgroundColor: "#009ec9",
