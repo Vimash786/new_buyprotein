@@ -98,9 +98,9 @@ new class extends Component
 
         // If user is a seller, only show orders that contain their products
         if ($isSeller) {
-            $query->whereHas('orderSellerProducts', function($orderItemQuery) use ($seller) {
-                $orderItemQuery->where('seller_id', $seller->id);
-            });
+            $seller_query = OrderSellerProduct::whereIn('product_id', 
+                    products::where('seller_id', $seller->id)->pluck('id')
+                )->with(['product', 'order.user'])->latest()->paginate(10);
         }
 
         if ($this->search) {
@@ -160,6 +160,7 @@ new class extends Component
         }
 
         return [
+            'orderCount'=> $isSeller ? $seller_query: null,
             'orders' => $query->latest()->paginate(10),
             'products' => products::where('status', 'active')->get(),
             'sellers' => \App\Models\Sellers::all(),
@@ -472,137 +473,170 @@ new class extends Component
                 <table class="w-full">
                     <thead class="bg-gray-50 dark:bg-zinc-800">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Order ID</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Customer</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Products</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Items Count</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Total Amount</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
+                            @if(!$isSeller)
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Order ID</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Customer</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Products</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Items Count</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Total Amount</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
+                            @else
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Order ID</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Product</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Customer</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Amount</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
+                            @endif
                         </tr>
                     </thead>
                     <tbody class="bg-white dark:bg-zinc-900 divide-y divide-gray-200 dark:divide-gray-700">
-                       
-                        @forelse($orders as $order)
-
-                            <tr class="hover:bg-gray-50 dark:hover:bg-zinc-800 dark:bg-zinc-800">
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <div class="flex items-center gap-2">
-                                        <button 
-                                            wire:click="edit({{ $order->id }})"
-                                            class="text-blue-600 hover:text-blue-900"
-                                        >
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                            </svg>
-                                        </button>
-                                        <button 
-                                            wire:click="confirmDelete({{ $order->id }})"
-                                            class="text-red-600 hover:text-red-900"
-                                        >
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                                    #{{ $order->order_number }}
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div>
-                                        <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $order->user->name ?? 'N/A' }}</div>
-                                        <div class="text-sm text-gray-500 dark:text-gray-400">{{ $order->user->email ?? 'N/A' }}</div>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="max-w-xs">
-                                        @foreach($order->orderSellerProducts->take(2) as $item)
-                                            <div class="text-sm text-gray-900 dark:text-white">{{ $item->product->name ?? 'N/A' }} ({{ $item->quantity }})</div>
-                                        @endforeach
-                                        @if($order->orderSellerProducts->count() > 2)
-                                            <div class="text-sm text-gray-500 dark:text-gray-400">+{{ $order->orderSellerProducts->count() - 2 }} more...</div>
-                                        @endif
-                                        <div class="text-xs text-gray-500 dark:text-gray-400">{{ $order->orderSellerProducts->first()->seller->company_name ?? 'N/A' }}</div>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                                    {{ $order->orderSellerProducts->count() }} items
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                                    ₹{{ number_format($order->total_order_amount, 2) }}
-                                </td>
-                                @if(!$isSeller)
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="relative inline-block">
-                                        <select 
-                                            onchange="if(this.value !== '{{ $order->overall_status }}') { @this.call('confirmStatusChange', {{ $order->id }}, this.value); } else { this.value = '{{ $order->overall_status }}'; }"
-                                            class="appearance-none bg-transparent border-0 text-xs font-medium rounded-full px-3 py-1 pr-8
-                                                   {{ $order->overall_status === 'pending' ? 'bg-yellow-100 text-yellow-800' : '' }}
-                                                   {{ $order->overall_status === 'processing' ? 'bg-blue-100 text-blue-800' : '' }}
-                                                   {{ $order->overall_status === 'partially_shipped' ? 'bg-purple-100 text-purple-800' : '' }}
-                                                   {{ $order->overall_status === 'completed' ? 'bg-green-100 text-green-800' : '' }}
-                                                   {{ $order->overall_status === 'cancelled' ? 'bg-red-100 text-red-800' : '' }}"
-                                        >
-                                            <option value="pending" {{ $order->overall_status === 'pending' ? 'selected' : '' }}>Pending</option>
-                                            <option value="processing" {{ $order->overall_status === 'processing' ? 'selected' : '' }}>Processing</option>
-                                            <option value="partially_shipped" {{ $order->overall_status === 'partially_shipped' ? 'selected' : '' }}>Partially Shipped</option>
-                                            <option value="completed" {{ $order->overall_status === 'completed' ? 'selected' : '' }}>Completed</option>
-                                            <option value="cancelled" {{ $order->overall_status === 'cancelled' ? 'selected' : '' }}>Cancelled</option> 
-                                        </select>
-                                        <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                            </svg>
+                       @if(!$isSeller)
+                            @forelse($orders as $order)
+                                <tr class="hover:bg-gray-50 dark:hover:bg-zinc-800 dark:bg-zinc-800">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <div class="flex items-center gap-2">
+                                            <button 
+                                                wire:click="edit({{ $order->id }})"
+                                                class="text-blue-600 hover:text-blue-900"
+                                            >
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                </svg>
+                                            </button>
+                                            <button 
+                                                wire:click="confirmDelete({{ $order->id }})"
+                                                class="text-red-600 hover:text-red-900"
+                                            >
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                            </button>
                                         </div>
-                                    </div>
-                                </td>
-                                @else
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="relative inline-block">
-                                        <select 
-                                            onchange="if(this.value !== '{{ $order->overall_status }}') { @this.call('confirmStatusChange', {{ $order->id }}, this.value); } else { this.value = '{{ $order->overall_status }}'; }"
-                                            class="appearance-none bg-transparent border-0 text-xs font-medium rounded-full px-3 py-1 pr-8
-                                                   {{ $order->overall_status === 'pending' ? 'bg-yellow-100 text-yellow-800' : '' }}
-                                                   {{ $order->overall_status === 'processing' ? 'bg-blue-100 text-blue-800' : '' }}
-                                                   {{ $order->overall_status === 'partially_shipped' ? 'bg-purple-100 text-purple-800' : '' }}
-                                                   {{ $order->overall_status === 'completed' ? 'bg-green-100 text-green-800' : '' }}
-                                                   {{ $order->overall_status === 'cancelled' ? 'bg-red-100 text-red-800' : '' }}"
-                                        >
-                                            <option value="pending" {{ $order->overall_status === 'pending' ? 'selected' : '' }}>Pending</option>
-                                            <option value="processing" {{ $order->overall_status === 'processing' ? 'selected' : '' }}>Processing</option>
-                                            <option value="partially_shipped" {{ $order->overall_status === 'partially_shipped' ? 'selected' : '' }}>Partially Shipped</option>
-                                            <option value="completed" {{ $order->overall_status === 'completed' ? 'selected' : '' }}>Completed</option>
-                                            <option value="cancelled" {{ $order->overall_status === 'cancelled' ? 'selected' : '' }}>Cancelled</option> 
-                                        </select>
-                                        <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                            </svg>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                                        #{{ $order->order_number }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div>
+                                            <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $order->user->name ?? 'N/A' }}</div>
+                                            <div class="text-sm text-gray-500 dark:text-gray-400">{{ $order->user->email ?? 'N/A' }}</div>
                                         </div>
-                                    </div>
-                                </td>
-                                @endif
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                    {{ $order->created_at->format('M d, Y') }}
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="8" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
-                                    No orders found.
-                                </td>
-                            </tr>
-                        @endforelse
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="max-w-xs">
+                                            @foreach($order->orderSellerProducts->take(2) as $item)
+                                                <div class="text-sm text-gray-900 dark:text-white">{{ $item->product->name ?? 'N/A' }} ({{ $item->quantity }})</div>
+                                            @endforeach
+                                            @if($order->orderSellerProducts->count() > 2)
+                                                <div class="text-sm text-gray-500 dark:text-gray-400">+{{ $order->orderSellerProducts->count() - 2 }} more...</div>
+                                            @endif
+                                            <div class="text-xs text-gray-500 dark:text-gray-400">{{ $order->orderSellerProducts->first()->seller->company_name ?? 'N/A' }}</div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                        {{ $order->orderSellerProducts->count() }} items
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                                        ₹{{ number_format($order->total_order_amount, 2) }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="relative inline-block">
+                                            <select 
+                                                onchange="if(this.value !== '{{ $order->overall_status }}') { @this.call('confirmStatusChange', {{ $order->id }}, this.value); } else { this.value = '{{ $order->overall_status }}'; }"
+                                                class="appearance-none bg-transparent border-0 text-xs font-medium rounded-full px-3 py-1 pr-8
+                                                    {{ $order->overall_status === 'pending' ? 'bg-yellow-100 text-yellow-800' : '' }}
+                                                    {{ $order->overall_status === 'processing' ? 'bg-blue-100 text-blue-800' : '' }}
+                                                    {{ $order->overall_status === 'partially_shipped' ? 'bg-purple-100 text-purple-800' : '' }}
+                                                    {{ $order->overall_status === 'completed' ? 'bg-green-100 text-green-800' : '' }}
+                                                    {{ $order->overall_status === 'cancelled' ? 'bg-red-100 text-red-800' : '' }}"
+                                            >
+                                                <option value="pending" {{ $order->overall_status === 'pending' ? 'selected' : '' }}>Pending</option>
+                                                <option value="processing" {{ $order->overall_status === 'processing' ? 'selected' : '' }}>Processing</option>
+                                                <option value="partially_shipped" {{ $order->overall_status === 'partially_shipped' ? 'selected' : '' }}>Partially Shipped</option>
+                                                <option value="completed" {{ $order->overall_status === 'completed' ? 'selected' : '' }}>Completed</option>
+                                                <option value="cancelled" {{ $order->overall_status === 'cancelled' ? 'selected' : '' }}>Cancelled</option> 
+                                            </select>
+                                            <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                        {{ $order->created_at->format('M d, Y') }}
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="8" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                                        No orders found.
+                                    </td>
+                                </tr>
+                            @endforelse
+                        @else
+                             @forelse($orderCount as $order)
+                                <tr class="hover:bg-gray-50 dark:hover:bg-zinc-800">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                                        #{{ $order->id }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                        {{ $order->product->name ?? 'Product not found' }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                        {{ $order->order->user->name ?? 'User not found' }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600">
+                                        ₹{{ number_format($order->total_amount, 2) }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                                @if($order->status === 'delivered')
+                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300">
+                                                        Delivered
+                                                    </span>
+                                                @elseif($order->status === 'pending')
+                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300">
+                                                        Pending
+                                                    </span>
+                                                @elseif($order->status === 'cancelled')
+                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300">
+                                                        Cancelled
+                                                    </span>
+                                                @else
+                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
+                                                        {{ ucfirst($order->status) }}
+                                                    </span>
+                                                @endif
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                        {{ $order->created_at->format('M d, Y') }}
+                                    </td>
+                                </tr>
+                                @empty
+                                <tr>
+                                    <td colspan="8" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                                        No orders found.
+                                    </td>
+                                </tr>
+                             @endforelse
+                        @endif
                     </tbody>
                 </table>
             </div>
-
             <!-- Pagination -->
-            <div class="px-6 py-3 border-t border-gray-200 dark:border-gray-700">
-                {{ $orders->links() }}
-            </div>
+            @if(!$isSeller)
+                <div class="px-6 py-3 border-t border-gray-200 dark:border-gray-700">
+                    {{ $orders->links() }}
+                </div>
+            @else
+                <div class="px-6 py-3 border-t border-gray-200 dark:border-gray-700">
+                    {{ $orderCount->links() }}
+                </div>
+            @endif
+
         </div>
     </div>
 
