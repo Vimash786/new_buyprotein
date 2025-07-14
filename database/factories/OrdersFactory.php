@@ -19,28 +19,12 @@ class OrdersFactory extends Factory
      */
     public function definition(): array
     {
-        $quantity = $this->faker->numberBetween(1, 10);
-        $unitPrice = $this->faker->randomFloat(2, 15.99, 199.99);
-        $totalAmount = $quantity * $unitPrice;
-
         return [
-            'product_id' => products::factory(),
             'user_id' => User::factory(),
-            'quantity' => $quantity,
-            'unit_price' => $unitPrice,
-            'total_amount' => function () use ($quantity, $unitPrice) {
-                $product = products::find($this->faker->randomElement(products::pluck('id')->toArray()));
-                $finalPrice = $product->gym_owner_final_price ?? $product->regular_user_final_price ?? $product->shop_owner_final_price;
-
-                if (is_null($finalPrice)) {
-                    $variantPrice = $product->variants()->first()->price ?? $unitPrice;
-                    return $quantity * $variantPrice;
-                }
-
-                return $quantity * $finalPrice;
-            },
+            'order_number' => 'ORD-' . date('Ymd') . '-' . strtoupper($this->faker->bothify('??####')),
+            'overall_status' => $this->faker->randomElement(['pending', 'processing', 'partially_shipped', 'completed', 'cancelled']),
+            'total_order_amount' => $this->faker->randomFloat(2, 100.00, 5000.00),
             'status' => $this->faker->randomElement(['pending', 'confirmed', 'shipped', 'delivered', 'cancelled']),
-            'notes' => $this->faker->optional()->sentence(),
         ];
     }
 }
