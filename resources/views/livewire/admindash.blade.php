@@ -67,7 +67,7 @@ new class extends Component
                 'totalProducts' => products::count(),
                 'totalOrders' => orders::count(),
                 'totalUsers' => User::count(),
-                'totalSales' => orders::where('seller_status', 'delivered')->sum('total_order_amount'),
+                'totalSales' => orders::where('status', 'delivered')->sum('total_order_amount'),
                 'totalCategories' => Category::count(),
                 'totalSubCategories' => SubCategory::count(),
                 'totalBanners' => Banner::count(),
