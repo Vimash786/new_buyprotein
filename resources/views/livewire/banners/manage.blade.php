@@ -15,9 +15,13 @@ new class extends Component
     public $statusFilter = '';
     public $showModal = false;
     public $showViewModal = false;
+    public $showDeleteModal = false;
+    public $showStatusModal = false;
     public $editMode = false;
     public $bannerId = null;
     public $viewingBanner = null;
+    public $bannerToDelete = null;
+    public $bannerToToggle = null;
     
     // Form fields
     public $name = '';
@@ -77,6 +81,30 @@ new class extends Component
     {
         $this->showViewModal = false;
         $this->viewingBanner = null;
+    }
+
+    public function confirmDelete($id)
+    {
+        $this->bannerToDelete = Banner::findOrFail($id);
+        $this->showDeleteModal = true;
+    }
+
+    public function closeDeleteModal()
+    {
+        $this->showDeleteModal = false;
+        $this->bannerToDelete = null;
+    }
+
+    public function confirmStatusToggle($id)
+    {
+        $this->bannerToToggle = Banner::findOrFail($id);
+        $this->showStatusModal = true;
+    }
+
+    public function closeStatusModal()
+    {
+        $this->showStatusModal = false;
+        $this->bannerToToggle = null;
     }    
     
     public function resetForm()
@@ -107,9 +135,19 @@ new class extends Component
                 Storage::disk('public')->delete($this->banner_image);
             }
             
-            $fileName = time() . '_' . $this->banner_image_file->getClientOriginalName();
-            $filePath = $this->banner_image_file->storeAs('banners', $fileName, 'public');
-            $data['banner_image'] = $filePath;
+            try {
+                $fileName = time() . '_' . $this->banner_image_file->getClientOriginalName();
+                $filePath = $this->banner_image_file->storeAs('banners', $fileName, 'public');
+                
+                if (!$filePath) {
+                    throw new \Exception('Failed to store banner image');
+                }
+                
+                $data['banner_image'] = $filePath;
+            } catch (\Exception $e) {
+                $this->addError('banner_image_file', 'Failed to upload banner image. Please try again.');
+                return;
+            }
         }
         
         if ($this->editMode) {
@@ -142,9 +180,9 @@ new class extends Component
         $this->showModal = true;
     }
     
-    public function delete($id)
+    public function delete($id = null)
     {
-        $banner = Banner::findOrFail($id);
+        $banner = $this->bannerToDelete ?? Banner::findOrFail($id);
         
         // Delete associated image
         if ($banner->banner_image) {
@@ -153,17 +191,21 @@ new class extends Component
         
         $banner->delete();
         session()->flash('message', 'Banner deleted successfully!');
+        
+        $this->closeDeleteModal();
     }
 
-    public function toggleStatus($id)
+    public function toggleStatus($id = null)
     {
-        $banner = Banner::findOrFail($id);
+        $banner = $this->bannerToToggle ?? Banner::findOrFail($id);
         $banner->update([
             'status' => $banner->status === 'active' ? 'inactive' : 'active',
             'updated_by' => auth()->id()
         ]);
         
         session()->flash('message', 'Banner status updated successfully!');
+        
+        $this->closeStatusModal();
     }
 
     public function updatingSearch()
@@ -326,7 +368,7 @@ new class extends Component
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <button 
-                                        wire:click="toggleStatus({{ $banner->id }})"
+                                        wire:click="confirmStatusToggle({{ $banner->id }})"
                                         class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
                                                {{ $banner->status === 'active' 
                                                   ? 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/70' 
@@ -373,8 +415,7 @@ new class extends Component
                                             </svg>
                                         </button>
                                         <button 
-                                            wire:click="delete({{ $banner->id }})"
-                                            wire:confirm="Are you sure you want to delete this banner?"
+                                            wire:click="confirmDelete({{ $banner->id }})"
                                             class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300"
                                             title="Delete"
                                         >
@@ -598,6 +639,89 @@ new class extends Component
                             class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg font-medium"
                         >
                             Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- Delete Confirmation Modal -->
+    @if($showDeleteModal && $bannerToDelete)
+        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div class="bg-white dark:bg-zinc-900 rounded-lg max-w-md w-full">
+                <div class="p-6">
+                    <div class="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 dark:bg-red-900/50 rounded-full mb-4">
+                        <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                        </svg>
+                    </div>
+                    
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white text-center mb-2">Delete Banner</h3>
+                    <p class="text-gray-600 dark:text-gray-300 text-center mb-6">
+                        Are you sure you want to delete "<strong>{{ $bannerToDelete->name }}</strong>"? This action cannot be undone.
+                    </p>
+                    
+                    <div class="flex justify-end gap-3">
+                        <button 
+                            wire:click="closeDeleteModal"
+                            class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-zinc-700 rounded-lg hover:bg-gray-300 dark:hover:bg-zinc-600"
+                        >
+                            Cancel
+                        </button>
+                        <button 
+                            wire:click="delete"
+                            class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700"
+                        >
+                            Delete Banner
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- Status Change Confirmation Modal -->
+    @if($showStatusModal && $bannerToToggle)
+        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div class="bg-white dark:bg-zinc-900 rounded-lg max-w-md w-full">
+                <div class="p-6">
+                    <div class="flex items-center justify-center w-12 h-12 mx-auto 
+                                {{ $bannerToToggle->status === 'active' ? 'bg-red-100 dark:bg-red-900/50' : 'bg-green-100 dark:bg-green-900/50' }} 
+                                rounded-full mb-4">
+                        @if($bannerToToggle->status === 'active')
+                            <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728" />
+                            </svg>
+                        @else
+                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        @endif
+                    </div>
+                    
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white text-center mb-2">
+                        {{ $bannerToToggle->status === 'active' ? 'Deactivate' : 'Activate' }} Banner
+                    </h3>
+                    <p class="text-gray-600 dark:text-gray-300 text-center mb-6">
+                        Are you sure you want to {{ $bannerToToggle->status === 'active' ? 'deactivate' : 'activate' }} 
+                        "<strong>{{ $bannerToToggle->name }}</strong>"?
+                    </p>
+                    
+                    <div class="flex justify-end gap-3">
+                        <button 
+                            wire:click="closeStatusModal"
+                            class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-zinc-700 rounded-lg hover:bg-gray-300 dark:hover:bg-zinc-600"
+                        >
+                            Cancel
+                        </button>
+                        <button 
+                            wire:click="toggleStatus"
+                            class="px-4 py-2 text-sm font-medium text-white 
+                                   {{ $bannerToToggle->status === 'active' ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700' }} 
+                                   rounded-lg"
+                        >
+                            {{ $bannerToToggle->status === 'active' ? 'Deactivate' : 'Activate' }}
                         </button>
                     </div>
                 </div>

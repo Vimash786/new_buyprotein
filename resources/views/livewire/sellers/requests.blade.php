@@ -68,7 +68,7 @@ new class extends Component
         }
 
         return [
-            'sellers' => $query->latest()->paginate(10),
+            'sellers' => $query->where('status', 'not_approved')->latest()->paginate(10),
             'categories' => Category::all(),
             'totalSellers' => Sellers::count(),
             'approvedSellers' => Sellers::where('status', 'approved')->count(),

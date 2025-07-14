@@ -167,7 +167,7 @@ new class extends Component
         }
 
         return [
-            'products' => $query->latest()->paginate(10),
+            'products' => $query->where('super_status','not_approved')->latest()->paginate(10),
             'sellers' => Sellers::where('status', 'approved')->get(),
             'categories' => Category::active()->ordered()->get(),
             'subCategories' => SubCategory::active()->ordered()->get(),

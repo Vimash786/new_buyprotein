@@ -18,9 +18,15 @@ new class extends Component
     public $categoryFilter = '';
     public $showModal = false;
     public $showViewModal = false;
+    public $showDeleteModal = false;
+    public $showStatusModal = false;
+    public $showFeaturedModal = false;
     public $editMode = false;
     public $blogId = null;
     public $viewingBlog = null;
+    public $blogToDelete = null;
+    public $blogToToggleStatus = null;
+    public $blogToToggleFeatured = null;
     
     // Form fields
     public $title = '';
@@ -105,6 +111,42 @@ new class extends Component
     {
         $this->showViewModal = false;
         $this->viewingBlog = null;
+    }
+
+    public function confirmDelete($id)
+    {
+        $this->blogToDelete = Blog::findOrFail($id);
+        $this->showDeleteModal = true;
+    }
+
+    public function closeDeleteModal()
+    {
+        $this->showDeleteModal = false;
+        $this->blogToDelete = null;
+    }
+
+    public function confirmStatusToggle($id)
+    {
+        $this->blogToToggleStatus = Blog::findOrFail($id);
+        $this->showStatusModal = true;
+    }
+
+    public function closeStatusModal()
+    {
+        $this->showStatusModal = false;
+        $this->blogToToggleStatus = null;
+    }
+
+    public function confirmFeaturedToggle($id)
+    {
+        $this->blogToToggleFeatured = Blog::findOrFail($id);
+        $this->showFeaturedModal = true;
+    }
+
+    public function closeFeaturedModal()
+    {
+        $this->showFeaturedModal = false;
+        $this->blogToToggleFeatured = null;
     }
 
     public function resetForm()
@@ -232,9 +274,9 @@ new class extends Component
         $this->showModal = true;
     }
 
-    public function delete($id)
+    public function delete($id = null)
     {
-        $blog = Blog::findOrFail($id);
+        $blog = $this->blogToDelete ?? Blog::findOrFail($id);
         
         // Delete associated image
         if ($blog->featured_image) {
@@ -243,11 +285,13 @@ new class extends Component
         
         $blog->delete();
         session()->flash('message', 'Blog deleted successfully!');
+        
+        $this->closeDeleteModal();
     }
 
-    public function toggleStatus($id)
+    public function toggleStatus($id = null)
     {
-        $blog = Blog::findOrFail($id);
+        $blog = $this->blogToToggleStatus ?? Blog::findOrFail($id);
         
         if ($blog->status === 'published') {
             $blog->update(['status' => 'draft', 'published_at' => null]);
@@ -256,14 +300,18 @@ new class extends Component
         }
         
         session()->flash('message', 'Blog status updated successfully!');
+        
+        $this->closeStatusModal();
     }
 
-    public function toggleFeatured($id)
+    public function toggleFeatured($id = null)
     {
-        $blog = Blog::findOrFail($id);
+        $blog = $this->blogToToggleFeatured ?? Blog::findOrFail($id);
         $blog->update(['is_featured' => !$blog->is_featured]);
         
         session()->flash('message', 'Blog featured status updated successfully!');
+        
+        $this->closeFeaturedModal();
     }
 
     public function updatingSearch()
@@ -460,7 +508,7 @@ new class extends Component
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <button 
-                                        wire:click="toggleStatus({{ $blog->id }})"
+                                        wire:click="confirmStatusToggle({{ $blog->id }})"
                                         class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
                                                {{ $blog->status === 'published' 
                                                   ? 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/70' 
@@ -521,7 +569,7 @@ new class extends Component
                                             </svg>
                                         </button>
                                         <button 
-                                            wire:click="toggleFeatured({{ $blog->id }})"
+                                            wire:click="confirmFeaturedToggle({{ $blog->id }})"
                                             class="text-yellow-600 dark:text-yellow-400 hover:text-yellow-900 dark:hover:text-yellow-300"
                                             title="Toggle Featured"
                                         >
@@ -536,8 +584,7 @@ new class extends Component
                                             @endif
                                         </button>
                                         <button 
-                                            wire:click="delete({{ $blog->id }})"
-                                            wire:confirm="Are you sure you want to delete this blog?"
+                                            wire:click="confirmDelete({{ $blog->id }})"
                                             class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300"
                                             title="Delete"
                                         >
@@ -903,6 +950,194 @@ new class extends Component
                             class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg font-medium"
                         >
                             Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- Delete Confirmation Modal -->
+    @if($showDeleteModal && $blogToDelete)
+        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div class="bg-white dark:bg-zinc-900 rounded-lg max-w-md w-full">
+                <div class="p-6">
+                    <div class="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 dark:bg-red-900/50 rounded-full mb-4">
+                        <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                        </svg>
+                    </div>
+                    
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white text-center mb-2">Delete Blog Post</h3>
+                    <p class="text-gray-600 dark:text-gray-300 text-center mb-6">
+                        Are you sure you want to delete "<strong>{{ $blogToDelete->title }}</strong>"? This action cannot be undone and will permanently remove the blog post and its associated image.
+                    </p>
+                    
+                    <div class="bg-gray-50 dark:bg-zinc-800 rounded-lg p-3 mb-4">
+                        <div class="text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">Author:</span>
+                                <span class="font-medium text-gray-900 dark:text-white">{{ $blogToDelete->author->name ?? 'N/A' }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">Status:</span>
+                                <span class="font-medium text-gray-900 dark:text-white">{{ ucfirst($blogToDelete->status) }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">Views:</span>
+                                <span class="font-medium text-gray-900 dark:text-white">{{ number_format($blogToDelete->views_count) }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-end gap-3">
+                        <button 
+                            wire:click="closeDeleteModal"
+                            class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-zinc-700 rounded-lg hover:bg-gray-300 dark:hover:bg-zinc-600"
+                        >
+                            Cancel
+                        </button>
+                        <button 
+                            wire:click="delete"
+                            class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700"
+                        >
+                            Delete Blog
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- Status Change Confirmation Modal -->
+    @if($showStatusModal && $blogToToggleStatus)
+        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div class="bg-white dark:bg-zinc-900 rounded-lg max-w-md w-full">
+                <div class="p-6">
+                    <div class="flex items-center justify-center w-12 h-12 mx-auto 
+                                {{ $blogToToggleStatus->status === 'published' ? 'bg-yellow-100 dark:bg-yellow-900/50' : 'bg-green-100 dark:bg-green-900/50' }} 
+                                rounded-full mb-4">
+                        @if($blogToToggleStatus->status === 'published')
+                            <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                            </svg>
+                        @else
+                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        @endif
+                    </div>
+                    
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white text-center mb-2">
+                        {{ $blogToToggleStatus->status === 'published' ? 'Change to Draft' : 'Publish Blog' }}
+                    </h3>
+                    <p class="text-gray-600 dark:text-gray-300 text-center mb-4">
+                        Are you sure you want to {{ $blogToToggleStatus->status === 'published' ? 'change to draft' : 'publish' }} 
+                        "<strong>{{ $blogToToggleStatus->title }}</strong>"?
+                        @if($blogToToggleStatus->status !== 'published')
+                            <br><span class="text-sm text-gray-500">This will make the blog visible to readers.</span>
+                        @endif
+                    </p>
+                    
+                    <div class="bg-gray-50 dark:bg-zinc-800 rounded-lg p-3 mb-4">
+                        <div class="text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">Author:</span>
+                                <span class="font-medium text-gray-900 dark:text-white">{{ $blogToToggleStatus->author->name ?? 'N/A' }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">Category:</span>
+                                <span class="font-medium text-gray-900 dark:text-white">{{ $blogToToggleStatus->category->name ?? 'Uncategorized' }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">Current Status:</span>
+                                <span class="font-medium text-gray-900 dark:text-white">{{ ucfirst($blogToToggleStatus->status) }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-end gap-3">
+                        <button 
+                            wire:click="closeStatusModal"
+                            class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-zinc-700 rounded-lg hover:bg-gray-300 dark:hover:bg-zinc-600"
+                        >
+                            Cancel
+                        </button>
+                        <button 
+                            wire:click="toggleStatus"
+                            class="px-4 py-2 text-sm font-medium text-white 
+                                   {{ $blogToToggleStatus->status === 'published' ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-green-600 hover:bg-green-700' }} 
+                                   rounded-lg"
+                        >
+                            {{ $blogToToggleStatus->status === 'published' ? 'Change to Draft' : 'Publish Blog' }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- Featured Toggle Confirmation Modal -->
+    @if($showFeaturedModal && $blogToToggleFeatured)
+        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div class="bg-white dark:bg-zinc-900 rounded-lg max-w-md w-full">
+                <div class="p-6">
+                    <div class="flex items-center justify-center w-12 h-12 mx-auto 
+                                {{ $blogToToggleFeatured->is_featured ? 'bg-gray-100 dark:bg-gray-900/50' : 'bg-yellow-100 dark:bg-yellow-900/50' }} 
+                                rounded-full mb-4">
+                        @if($blogToToggleFeatured->is_featured)
+                            <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                            </svg>
+                        @else
+                            <svg class="w-6 h-6 text-yellow-600 fill-current" viewBox="0 0 20 20">
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.518 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                            </svg>
+                        @endif
+                    </div>
+                    
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white text-center mb-2">
+                        {{ $blogToToggleFeatured->is_featured ? 'Remove from Featured' : 'Mark as Featured' }}
+                    </h3>
+                    <p class="text-gray-600 dark:text-gray-300 text-center mb-4">
+                        Are you sure you want to {{ $blogToToggleFeatured->is_featured ? 'remove' : 'mark' }} 
+                        "<strong>{{ $blogToToggleFeatured->title }}</strong>" {{ $blogToToggleFeatured->is_featured ? 'from featured blogs' : 'as a featured blog' }}?
+                        @if(!$blogToToggleFeatured->is_featured)
+                            <br><span class="text-sm text-gray-500">Featured blogs get special highlighting and visibility.</span>
+                        @endif
+                    </p>
+                    
+                    <div class="bg-gray-50 dark:bg-zinc-800 rounded-lg p-3 mb-4">
+                        <div class="text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">Author:</span>
+                                <span class="font-medium text-gray-900 dark:text-white">{{ $blogToToggleFeatured->author->name ?? 'N/A' }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">Status:</span>
+                                <span class="font-medium text-gray-900 dark:text-white">{{ ucfirst($blogToToggleFeatured->status) }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">Views:</span>
+                                <span class="font-medium text-gray-900 dark:text-white">{{ number_format($blogToToggleFeatured->views_count) }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-end gap-3">
+                        <button 
+                            wire:click="closeFeaturedModal"
+                            class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-zinc-700 rounded-lg hover:bg-gray-300 dark:hover:bg-zinc-600"
+                        >
+                            Cancel
+                        </button>
+                        <button 
+                            wire:click="toggleFeatured"
+                            class="px-4 py-2 text-sm font-medium text-white 
+                                   {{ $blogToToggleFeatured->is_featured ? 'bg-gray-600 hover:bg-gray-700' : 'bg-yellow-600 hover:bg-yellow-700' }} 
+                                   rounded-lg"
+                        >
+                            {{ $blogToToggleFeatured->is_featured ? 'Remove Featured' : 'Mark as Featured' }}
                         </button>
                     </div>
                 </div>

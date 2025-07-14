@@ -72,6 +72,7 @@ class ProductsFactory extends Factory
             'section_category' => $this->faker->randomElement(['everyday_essential', 'popular_pick', 'exclusive_deal']),
             'thumbnail_image' => $thumbnailImage,
             'status' => $this->faker->randomElement(['active', 'inactive']),
+            'super_status' => $this->faker->randomElement(['approved', 'not_approved']),
             'has_variants' => $this->faker->boolean(30), // 30% chance of having variants
         ];
     }

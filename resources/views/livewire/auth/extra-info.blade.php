@@ -135,9 +135,13 @@ new #[Layout('components.layouts.auth')] class extends Component {
         $completed = $user->profile_completed;
 
         if($completed && $user->role == 'Super') {
-            $this->redirectIntended(route('dashboard', absolute: false), navigate: true);
+            // Clear any intended URL and redirect directly to dashboard
+            session()->forget('url.intended');
+            $this->redirect(route('dashboard', absolute: false), navigate: true);
         }elseif($completed && $user->role == 'Seller'){
-            $this->redirectIntended(route('dashboard', absolute: false), navigate: true);
+            // Clear any intended URL and redirect directly to dashboard
+            session()->forget('url.intended');
+            $this->redirect(route('dashboard', absolute: false), navigate: true);
         }elseif($completed){
             $this->redirectIntended(route('home', absolute: false), navigate: true);
         }

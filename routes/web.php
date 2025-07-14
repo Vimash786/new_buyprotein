@@ -27,7 +27,7 @@ Volt::route('/blog', 'blogs.index')->name('blog.index');
 //     return view('dashboard');
 // })->name('home');
 
-Volt::route('dashboard', 'dashboard')
+Volt::route('dashboard', 'admindash')
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
@@ -38,9 +38,12 @@ Route::middleware(['auth'])->group(function () {
     Volt::route('settings/password', 'settings.password')->name('settings.password');
     Volt::route('settings/appearance', 'settings.appearance')->name('settings.appearance');
 
+    
     // Management Pages
     Volt::route('sellers', 'sellers.manage')->name('sellers.manage');
+    Volt::route('sellers/requests', 'sellers.requests')->name('sellers.requests');
     Volt::route('products', 'products.manage')->name('products.manage');
+     Volt::route('products/requests', 'products.requests')->name('products.requests');
     Volt::route('orders', 'orders.manage')->name('orders.manage');
     Volt::route('users', 'users.manage')->name('users.manage');
     Volt::route('categories', 'categories.manage')->name('categories.manage');

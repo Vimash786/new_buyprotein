@@ -33,6 +33,7 @@ class products extends Model
         'category',
         'old_category',
         'status',
+        'super_status',
         'section_category',
         'thumbnail_image',
         'has_variants',
@@ -54,7 +55,7 @@ class products extends Model
         'shop_owner_final_price' => 'decimal:2',
         'stock_quantity' => 'integer',
         'status' => 'string',
-    
+        'super_status' => 'string',
         'has_variants' => 'boolean',
     ];
 

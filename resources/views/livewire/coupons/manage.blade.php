@@ -19,9 +19,13 @@ new class extends Component
     public $showModal = false;
     public $showReportModal = false;
     public $showAssignModal = false;
+    public $showDeleteModal = false;
+    public $showStatusModal = false;
     public $editMode = false;
     public $couponId = null;
     public $selectedCoupon = null;
+    public $couponToDelete = null;
+    public $couponToToggle = null;
     
     // Form fields
     public $code = '';
@@ -133,6 +137,30 @@ new class extends Component
     {
         $this->showModal = false;
         $this->resetForm();
+    }
+
+    public function confirmDelete($id)
+    {
+        $this->couponToDelete = Coupon::findOrFail($id);
+        $this->showDeleteModal = true;
+    }
+
+    public function closeDeleteModal()
+    {
+        $this->showDeleteModal = false;
+        $this->couponToDelete = null;
+    }
+
+    public function confirmStatusToggle($id)
+    {
+        $this->couponToToggle = Coupon::findOrFail($id);
+        $this->showStatusModal = true;
+    }
+
+    public function closeStatusModal()
+    {
+        $this->showStatusModal = false;
+        $this->couponToToggle = null;
     }
 
     public function openReportModal($id)
@@ -255,26 +283,35 @@ new class extends Component
         $this->showModal = true;
     }
 
-    public function delete($id)
+    public function delete($id = null)
     {
-        $coupon = Coupon::findOrFail($id);
+        $coupon = $id ? Coupon::findOrFail($id) : $this->couponToDelete;
         
-        // Delete assignments
-        $coupon->assignments()->delete();
-        
-        $coupon->delete();
-        session()->flash('message', 'Coupon deleted successfully!');
+        if ($coupon) {
+            // Delete assignments
+            $coupon->assignments()->delete();
+            
+            $coupon->delete();
+            session()->flash('message', 'Coupon deleted successfully!');
+            
+            $this->closeDeleteModal();
+        }
     }
 
-    public function toggleStatus($id)
+    public function toggleStatus($id = null)
     {
-        $coupon = Coupon::findOrFail($id);
-        $coupon->update([
-            'status' => $coupon->status === 'active' ? 'inactive' : 'active',
-            'updated_by' => auth()->id()
-        ]);
+        $coupon = $id ? Coupon::findOrFail($id) : $this->couponToToggle;
         
-        session()->flash('message', 'Coupon status updated successfully!');
+        if ($coupon) {
+            $coupon->update([
+                'status' => $coupon->status === 'active' ? 'inactive' : 'active',
+                'updated_by' => auth()->id()
+            ]);
+            
+            session()->flash('message', 'Coupon status updated successfully!');
+            
+            $this->closeStatusModal();
+        }
     }
 
     public function getAssignableItems()
@@ -417,7 +454,7 @@ new class extends Component
         </div>
 
         <!-- Stats Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8" hidden>
             <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
                 <div class="flex items-center">
                     <div class="flex-1">
@@ -554,5 +591,88 @@ new class extends Component
     
     @if($showAssignModal)
         @include('livewire.coupons.partials.assign-modal')
+    @endif
+
+    <!-- Delete Confirmation Modal -->
+    @if($showDeleteModal && $couponToDelete)
+        <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-zinc-900">
+                <div class="mt-3 text-center">
+                    <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/50">
+                        <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white mt-2">Delete Coupon</h3>
+                    <div class="mt-2 px-7 py-3">
+                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                            Are you sure you want to delete the coupon "<strong>{{ $couponToDelete->name }}</strong>" ({{ $couponToDelete->code }})? 
+                            This action will also delete all assignments and cannot be undone.
+                        </p>
+                    </div>
+                    <div class="items-center px-4 py-3">
+                        <div class="flex gap-3 justify-center">
+                            <button
+                                wire:click="closeDeleteModal"
+                                class="px-4 py-2 bg-gray-500 text-white text-base font-medium rounded-md shadow-sm hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                wire:click="delete"
+                                class="px-4 py-2 bg-red-600 text-white text-base font-medium rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- Status Toggle Confirmation Modal -->
+    @if($showStatusModal && $couponToToggle)
+        <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-zinc-900">
+                <div class="mt-3 text-center">
+                    <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full 
+                                {{ $couponToToggle->status === 'active' ? 'bg-red-100 dark:bg-red-900/50' : 'bg-green-100 dark:bg-green-900/50' }}">
+                        <svg class="h-6 w-6 {{ $couponToToggle->status === 'active' ? 'text-red-600' : 'text-green-600' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            @if($couponToToggle->status === 'active')
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728" />
+                            @else
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            @endif
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white mt-2">
+                        {{ $couponToToggle->status === 'active' ? 'Deactivate' : 'Activate' }} Coupon
+                    </h3>
+                    <div class="mt-2 px-7 py-3">
+                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                            Are you sure you want to {{ $couponToToggle->status === 'active' ? 'deactivate' : 'activate' }} the coupon 
+                            "<strong>{{ $couponToToggle->name }}</strong>" ({{ $couponToToggle->code }})?
+                        </p>
+                    </div>
+                    <div class="items-center px-4 py-3">
+                        <div class="flex gap-3 justify-center">
+                            <button
+                                wire:click="closeStatusModal"
+                                class="px-4 py-2 bg-gray-500 text-white text-base font-medium rounded-md shadow-sm hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                wire:click="toggleStatus"
+                                class="px-4 py-2 {{ $couponToToggle->status === 'active' ? 'bg-red-600 hover:bg-red-700 focus:ring-red-500' : 'bg-green-600 hover:bg-green-700 focus:ring-green-500' }} text-white text-base font-medium rounded-md shadow-sm focus:outline-none focus:ring-2"
+                            >
+                                {{ $couponToToggle->status === 'active' ? 'Deactivate' : 'Activate' }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     @endif
 </div>

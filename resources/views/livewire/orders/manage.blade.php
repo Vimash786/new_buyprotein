@@ -13,8 +13,13 @@ new class extends Component
     public $search = '';
     public $statusFilter = '';
     public $showModal = false;
+    public $showDeleteModal = false;
+    public $showStatusModal = false;
     public $editMode = false;
     public $orderId = null;
+    public $orderToDelete = null;
+    public $orderToToggle = null;
+    public $newStatusValue = null;
     
     // Form fields
     public $product_id = '';
@@ -54,7 +59,18 @@ new class extends Component
 
     public function with()
     {
+        $user = auth()->user();
+        $seller = \App\Models\Sellers::where('user_id', $user->id)->first();
+        $isSeller = $seller !== null;
+
         $query = orders::with(['product', 'user', 'product.seller']);
+
+        // If user is a seller, only show orders for their products
+        if ($isSeller) {
+            $query->whereHas('product', function($productQuery) use ($seller) {
+                $productQuery->where('seller_id', $seller->id);
+            });
+        }
 
         if ($this->search) {
             $query->where(function($q) {
@@ -71,13 +87,44 @@ new class extends Component
             $query->where('status', $this->statusFilter);
         }
 
-        $totalOrders = orders::count();
-        $pendingOrders = orders::where('status', 'pending')->count();
-        $confirmedOrders = orders::where('status', 'confirmed')->count();
-        $shippedOrders = orders::where('status', 'shipped')->count();
-        $deliveredOrders = orders::where('status', 'delivered')->count();
-        $cancelledOrders = orders::where('status', 'cancelled')->count();
-        $totalRevenue = orders::whereIn('status', ['confirmed', 'shipped', 'delivered'])->sum('total_amount');
+        // Calculate statistics based on user role
+        if ($isSeller) {
+            $totalOrders = orders::whereHas('product', function($productQuery) use ($seller) {
+                $productQuery->where('seller_id', $seller->id);
+            })->count();
+            
+            $pendingOrders = orders::whereHas('product', function($productQuery) use ($seller) {
+                $productQuery->where('seller_id', $seller->id);
+            })->where('status', 'pending')->count();
+            
+            $confirmedOrders = orders::whereHas('product', function($productQuery) use ($seller) {
+                $productQuery->where('seller_id', $seller->id);
+            })->where('status', 'confirmed')->count();
+            
+            $shippedOrders = orders::whereHas('product', function($productQuery) use ($seller) {
+                $productQuery->where('seller_id', $seller->id);
+            })->where('status', 'shipped')->count();
+            
+            $deliveredOrders = orders::whereHas('product', function($productQuery) use ($seller) {
+                $productQuery->where('seller_id', $seller->id);
+            })->where('status', 'delivered')->count();
+            
+            $cancelledOrders = orders::whereHas('product', function($productQuery) use ($seller) {
+                $productQuery->where('seller_id', $seller->id);
+            })->where('status', 'cancelled')->count();
+            
+            $totalRevenue = orders::whereHas('product', function($productQuery) use ($seller) {
+                $productQuery->where('seller_id', $seller->id);
+            })->whereIn('status', ['confirmed', 'shipped', 'delivered'])->sum('total_amount');
+        } else {
+            $totalOrders = orders::count();
+            $pendingOrders = orders::where('status', 'pending')->count();
+            $confirmedOrders = orders::where('status', 'confirmed')->count();
+            $shippedOrders = orders::where('status', 'shipped')->count();
+            $deliveredOrders = orders::where('status', 'delivered')->count();
+            $cancelledOrders = orders::where('status', 'cancelled')->count();
+            $totalRevenue = orders::whereIn('status', ['confirmed', 'shipped', 'delivered'])->sum('total_amount');
+        }
 
         return [
             'orders' => $query->latest()->paginate(10),
@@ -90,6 +137,8 @@ new class extends Component
             'deliveredOrders' => $deliveredOrders,
             'cancelledOrders' => $cancelledOrders,
             'totalRevenue' => $totalRevenue,
+            'isSeller' => $isSeller,
+            'currentSeller' => $seller,
         ];
     }
 
@@ -104,6 +153,32 @@ new class extends Component
     {
         $this->showModal = false;
         $this->resetForm();
+    }
+
+    public function confirmDelete($id)
+    {
+        $this->orderToDelete = orders::findOrFail($id);
+        $this->showDeleteModal = true;
+    }
+
+    public function closeDeleteModal()
+    {
+        $this->showDeleteModal = false;
+        $this->orderToDelete = null;
+    }
+
+    public function confirmStatusChange($id, $newStatus)
+    {
+        $this->orderToToggle = orders::findOrFail($id);
+        $this->newStatusValue = $newStatus;
+        $this->showStatusModal = true;
+    }
+
+    public function closeStatusModal()
+    {
+        $this->showStatusModal = false;
+        $this->orderToToggle = null;
+        $this->newStatusValue = null;
     }
 
     public function resetForm()
@@ -161,18 +236,25 @@ new class extends Component
         $this->showModal = true;
     }
 
-    public function delete($id)
+    public function delete($id = null)
     {
-        orders::findOrFail($id)->delete();
+        $order = $this->orderToDelete ?? orders::findOrFail($id);
+        $order->delete();
         session()->flash('message', 'Order deleted successfully!');
+        
+        $this->closeDeleteModal();
     }
 
-    public function updateStatus($id, $newStatus)
+    public function updateStatus($id = null, $newStatus = null)
     {
-        $order = orders::findOrFail($id);
-        $order->update(['status' => $newStatus]);
+        $order = $this->orderToToggle ?? orders::findOrFail($id);
+        $status = $this->newStatusValue ?? $newStatus;
+        
+        $order->update(['status' => $status]);
         
         session()->flash('message', 'Order status updated successfully!');
+        
+        $this->closeStatusModal();
     }
 
     public function updatingSearch()
@@ -195,7 +277,7 @@ new class extends Component
         </div>
 
         <!-- Stats Cards -->
-        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8" hidden>
             <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-4">
                 <div class="text-center">
                     <h3 class="text-sm font-medium text-gray-900 dark:text-white dark:text-white">Total Orders</h3>
@@ -297,6 +379,7 @@ new class extends Component
                 <table class="w-full">
                     <thead class="bg-gray-50 dark:bg-zinc-800">
                         <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Order ID</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Customer</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Product</th>
@@ -304,12 +387,31 @@ new class extends Component
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Total</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="bg-white dark:bg-zinc-900 divide-y divide-gray-200 dark:divide-gray-700">
                         @forelse($orders as $order)
                             <tr class="hover:bg-gray-50 dark:hover:bg-zinc-800 dark:bg-zinc-800">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <div class="flex items-center gap-2">
+                                        <button 
+                                            wire:click="edit({{ $order->id }})"
+                                            class="text-blue-600 hover:text-blue-900"
+                                        >
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                            </svg>
+                                        </button>
+                                        <button 
+                                            wire:click="confirmDelete({{ $order->id }})"
+                                            class="text-red-600 hover:text-red-900"
+                                        >
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white dark:text-white">
                                     #{{ $order->id }}
                                 </td>
@@ -334,7 +436,7 @@ new class extends Component
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="relative inline-block">
                                         <select 
-                                            wire:change="updateStatus({{ $order->id }}, $event.target.value)"
+                                            onchange="if(this.value !== '{{ $order->status }}') { @this.call('confirmStatusChange', {{ $order->id }}, this.value); } else { this.value = '{{ $order->status }}'; }"
                                             class="appearance-none bg-transparent border-0 text-xs font-medium rounded-full px-3 py-1 pr-8
                                                    {{ $order->status === 'pending' ? 'bg-yellow-100 text-yellow-800' : '' }}
                                                    {{ $order->status === 'confirmed' ? 'bg-blue-100 text-blue-800' : '' }}
@@ -357,27 +459,6 @@ new class extends Component
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400">
                                     {{ $order->created_at->format('M d, Y') }}
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <div class="flex items-center gap-2">
-                                        <button 
-                                            wire:click="edit({{ $order->id }})"
-                                            class="text-blue-600 hover:text-blue-900"
-                                        >
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                            </svg>
-                                        </button>
-                                        <button 
-                                            wire:click="delete({{ $order->id }})"
-                                            wire:confirm="Are you sure you want to delete this order?"
-                                            class="text-red-600 hover:text-red-900"
-                                        >
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                            </svg>
-                                        </button>
-                                    </div>
                                 </td>
                             </tr>
                         @empty
@@ -532,6 +613,156 @@ new class extends Component
                             </button>
                         </div>
                     </form>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- Delete Confirmation Modal -->
+    @if($showDeleteModal && $orderToDelete)
+        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div class="bg-white dark:bg-zinc-900 rounded-lg max-w-md w-full">
+                <div class="p-6">
+                    <div class="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 dark:bg-red-900/50 rounded-full mb-4">
+                        <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                        </svg>
+                    </div>
+                    
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white text-center mb-2">Delete Order</h3>
+                    <p class="text-gray-600 dark:text-gray-300 text-center mb-6">
+                        Are you sure you want to delete order "<strong>#{{ $orderToDelete->id }}</strong>"? This action cannot be undone and will permanently remove this order from the system.
+                    </p>
+                    
+                    <div class="bg-gray-50 dark:bg-zinc-800 rounded-lg p-3 mb-4">
+                        <div class="text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">Customer:</span>
+                                <span class="font-medium text-gray-900 dark:text-white">{{ $orderToDelete->user->name ?? 'N/A' }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">Product:</span>
+                                <span class="font-medium text-gray-900 dark:text-white">{{ $orderToDelete->product->name ?? 'N/A' }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">Total:</span>
+                                <span class="font-medium text-gray-900 dark:text-white">₹{{ number_format($orderToDelete->total_amount, 2) }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-end gap-3">
+                        <button 
+                            wire:click="closeDeleteModal"
+                            class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-zinc-700 rounded-lg hover:bg-gray-300 dark:hover:bg-zinc-600"
+                        >
+                            Cancel
+                        </button>
+                        <button 
+                            wire:click="delete"
+                            class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700"
+                        >
+                            Delete Order
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- Status Change Confirmation Modal -->
+    @if($showStatusModal && $orderToToggle && $newStatusValue)
+        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div class="bg-white dark:bg-zinc-900 rounded-lg max-w-md w-full">
+                <div class="p-6">
+                    <div class="flex items-center justify-center w-12 h-12 mx-auto 
+                                {{ $newStatusValue === 'pending' ? 'bg-yellow-100 dark:bg-yellow-900/50' : '' }}
+                                {{ $newStatusValue === 'confirmed' ? 'bg-blue-100 dark:bg-blue-900/50' : '' }}
+                                {{ $newStatusValue === 'shipped' ? 'bg-purple-100 dark:bg-purple-900/50' : '' }}
+                                {{ $newStatusValue === 'delivered' ? 'bg-green-100 dark:bg-green-900/50' : '' }}
+                                {{ $newStatusValue === 'cancelled' ? 'bg-red-100 dark:bg-red-900/50' : '' }}
+                                rounded-full mb-4">
+                        @if($newStatusValue === 'pending')
+                            <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        @elseif($newStatusValue === 'confirmed')
+                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        @elseif($newStatusValue === 'shipped')
+                            <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
+                            </svg>
+                        @elseif($newStatusValue === 'delivered')
+                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                        @elseif($newStatusValue === 'cancelled')
+                            <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        @endif
+                    </div>
+                    
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white text-center mb-2">
+                        Change Order Status
+                    </h3>
+                    <p class="text-gray-600 dark:text-gray-300 text-center mb-4">
+                        Are you sure you want to change the status of order "<strong>#{{ $orderToToggle->id }}</strong>" 
+                        from "<strong>{{ ucfirst($orderToToggle->status) }}</strong>" to "<strong>{{ ucfirst($newStatusValue) }}</strong>"?
+                    </p>
+                    
+                    <div class="bg-gray-50 dark:bg-zinc-800 rounded-lg p-3 mb-4">
+                        <div class="text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">Customer:</span>
+                                <span class="font-medium text-gray-900 dark:text-white">{{ $orderToToggle->user->name ?? 'N/A' }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">Product:</span>
+                                <span class="font-medium text-gray-900 dark:text-white">{{ $orderToToggle->product->name ?? 'N/A' }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">Total:</span>
+                                <span class="font-medium text-gray-900 dark:text-white">₹{{ number_format($orderToToggle->total_amount, 2) }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    @if($newStatusValue === 'cancelled')
+                        <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 mb-4">
+                            <div class="flex">
+                                <svg class="w-5 h-5 text-red-600 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                </svg>
+                                <div class="text-sm text-red-700 dark:text-red-300">
+                                    <strong>Warning:</strong> Cancelling this order may require additional steps like processing refunds or updating inventory.
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+                    
+                    <div class="flex justify-end gap-3">
+                        <button 
+                            wire:click="closeStatusModal"
+                            class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-zinc-700 rounded-lg hover:bg-gray-300 dark:hover:bg-zinc-600"
+                        >
+                            Cancel
+                        </button>
+                        <button 
+                            wire:click="updateStatus"
+                            class="px-4 py-2 text-sm font-medium text-white 
+                                   {{ $newStatusValue === 'pending' ? 'bg-yellow-600 hover:bg-yellow-700' : '' }}
+                                   {{ $newStatusValue === 'confirmed' ? 'bg-blue-600 hover:bg-blue-700' : '' }}
+                                   {{ $newStatusValue === 'shipped' ? 'bg-purple-600 hover:bg-purple-700' : '' }}
+                                   {{ $newStatusValue === 'delivered' ? 'bg-green-600 hover:bg-green-700' : '' }}
+                                   {{ $newStatusValue === 'cancelled' ? 'bg-red-600 hover:bg-red-700' : '' }}
+                                   rounded-lg"
+                        >
+                            Change to {{ ucfirst($newStatusValue) }}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
