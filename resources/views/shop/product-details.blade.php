@@ -529,8 +529,8 @@
                                                 </a>
                                                 <span class="availability">500g Pack</span>
                                                 <div class="price-area">
-                                                    <span class="current">₹{{ $product->price }}</span>
-                                                    <div class="previous">₹{{ $product->price }}</div>
+                                                    <span class="current">{{ format_price($product->id) }}</span>
+                                                    <div class="previous">{{ format_price($product->id) }}</div>
                                                 </div>
                                                 <div class="cart-counter-action">
                                                     <div class="quantity-edit">
@@ -881,7 +881,6 @@
                     }).showToast();
                 },
                 error: function(xhr) {
-                    console.log(xhr.status);
                     if (xhr.status == 401) {
                         Toastify({
                             text: "Please Login to add product to cart.",

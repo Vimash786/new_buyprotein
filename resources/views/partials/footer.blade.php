@@ -35,8 +35,8 @@
                         <div class="footer-nav">
                             <ul>
                                 <li><a href="#">Delivery Information</a></li>
-                                <li><a href="#">Privacy Policy</a></li>
-                                <li><a href="#">Terms & Conditions</a></li>
+                                <li><a href="{{ route('privacy.policy') }}">Privacy Policy</a></li>
+                                <li><a href="{{ route('term.condition') }}">Terms & Conditions</a></li>
                                 <li><a href="#">Support Center</a></li>
                                 <li><a href="#">Careers</a></li>
                             </ul>
@@ -48,9 +48,9 @@
                         <h3 class="footer-title">Shop Categories</h3>
                         <div class="footer-nav">
                             <ul>
-                                <li><a href="#">Contact Us</a></li>
+                                <li><a href="{{ route('contact') }}">Contact Us</a></li>
                                 <li><a href="#">Information</a></li>
-                                <li><a href="#">About Us</a></li>
+                                <li><a href="{{ route('about.us') }}">About Us</a></li>
                                 <li><a href="#">Careers</a></li>
                                 <li><a href="#">Nest Stories</a></li>
                             </ul>
@@ -62,11 +62,10 @@
                         <h3 class="footer-title">Useful Links</h3>
                         <div class="footer-nav">
                             <ul>
-                                <li><a href="#">Cancellation & Returns</a></li>
-                                <li><a href="#">Report Infringement</a></li>
-                                <li><a href="#">Payments</a></li>
-                                <li><a href="#">Shipping</a></li>
-                                <li><a href="#">FAQ</a></li>
+                                <li><a href="{{ route('term.condition') }}">Terms & Conditions</a></li>
+                                <li><a href="{{ route('shipping.policy') }}">Shipping Policy</a></li>
+                                <li><a href="{{ route('privacy.policy') }}">Privacy Policy</a></li>
+                                <li><a href="{{ route('return.policy') }}">Return Policy</a></li>
                             </ul>
                         </div>
                     </div>
