@@ -173,4 +173,12 @@ class products extends Model
             default => 'Everyday Essential'
         };
     }
+
+    /**
+     * Get all order items for this product.
+     */
+    public function orderSellerProducts(): HasMany
+    {
+        return $this->hasMany(OrderSellerProduct::class, 'product_id');
+    }
 }
