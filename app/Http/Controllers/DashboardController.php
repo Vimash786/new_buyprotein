@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Banner;
+use App\Models\BillingDetail;
 use App\Models\Cart;
 use App\Models\Category;
 use App\Models\orders;
@@ -24,9 +25,9 @@ class DashboardController extends Controller
     public function index()
     {
         $categories = Category::limit(10)->get();
-        $productCounts = orders::select('product_id', DB::raw('count(*) as total'))->groupBy('product_id')->orderBy('product_id')->get();
-        $productIds = $productCounts->pluck('product_id');
-        $products = products::with(['subCategory', 'category'])->whereIn('id', $productIds)->get();
+        // $productCounts = orders::select('product_id', DB::raw('count(*) as total'))->groupBy('product_id')->orderBy('product_id')->get();
+        // $productIds = $productCounts->pluck('product_id');
+        // $products = products::with(['subCategory', 'category'])->whereIn('id', $productIds)->get();
         $everyDayEssentials = products::with(['subCategory', 'category'])->where('section_category', 'everyday_essential')->limit(10)->get();
         $populerProducts = products::where('section_category', 'popular_pick')->limit(6)->get();
         $latestProducts = products::orderBy('created_at', 'desc')->take(12)->get();
@@ -34,7 +35,7 @@ class DashboardController extends Controller
         $banners = Banner::where('status', 'active')->orderBy('created_at', 'desc')->get();
         $sellers = Sellers::where('status', 'approved')->limit(4)->get();
 
-        return view('dashboard', compact('categories', 'products', 'everyDayEssentials', 'populerProducts', 'latestProducts', 'offers', 'banners', 'sellers'));
+        return view('dashboard', compact('categories', 'everyDayEssentials', 'populerProducts', 'latestProducts', 'offers', 'banners', 'sellers'));
     }
 
     public function shop(Request $request, $type = null, $id = null)
@@ -303,8 +304,15 @@ class DashboardController extends Controller
     public function checkout()
     {
         $cartData = Cart::with('product')->where('user_id', Auth::user()->id)->get();
-
-        return view('shop.checkout', compact('cartData'));
+        $order = orders::where('user_id', Auth::user()->id)->orderBy('created_at', 'desc')->first();
+    
+        $billingAddress = [];
+        if ($order) {
+            $orderId = $order->id;
+            $billingAddress = BillingDetail::where('order_id', $orderId)->get();
+        }
+        
+        return view('shop.checkout', compact('cartData', 'billingAddress'));
     }
 
     public function aboutUs()
