@@ -208,6 +208,7 @@ new class extends Component
         $this->newStatusValue = $newStatus;
         $this->showStatusModal = true;
     }
+    
     public function confirmStatus($id, $newStatus)
     {
         $this->orderToToggle = OrderSellerProduct::findOrFail($id);
@@ -220,6 +221,57 @@ new class extends Component
         $this->showStatusModal = false;
         $this->orderToToggle = null;
         $this->newStatusValue = null;
+    }
+
+    public function editSellerOrder($id)
+    {
+        $orderItem = OrderSellerProduct::with(['order', 'product'])->findOrFail($id);
+        
+        $this->orderId = $orderItem->id;
+        $this->user_id = $orderItem->order->user_id;
+        $this->seller_id = $orderItem->seller_id;
+        $this->overall_status = $orderItem->status;
+        $this->notes = $orderItem->notes ?? '';
+        
+        // Load order items (single item for seller)
+        $this->orderItems = [[
+            'product_id' => $orderItem->product_id,
+            'quantity' => $orderItem->quantity,
+            'unit_price' => $orderItem->unit_price,
+            'total_amount' => $orderItem->total_amount,
+        ]];
+        
+        $this->editMode = true;
+        $this->showModal = true;
+    }
+
+    public function confirmDeleteSellerOrder($id)
+    {
+        $this->orderToDelete = OrderSellerProduct::findOrFail($id);
+        $this->showDeleteModal = true;
+    }
+
+    public function deleteSellerOrder($id = null)
+    {
+        $orderItem = $this->orderToDelete ?? OrderSellerProduct::findOrFail($id);
+        $order = $orderItem->order;
+        
+        // Delete the order item
+        $orderItem->delete();
+        
+        // Check if this was the last item in the order
+        if ($order->orderSellerProducts()->count() === 0) {
+            // Delete the entire order if no items left
+            $order->delete();
+        } else {
+            // Recalculate order total
+            $newTotal = $order->orderSellerProducts()->sum('total_amount');
+            $order->update(['total_order_amount' => $newTotal]);
+        }
+        
+        session()->flash('message', 'Order item deleted successfully!');
+        
+        $this->closeDeleteModal();
     }
 
     public function resetForm()
@@ -239,36 +291,61 @@ new class extends Component
         $this->validate();
 
         if ($this->editMode) {
-            $order = orders::findOrFail($this->orderId);
+            // Check if this is a seller editing their order item
+            $user = auth()->user();
+            $seller = \App\Models\Sellers::where('user_id', $user->id)->first();
+            $isSeller = $seller !== null;
             
-            // Update order basic info
-            $order->update([
-                'user_id' => $this->user_id,
-                'overall_status' => $this->overall_status,
-                'total_order_amount' => collect($this->orderItems)->sum('total_amount'),
-                'status' => $this->overall_status,
-            ]);
-
-            // Remove existing order items
-            $order->orderSellerProducts()->delete();
-
-            // Add new order items
-            foreach ($this->orderItems as $item) {
-                OrderSellerProduct::create([
-                    'order_id' => $order->id,
-                    'seller_id' => $this->seller_id,
-                    'product_id' => $item['product_id'],
-                    'quantity' => $item['quantity'],
-                    'unit_price' => $item['unit_price'],
-                    'total_amount' => $item['total_amount'],
+            if ($isSeller) {
+                // Seller editing their order item
+                $orderItem = OrderSellerProduct::findOrFail($this->orderId);
+                $orderItem->update([
+                    'quantity' => $this->orderItems[0]['quantity'],
+                    'unit_price' => $this->orderItems[0]['unit_price'],
+                    'total_amount' => $this->orderItems[0]['total_amount'],
                     'status' => $this->overall_status,
                     'notes' => $this->notes,
                 ]);
-            }
+                
+                // Update order total
+                $order = $orderItem->order;
+                $newTotal = $order->orderSellerProducts()->sum('total_amount');
+                $order->update(['total_order_amount' => $newTotal]);
+                
+                session()->flash('message', 'Order item updated successfully!');
+            } else {
+                // Admin editing entire order
+                $order = orders::findOrFail($this->orderId);
+                
+                // Update order basic info
+                $order->update([
+                    'user_id' => $this->user_id,
+                    'overall_status' => $this->overall_status,
+                    'total_order_amount' => collect($this->orderItems)->sum('total_amount'),
+                    'status' => $this->overall_status,
+                ]);
 
-            session()->flash('message', 'Order updated successfully!');
+                // Remove existing order items
+                $order->orderSellerProducts()->delete();
+
+                // Add new order items
+                foreach ($this->orderItems as $item) {
+                    OrderSellerProduct::create([
+                        'order_id' => $order->id,
+                        'seller_id' => $this->seller_id,
+                        'product_id' => $item['product_id'],
+                        'quantity' => $item['quantity'],
+                        'unit_price' => $item['unit_price'],
+                        'total_amount' => $item['total_amount'],
+                        'status' => $this->overall_status,
+                        'notes' => $this->notes,
+                    ]);
+                }
+
+                session()->flash('message', 'Order updated successfully!');
+            }
         } else {
-            // Create new order
+            // Create new order (admin only)
             $order = orders::create([
                 'user_id' => $this->user_id,
                 'order_number' => 'ORD-' . date('Ymd') . '-' . strtoupper(\Illuminate\Support\Str::random(6)),
@@ -340,22 +417,37 @@ new class extends Component
 
     public function updateStatus($id = null, $newStatus = null)
     {
-        if(!$isSeller){
-            $item = $this->orderToToggle ?? orders::findOrFail($id);
-        } else {
-            $item = $this->orderToToggle ?? OrderSellerProduct::findOrFail($id);    
-        }
-        
+        $item = $this->orderToToggle ?? null;
         $status = $this->newStatusValue ?? $newStatus;
         
-        // Update order status
-        $item->update([
-            'overall_status' => $status,
-            'status' => $status
-        ]);
-        
-        // Update all order items status
-        $item->orderSellerProducts()->update(['status' => $status]);
+        if ($item instanceof OrderSellerProduct) {
+            // For seller updating individual order item - only update the OrderSellerProduct
+            $item->update(['status' => $status]);
+            
+            // Check if we need to update the main order status based on all items
+            $order = $item->order;
+            $allItemsStatus = $order->orderSellerProducts()->pluck('status')->unique();
+            
+            if ($allItemsStatus->count() === 1) {
+                // All items have the same status, update order overall_status to match
+                $order->update(['overall_status' => $allItemsStatus->first()]);
+            } else {
+                // Mixed statuses, set order to processing
+                $order->update(['overall_status' => 'processing']);
+            }
+        } else {
+            // For admin updating entire order
+            $order = $item ?? orders::findOrFail($id);
+            
+            // Update order status
+            $order->update([
+                'overall_status' => $status,
+                'status' => $status
+            ]);
+            
+            // Update all order items status
+            $order->orderSellerProducts()->update(['status' => $status]);
+        }
         
         session()->flash('message', 'Order status updated successfully!');
         
@@ -458,15 +550,17 @@ new class extends Component
                     </div>
 
                     <!-- Add Button -->
-                    <button 
-                        wire:click="openModal"
-                        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2"
-                    >
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                        </svg>
-                        Add Order
-                    </button>
+                    @if(!$isSeller)
+                        <button 
+                            wire:click="openModal"
+                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2"
+                        >
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                            </svg>
+                            Add Order
+                        </button>
+                    @endif
                 </div>
             </div>
         </div>
@@ -494,6 +588,7 @@ new class extends Component
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
                             @else
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Order ID</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Product</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Customer</th>
@@ -591,6 +686,26 @@ new class extends Component
                         @else
                              @forelse($orderCount as $order)
                                 <tr class="hover:bg-gray-50 dark:hover:bg-zinc-800">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <div class="flex items-center gap-2">
+                                            <button 
+                                                wire:click="editSellerOrder({{ $order->id }})"
+                                                class="text-blue-600 hover:text-blue-900"
+                                            >
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                </svg>
+                                            </button>
+                                            <button 
+                                                wire:click="confirmDeleteSellerOrder({{ $order->id }})"
+                                                class="text-red-600 hover:text-red-900"
+                                            >
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                                         #{{ $order->id }}
                                     </td>
@@ -606,7 +721,7 @@ new class extends Component
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="relative inline-block">
                                             <select 
-                                                onchange="if(this.value !== '{{ $order->status }}') { @this.call('confirmStatusChange', {{ $order->id }}, this.value); } else { this.value = '{{ $order->status }}'; }"
+                                                onchange="if(this.value !== '{{ $order->status }}') { @this.call('confirmStatus', {{ $order->id }}, this.value); } else { this.value = '{{ $order->status }}'; }"
                                                 class="appearance-none bg-transparent border-0 text-xs font-medium rounded-full px-3 py-1 pr-8
                                                     {{ $order->status === 'pending' ? 'bg-yellow-100 text-yellow-800' : '' }}
                                                     {{ $order->status === 'confirmed' ? 'bg-blue-100 text-blue-800' : '' }}
@@ -634,7 +749,7 @@ new class extends Component
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="8" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                                    <td colspan="7" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
                                         No orders found.
                                     </td>
                                 </tr>
@@ -807,24 +922,42 @@ new class extends Component
                         </svg>
                     </div>
                     
-                    <h3 class="text-lg font-bold text-gray-900 dark:text-white text-center mb-2">Delete Order</h3>
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white text-center mb-2">
+                        @if($orderToDelete instanceof \App\Models\OrderSellerProduct)
+                            Delete Order Item
+                        @else
+                            Delete Order
+                        @endif
+                    </h3>
                     <p class="text-gray-600 dark:text-gray-300 text-center mb-6">
-                        Are you sure you want to delete order "<strong>#{{ $orderToDelete->id }}</strong>"? This action cannot be undone and will permanently remove this order and all its items from the system.
+                        @if($orderToDelete instanceof \App\Models\OrderSellerProduct)
+                            Are you sure you want to delete this order item? This action cannot be undone and will permanently remove this item from the order.
+                        @else
+                            Are you sure you want to delete this order? This action cannot be undone and will permanently remove this order and all its items from the system.
+                        @endif
                     </p>
                     
                     <div class="bg-gray-50 dark:bg-zinc-800 rounded-lg p-3 mb-4">
                         <div class="text-sm">
                             <div class="flex justify-between">
-                                <span class="text-gray-600 dark:text-gray-400">Customer:</span>
-                                <span class="font-medium text-gray-900 dark:text-white">{{ $orderToDelete->user->name ?? 'N/A' }}</span>
+                                <span class="text-gray-600 dark:text-gray-400">Item:</span>
+                                <span class="font-medium text-gray-900 dark:text-white">
+                                    @if($orderToDelete instanceof \App\Models\OrderSellerProduct)
+                                        Order Item
+                                    @else
+                                        Full Order
+                                    @endif
+                                </span>
                             </div>
                             <div class="flex justify-between">
-                                <span class="text-gray-600 dark:text-gray-400">Items Count:</span>
-                                <span class="font-medium text-gray-900 dark:text-white">{{ $orderToDelete->orderSellerProducts->count() }} items</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-600 dark:text-gray-400">Total:</span>
-                                <span class="font-medium text-gray-900 dark:text-white">₹{{ number_format($orderToDelete->total_order_amount, 2) }}</span>
+                                <span class="text-gray-600 dark:text-gray-400">Action:</span>
+                                <span class="font-medium text-red-600">
+                                    @if($orderToDelete instanceof \App\Models\OrderSellerProduct)
+                                        Delete Item
+                                    @else
+                                        Delete Order
+                                    @endif
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -837,10 +970,14 @@ new class extends Component
                             Cancel
                         </button>
                         <button 
-                            wire:click="delete"
+                            wire:click="{{ $orderToDelete instanceof \App\Models\OrderSellerProduct ? 'deleteSellerOrder' : 'delete' }}"
                             class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700"
                         >
-                            Delete Order
+                            @if($orderToDelete instanceof \App\Models\OrderSellerProduct)
+                                Delete Item
+                            @else
+                                Delete Order
+                            @endif
                         </button>
                     </div>
                 </div>
@@ -887,23 +1024,28 @@ new class extends Component
                         Change Order Status
                     </h3>
                     <p class="text-gray-600 dark:text-gray-300 text-center mb-4">
-                        Are you sure you want to change the status of order "<strong>#{{ $orderToToggle->id }}</strong>" 
-                        from "<strong>{{ ucfirst($orderToToggle->overall_status) }}</strong>" to "<strong>{{ ucfirst($newStatusValue) }}</strong>"?
+                        @if($orderToToggle instanceof \App\Models\OrderSellerProduct)
+                            Are you sure you want to change the status of this order item to "<strong>{{ ucfirst($newStatusValue) }}</strong>"?
+                        @else
+                            Are you sure you want to change the status of this order to "<strong>{{ ucfirst($newStatusValue) }}</strong>"?
+                        @endif
                     </p>
                     
                     <div class="bg-gray-50 dark:bg-zinc-800 rounded-lg p-3 mb-4">
                         <div class="text-sm">
                             <div class="flex justify-between">
-                                <span class="text-gray-600 dark:text-gray-400">Customer:</span>
-                                <span class="font-medium text-gray-900 dark:text-white">{{ $orderToToggle->user->name ?? 'N/A' }}</span>
+                                <span class="text-gray-600 dark:text-gray-400">Type:</span>
+                                <span class="font-medium text-gray-900 dark:text-white">
+                                    @if($orderToToggle instanceof \App\Models\OrderSellerProduct)
+                                        Order Item
+                                    @else
+                                        Full Order
+                                    @endif
+                                </span>
                             </div>
                             <div class="flex justify-between">
-                                <span class="text-gray-600 dark:text-gray-400">Items Count:</span>
-                                <span class="font-medium text-gray-900 dark:text-white">{{ $orderToToggle->orderSellerProducts->count() }} items</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-600 dark:text-gray-400">Total:</span>
-                                <span class="font-medium text-gray-900 dark:text-white">₹{{ number_format($orderToToggle->total_order_amount, 2) }}</span>
+                                <span class="text-gray-600 dark:text-gray-400">New Status:</span>
+                                <span class="font-medium text-blue-600">{{ ucfirst($newStatusValue) }}</span>
                             </div>
                         </div>
                     </div>
