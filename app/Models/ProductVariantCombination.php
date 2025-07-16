@@ -155,4 +155,24 @@ class ProductVariantCombination extends Model
         $this->regular_user_final_price = $this->calculateRegularUserFinalPrice();
         $this->shop_owner_final_price = $this->calculateShopOwnerFinalPrice();
     }
+
+    /**
+     * Get formatted variant text for display
+     */
+    public function getFormattedVariantText()
+    {
+        $options = $this->getVariantOptionsDetails();
+        if ($options->isEmpty()) {
+            return $this->sku ?? 'Variant';
+        }
+
+        $variantText = [];
+        foreach ($options as $variantName => $variantOptions) {
+            foreach ($variantOptions as $option) {
+                $variantText[] = ucfirst($variantName) . ': ' . $option->value;
+            }
+        }
+
+        return implode(', ', $variantText);
+    }
 }

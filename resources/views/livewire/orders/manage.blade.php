@@ -39,6 +39,7 @@ new class extends Component
         'orderItems.*.quantity' => 'required|integer|min:1',
         'orderItems.*.unit_price' => 'required|numeric|min:0',
         'orderItems.*.seller_id' => 'required|exists:sellers,id',
+        'orderItems.*.variant_combination_id' => 'nullable|exists:product_variant_combinations,id',
         'notes' => 'nullable|string',
     ];
 
@@ -75,7 +76,7 @@ new class extends Component
         // Add items for newly selected products
         foreach ($selectedProductIds as $productId) {
             if (!in_array($productId, $currentProductIds)) {
-                $product = products::find($productId);
+                $product = products::with('activeVariantCombinations')->find($productId);
                 if ($product) {
                     $this->orderItems[] = [
                         'product_id' => $productId,
@@ -83,6 +84,7 @@ new class extends Component
                         'unit_price' => $product->regular_user_final_price ?? $product->regular_user_price ?? 0,
                         'total_amount' => $product->regular_user_final_price ?? $product->regular_user_price ?? 0,
                         'seller_id' => $product->seller_id,
+                        'variant_combination_id' => null,
                     ];
                 }
             }
@@ -100,10 +102,41 @@ new class extends Component
             $index = $keyParts[0];
             $field = $keyParts[1];
             
+            // Handle variant selection
+            if ($field === 'variant_combination_id' && isset($this->orderItems[$index])) {
+                $this->updatePriceForVariant($index, $value);
+            }
+            
             if (in_array($field, ['quantity', 'unit_price']) && isset($this->orderItems[$index])) {
                 $this->calculateItemTotal($index);
             }
         }
+    }
+
+    public function updatePriceForVariant($index, $variantCombinationId)
+    {
+        if (!isset($this->orderItems[$index])) {
+            return;
+        }
+
+        $item = &$this->orderItems[$index];
+        
+        if ($variantCombinationId) {
+            // Get the variant combination price
+            $variantCombination = \App\Models\ProductVariantCombination::find($variantCombinationId);
+            if ($variantCombination) {
+                $item['unit_price'] = $variantCombination->regular_user_final_price ?? $variantCombination->regular_user_price ?? 0;
+            }
+        } else {
+            // Use product's base price
+            $product = products::find($item['product_id']);
+            if ($product) {
+                $item['unit_price'] = $product->regular_user_final_price ?? $product->regular_user_price ?? 0;
+            }
+        }
+        
+        // Recalculate total
+        $this->calculateItemTotal($index);
     }
 
     public function calculateItemTotal($index)
@@ -213,8 +246,8 @@ new class extends Component
             'orderCount'=> $isSeller ? $seller_query: null,
             'orders' => $query->latest()->paginate(10),
             'products' => $isSeller 
-                ? products::with('seller')->where('seller_id', $seller->id)->get()
-                : products::with('seller')->where('status', 'active')->get(),
+                ? products::with(['seller', 'activeVariantCombinations'])->where('seller_id', $seller->id)->get()
+                : products::with(['seller', 'activeVariantCombinations'])->where('status', 'active')->get(),
             'sellers' => \App\Models\Sellers::all(),
             'users' => User::all(),
             'totalOrders' => $totalOrders,
@@ -292,6 +325,7 @@ new class extends Component
             'unit_price' => $orderItem->unit_price,
             'total_amount' => $orderItem->total_amount,
             'seller_id' => $orderItem->seller_id,
+            'variant_combination_id' => $orderItem->variant_combination_id,
         ]];
         
         $this->editMode = true;
@@ -349,6 +383,9 @@ new class extends Component
         $isSeller = $currentSeller !== null;
         
         $this->validate();
+        
+        // Additional validation for variants
+        $this->validateOrderItems();
 
         if ($this->editMode) {
             if ($isSeller) {
@@ -360,6 +397,7 @@ new class extends Component
                     'total_amount' => $this->orderItems[0]['total_amount'],
                     'status' => $this->overall_status,
                     'notes' => $this->notes,
+                    'variant_combination_id' => $this->orderItems[0]['variant_combination_id'] ?? null,
                 ]);
                 
                 // Update order total
@@ -394,6 +432,7 @@ new class extends Component
                         'total_amount' => $item['total_amount'],
                         'status' => $this->overall_status,
                         'notes' => $this->notes,
+                        'variant_combination_id' => $item['variant_combination_id'] ?? null,
                     ]);
                 }
 
@@ -420,6 +459,7 @@ new class extends Component
                     'total_amount' => $item['total_amount'],
                     'status' => $this->overall_status,
                     'notes' => $this->notes,
+                    'variant_combination_id' => $item['variant_combination_id'] ?? null,
                 ]);
             }
 
@@ -451,6 +491,7 @@ new class extends Component
                 'unit_price' => $item->unit_price,
                 'total_amount' => $item->total_amount,
                 'seller_id' => $item->seller_id,
+                'variant_combination_id' => $item->variant_combination_id,
             ];
         })->toArray();
         
@@ -527,6 +568,19 @@ new class extends Component
     public function updatingStatusFilter()
     {
         $this->resetPage();
+    }
+
+    public function validateOrderItems()
+    {
+        foreach ($this->orderItems as $index => $item) {
+            $product = products::with('activeVariantCombinations')->find($item['product_id']);
+            
+            // Check if variant is required but not selected
+            if ($product && $product->has_variants && $product->activeVariantCombinations->count() > 0) {
+                // If product has variants, it's recommended but not required to select one
+                // The base product price will be used if no variant is selected
+            }
+        }
     }
 }; ?>
 
@@ -912,7 +966,9 @@ new class extends Component
                                             <div class="text-xs text-gray-500 dark:text-gray-400">
                                                 ₹{{ number_format($product->regular_user_final_price ?? $product->regular_user_price ?? 0, 2) }}
                                                 | Seller: {{ $product->seller->company_name ?? 'N/A' }}
-                                                | ID: {{ $product->id }} | Status: {{ $product->status }} | Selected: {{ $isChecked ? 'Yes' : 'No' }}
+                                                @if($product->has_variants && $product->activeVariantCombinations->count() > 0)
+                                                    | <span class="text-blue-600">Has {{ $product->activeVariantCombinations->count() }} variants</span>
+                                                @endif
                                             </div>
                                         </div>
                                     </label>
@@ -952,44 +1008,69 @@ new class extends Component
                                                     </svg>
                                                 </button>
                                             </div>
-                                            
-                                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                                <!-- Quantity -->
-                                                <div>
-                                                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Quantity</label>
-                                                    <input 
-                                                        type="number" 
-                                                        wire:model.live="orderItems.{{ $index }}.quantity"
-                                                        class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
-                                                        min="1"
-                                                    >
-                                                    @error("orderItems.{$index}.quantity") <span class="text-red-500 text-xs">{{ $errors->first("orderItems.{$index}.quantity") }}</span> @enderror
-                                                </div>
+                                            <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                                <!-- Variant Selection (only if product has variants) -->
+                                @php
+                                    $hasVariants = $product && $product->has_variants && $product->activeVariantCombinations->count() > 0;
+                                @endphp
+                                @if($hasVariants)
+                                    <div class="md:col-span-4 mb-2">
+                                        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Product Variant</label>
+                                        <select 
+                                            wire:model.live="orderItems.{{ $index }}.variant_combination_id"
+                                            class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
+                                        >
+                                            <option value="">Select variant (optional)</option>
+                                            @foreach($product->activeVariantCombinations as $variant)
+                                                <option value="{{ $variant->id }}">
+                                                    {{ $variant->getFormattedVariantText() }}
+                                                    - ₹{{ number_format($variant->regular_user_final_price ?? $variant->regular_user_price ?? 0, 2) }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        @if($hasVariants)
+                                            <p class="text-xs text-blue-600 mt-1">This product has variants available</p>
+                                        @endif
+                                        @error("orderItems.{$index}.variant_combination_id") <span class="text-red-500 text-xs">{{ $errors->first("orderItems.{$index}.variant_combination_id") }}</span> @enderror
+                                    </div>
+                                @endif
 
-                                                <!-- Unit Price -->
-                                                <div>
-                                                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Unit Price (₹)</label>
-                                                    <input 
-                                                        type="number" 
-                                                        step="0.01"
-                                                        wire:model.live="orderItems.{{ $index }}.unit_price"
-                                                        class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
-                                                    >
-                                                    @error("orderItems.{$index}.unit_price") <span class="text-red-500 text-xs">{{ $errors->first("orderItems.{$index}.unit_price") }}</span> @enderror
-                                                </div>
+                                <!-- Quantity -->
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Quantity</label>
+                                    <input 
+                                        type="number" 
+                                        wire:model.live="orderItems.{{ $index }}.quantity"
+                                        class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
+                                        min="1"
+                                    >
+                                    @error("orderItems.{$index}.quantity") <span class="text-red-500 text-xs">{{ $errors->first("orderItems.{$index}.quantity") }}</span> @enderror
+                                </div>
 
-                                                <!-- Total Amount -->
-                                                <div>
-                                                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Total Amount (₹)</label>
-                                                    <input 
-                                                        type="number" 
-                                                        step="0.01"
-                                                        wire:model="orderItems.{{ $index }}.total_amount"
-                                                        class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-100 dark:bg-zinc-600 text-gray-900 dark:text-white"
-                                                        readonly
-                                                    >
-                                                </div>
-                                            </div>
+                                <!-- Unit Price -->
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Unit Price (₹)</label>
+                                    <input 
+                                        type="number" 
+                                        step="0.01"
+                                        wire:model.live="orderItems.{{ $index }}.unit_price"
+                                        class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
+                                    >
+                                    @error("orderItems.{$index}.unit_price") <span class="text-red-500 text-xs">{{ $errors->first("orderItems.{$index}.unit_price") }}</span> @enderror
+                                </div>
+
+                                <!-- Total Amount -->
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Total Amount (₹)</label>
+                                    <input 
+                                        type="number" 
+                                        step="0.01"
+                                        wire:model="orderItems.{{ $index }}.total_amount"
+                                        class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-100 dark:bg-zinc-600 text-gray-900 dark:text-white"
+                                        readonly
+                                    >
+                                </div>
+                            </div>
                                         </div>
                                     @endforeach
                                 </div>
@@ -1147,7 +1228,7 @@ new class extends Component
                                 rounded-full mb-4">
                         @if($newStatusValue === 'pending')
                             <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0114 0z" />
                             </svg>
                         @elseif($newStatusValue === 'confirmed')
                             <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
