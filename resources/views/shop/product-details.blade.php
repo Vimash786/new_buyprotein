@@ -101,10 +101,9 @@
                                                 ₹{{ $product->regular_user_price }}<span
                                                     class="old-price ml--15">$69.35</span></span>
                                             @if (Auth::user() && Auth::user()->role == 'Gym Owner/Trainer/Influencer/Dietitian')
-                                            <a class="mb-4" data-bs-toggle="modal"
-                                                data-bs-target="#exampleModal">
-                                                Bulk Order
-                                            </a>
+                                                <a class="mb-4" data-bs-toggle="modal" data-bs-target="#exampleModal">
+                                                    Bulk Order
+                                                </a>
                                             @endif
                                             <div class="product-bottom-action mt-4">
                                                 <div class="cart-edits">
@@ -222,9 +221,16 @@
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link" id="profile-tabt" data-bs-toggle="tab"
                                         data-bs-target="#profile-tab-panes" type="button" role="tab"
-                                        aria-controls="profile-tab-panes" aria-selected="false">Customer Reviews
-                                        (01)</button>
+                                        aria-controls="profile-tab-panes" aria-selected="false">Customer Reviews</button>
                                 </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="review-tab" data-bs-toggle="tab"
+                                        data-bs-target="#review" type="button" role="tab" aria-controls="review"
+                                        aria-selected="false">
+                                        Reviews
+                                    </button>
+                                </li>
+
                             </ul>
                             <div class="tab-content" id="myTabContent">
                                 <div class="tab-pane fade   show active" id="home-tab-pane" role="tabpanel"
@@ -294,144 +300,115 @@
                                         <div class="product-details-review-product-style">
                                             <div class="average-stars-area-left">
                                                 <div class="top-stars-wrapper">
-                                                    <h4 class="review">
-                                                        5.0
-                                                    </h4>
+                                                    <h4 class="review">{{ number_format($averageRating, 1) }}</h4>
                                                     <div class="rating-disc">
                                                         <span>Average Rating</span>
                                                         <div class="stars">
-                                                            <i class="fa-solid fa-star"></i>
-                                                            <i class="fa-solid fa-star"></i>
-                                                            <i class="fa-solid fa-star"></i>
-                                                            <i class="fa-solid fa-star"></i>
-                                                            <i class="fa-solid fa-star"></i>
-                                                            <span>(1 Reviews & 0 Ratings)</span>
+                                                            @for ($i = 1; $i <= 5; $i++)
+                                                                <i
+                                                                    class="{{ $i <= round($averageRating) ? 'fa-solid' : 'fa-regular' }} fa-star"></i>
+                                                            @endfor
+                                                            <span>({{ $totalReviews }} Reviews)</span>
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <div class="average-stars-area">
-                                                    <h4 class="average">66.7%</h4>
-                                                    <span>Recommended
-                                                        (2 of 3)</span>
-                                                </div>
+
                                                 <div class="review-charts-details">
-                                                    <div class="single-review">
-                                                        <div class="stars">
-                                                            <i class="fa-solid fa-star"></i>
-                                                            <i class="fa-solid fa-star"></i>
-                                                            <i class="fa-solid fa-star"></i>
-                                                            <i class="fa-solid fa-star"></i>
-                                                            <i class="fa-solid fa-star"></i>
-                                                        </div>
-                                                        <div class="single-progress-area-incard">
-                                                            <div class="progress">
-                                                                <div class="progress-bar wow fadeInLeft"
-                                                                    role="progressbar" style="width: 80%"
-                                                                    aria-valuenow="25" aria-valuemin="0"
-                                                                    aria-valuemax="100"></div>
+                                                    @foreach (array_reverse(range(1, 5)) as $star)
+                                                        @php
+                                                            $count = $ratingCounts[$star];
+                                                            $percent =
+                                                                $totalReviews > 0 ? ($count / $totalReviews) * 100 : 0;
+                                                        @endphp
+
+                                                        <div class="single-review">
+                                                            <div class="stars">
+                                                                @for ($i = 1; $i <= 5; $i++)
+                                                                    <i
+                                                                        class="{{ $i <= $star ? 'fa-solid' : 'fa-regular' }} fa-star"></i>
+                                                                @endfor
                                                             </div>
-                                                        </div>
-                                                        <span class="pac">100%</span>
-                                                    </div>
-                                                    <div class="single-review">
-                                                        <div class="stars">
-                                                            <i class="fa-solid fa-star"></i>
-                                                            <i class="fa-solid fa-star"></i>
-                                                            <i class="fa-solid fa-star"></i>
-                                                            <i class="fa-solid fa-star"></i>
-                                                            <i class="fa-regular fa-star"></i>
-                                                        </div>
-                                                        <div class="single-progress-area-incard">
-                                                            <div class="progress">
-                                                                <div class="progress-bar wow fadeInLeft"
-                                                                    role="progressbar" style="width: 80%"
-                                                                    aria-valuenow="25" aria-valuemin="0"
-                                                                    aria-valuemax="100"></div>
+                                                            <div class="single-progress-area-incard">
+                                                                <div class="progress">
+                                                                    <div class="progress-bar wow fadeInLeft"
+                                                                        role="progressbar"
+                                                                        style="width: {{ $percent }}%"
+                                                                        aria-valuenow="{{ $percent }}"
+                                                                        aria-valuemin="0" aria-valuemax="100">
+                                                                    </div>
+                                                                </div>
                                                             </div>
+                                                            <span class="pac">{{ round($percent) }}%</span>
                                                         </div>
-                                                        <span class="pac">80%</span>
-                                                    </div>
-                                                    <div class="single-review">
-                                                        <div class="stars">
-                                                            <i class="fa-solid fa-star"></i>
-                                                            <i class="fa-solid fa-star"></i>
-                                                            <i class="fa-solid fa-star"></i>
-                                                            <i class="fa-regular fa-star"></i>
-                                                            <i class="fa-regular fa-star"></i>
-                                                        </div>
-                                                        <div class="single-progress-area-incard">
-                                                            <div class="progress">
-                                                                <div class="progress-bar wow fadeInLeft"
-                                                                    role="progressbar" style="width: 60%"
-                                                                    aria-valuenow="25" aria-valuemin="0"
-                                                                    aria-valuemax="100"></div>
-                                                            </div>
-                                                        </div>
-                                                        <span class="pac">60%</span>
-                                                    </div>
-                                                    <div class="single-review">
-                                                        <div class="stars">
-                                                            <i class="fa-solid fa-star"></i>
-                                                            <i class="fa-solid fa-star"></i>
-                                                            <i class="fa-regular fa-star"></i>
-                                                            <i class="fa-regular fa-star"></i>
-                                                            <i class="fa-regular fa-star"></i>
-                                                        </div>
-                                                        <div class="single-progress-area-incard">
-                                                            <div class="progress">
-                                                                <div class="progress-bar wow fadeInLeft"
-                                                                    role="progressbar" style="width: 80%"
-                                                                    aria-valuenow="25" aria-valuemin="0"
-                                                                    aria-valuemax="100"></div>
-                                                            </div>
-                                                        </div>
-                                                        <span class="pac">40%</span>
-                                                    </div>
-                                                    <div class="single-review">
-                                                        <div class="stars">
-                                                            <i class="fa-solid fa-star"></i>
-                                                            <i class="fa-regular fa-star"></i>
-                                                            <i class="fa-regular fa-star"></i>
-                                                            <i class="fa-regular fa-star"></i>
-                                                            <i class="fa-regular fa-star"></i>
-                                                        </div>
-                                                        <div class="single-progress-area-incard">
-                                                            <div class="progress">
-                                                                <div class="progress-bar wow fadeInLeft"
-                                                                    role="progressbar" style="width: 80%"
-                                                                    aria-valuenow="25" aria-valuemin="0"
-                                                                    aria-valuemax="100"></div>
-                                                            </div>
-                                                        </div>
-                                                        <span class="pac">30%</span>
-                                                    </div>
+                                                    @endforeach
                                                 </div>
                                             </div>
+
                                             <div class="submit-review-area">
-                                                <form action="#" class="submit-review-area">
+                                                <form action="{{ route('review.store') }}" method="POST"
+                                                    class="submit-review-area">
+                                                    @csrf
                                                     <h5 class="title">Submit Your Review</h5>
+
                                                     <div class="your-rating">
                                                         <span>Your Rating Of This Product :</span>
-                                                        <div class="stars">
-                                                            <i class="fa-solid fa-star"></i>
-                                                            <i class="fa-solid fa-star"></i>
-                                                            <i class="fa-solid fa-star"></i>
-                                                            <i class="fa-solid fa-star"></i>
-                                                            <i class="fa-solid fa-star"></i>
+                                                        <div class="stars" id="rating-stars">
+                                                            @for ($i = 1; $i <= 5; $i++)
+                                                                <i class="fa-regular fa-star star"
+                                                                    data-value="{{ $i }}"></i>
+                                                            @endfor
+                                                            <input type="hidden" name="rating" id="rating-value"
+                                                                value="0">
+                                                            <input type="hidden" name="productId"
+                                                                value="{{ $product->id }}">
                                                         </div>
                                                     </div>
+
                                                     <div class="half-input-wrapper">
                                                         <div class="half-input">
-                                                            <input type="text" placeholder="Your Name*">
+                                                            <input type="text" name="name" placeholder="Your Name*"
+                                                                required>
                                                         </div>
                                                         <div class="half-input">
-                                                            <input type="text" placeholder="Your Email *">
+                                                            <input type="email" name="email"
+                                                                placeholder="Your Email *" required>
                                                         </div>
                                                     </div>
-                                                    <textarea name="#" id="#" placeholder="Write Your Review" required></textarea>
-                                                    <button class="rts-btn btn-primary">SUBMIT REVIEW</button>
+
+                                                    <textarea name="review" placeholder="Write Your Review" required></textarea>
+                                                    <button class="rts-btn btn-primary" type="submit">SUBMIT
+                                                        REVIEW</button>
                                                 </form>
+
                                             </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="tab-pane fade" id="review" role="tabpanel" aria-labelledby="review-tab"
+                                    tabindex="0">
+
+                                    <div class="single-tab-content-shop-details">
+                                        <div class="product-details-review-product-style">
+                                            @foreach ($reviews as $review)
+                                                <div class="card mb-3 shadow-sm border-0">
+                                                    <div class="card-body">
+                                                        <div
+                                                            class="d-flex justify-content-between align-items-center mb-2">
+                                                            <h6 class="mb-0">{{ $review->name }}</h6>
+                                                            <div class="text-warning">
+                                                                @for ($i = 1; $i <= 5; $i++)
+                                                                    <i
+                                                                        class="{{ $i <= $review->rating ? 'fa-solid' : 'fa-regular' }} fa-star"></i>
+                                                                @endfor
+                                                            </div>
+                                                        </div>
+                                                        <p class="mb-1 text-muted" style="font-size: 14px;">
+                                                            {{ $review->created_at->format('F d, Y') }}
+                                                        </p>
+                                                        <p class="mb-0">{{ $review->review }}</p>
+                                                    </div>
+                                                </div>
+                                            @endforeach
                                         </div>
                                     </div>
                                 </div>
@@ -459,7 +436,7 @@
                             <label for="quantity" class="form-label">Quantity:</label>
                             <input type="number" name="quantity" placeholder="Enter Product Quantity" value="50"
                                 min="50" required>
-                                <input type="hidden" value="{{ $product->name }}" name="productName">
+                            <input type="hidden" value="{{ $product->name }}" name="productName">
                         </div>
                         @if ($product->variants && $product->variants->count() > 0)
                             <div class="rts-item p-4">
@@ -518,7 +495,8 @@
                             <button type="submit" class="btn btn-primary float-end me-auto">
                                 Bulk Order
                             </button>
-                            <button type="button" class="btn p-2 m-0 btn-light float-end" data-bs-dismiss="modal" aria-label="Close">
+                            <button type="button" class="btn p-2 m-0 btn-light float-end" data-bs-dismiss="modal"
+                                aria-label="Close">
                                 Close
                             </button>
                         </div>
@@ -599,20 +577,6 @@
                                                     <img src="{{ asset('storage/' . $product->thumbnail_image) }}"
                                                         alt="product">
                                                 </a>
-                                                <div class="action-share-option">
-                                                    <div class="single-action openuptip message-show-action"
-                                                        data-flow="up" title="Add To Wishlist">
-                                                        <i class="fa-light fa-heart"></i>
-                                                    </div>
-                                                    <div class="single-action openuptip" data-flow="up" title="Compare"
-                                                        data-bs-toggle="modal" data-bs-target="#exampleModal">
-                                                        <i class="fa-solid fa-arrows-retweet"></i>
-                                                    </div>
-                                                    <div class="single-action openuptip cta-quickview product-details-popup-btn"
-                                                        data-flow="up" title="Quick View">
-                                                        <i class="fa-regular fa-eye"></i>
-                                                    </div>
-                                                </div>
                                             </div>
                                             <!-- iamge and sction area start -->
 
@@ -627,7 +591,8 @@
                                                 </div>
                                                 <div class="cart-counter-action">
                                                     <div class="quantity-edit">
-                                                        <input type="text" class="input quantity-input" value="1" >
+                                                        <input type="text" class="input quantity-input"
+                                                            value="1">
                                                         <div class="button-wrapper-action">
                                                             <button class="button"><i
                                                                     class="fa-regular fa-chevron-down"></i></button>
@@ -635,7 +600,9 @@
                                                                     class="fa-regular fa-chevron-up"></i></button>
                                                         </div>
                                                     </div>
-                                                    <a href="#" class="rts-btn btn-primary radious-sm with-icon add-to-cart-btn-other" data-product-id="{{ $product->id }}">
+                                                    <a href="#"
+                                                        class="rts-btn btn-primary radious-sm with-icon add-to-cart-btn-other"
+                                                        data-product-id="{{ $product->id }}">
                                                         <div class="btn-text">
                                                             Add To Cart
                                                         </div>
@@ -1090,6 +1057,33 @@
                         backgroundColor: "#dc3545",
                     }).showToast();
                 }
+            });
+        });
+    });
+</script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    integrity="sha512-..." crossorigin="anonymous" />
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const stars = document.querySelectorAll('.star');
+        const ratingInput = document.getElementById('rating-value');
+
+        stars.forEach(star => {
+            star.addEventListener('click', function() {
+                const selectedRating = parseInt(this.getAttribute('data-value'));
+                ratingInput.value = selectedRating;
+
+                stars.forEach(s => {
+                    const val = parseInt(s.getAttribute('data-value'));
+                    if (val <= selectedRating) {
+                        s.classList.remove('fa-regular');
+                        s.classList.add('fa-solid', 'filled');
+                    } else {
+                        s.classList.remove('fa-solid', 'filled');
+                        s.classList.add('fa-regular');
+                    }
+                });
             });
         });
     });

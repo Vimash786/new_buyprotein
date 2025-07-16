@@ -62,6 +62,7 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/wishlist/remove', [DashboardController::class, 'removeWishlist'])->name('wishlist.remove');
     Route::post('/wish-to-cart', [DashboardController::class, 'wishToCart'])->name('wishlist.to.cart');
     Route::post('/bulk-order', [DashboardController::class, 'bulkOrder'])->name('bulk.order');
+    Route::post('/review-store', [DashboardController::class, 'reviewStore'])->name('review.store');
 
     Route::get('/checkout', [DashboardController::class, 'checkout'])->name('user.checkout');
 

@@ -9,6 +9,7 @@ use App\Models\orders;
 use App\Models\products;
 use App\Models\ProductVariantCombination;
 use App\Models\ProductVariantOption;
+use App\Models\Review;
 use App\Models\Sellers;
 use App\Models\Wishlist;
 use Exception;
@@ -16,6 +17,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 class DashboardController extends Controller
 {
@@ -76,8 +78,16 @@ class DashboardController extends Controller
                 ->where('id', '!=', $id)
                 ->limit(10)
                 ->get();
+            $reviews = Review::where('product_id', $id)->get();
+            $totalReviews = $reviews->count();
+            $averageRating = $reviews->avg('rating');
 
-            return view('shop.product-details', compact('product', 'relatedProducts'));
+            $ratingCounts = [];
+            for ($i = 1; $i <= 5; $i++) {
+                $ratingCounts[$i] = $reviews->where('rating', $i)->count();
+            }
+
+            return view('shop.product-details', compact('product', 'relatedProducts', 'reviews', 'totalReviews', 'averageRating', 'ratingCounts'));
         } catch (Exception $e) {
             return redirect()->back()->with('error', 'Invalid product ID.');
         }
@@ -86,8 +96,9 @@ class DashboardController extends Controller
     public function userAccount()
     {
         if (Auth::user() != null) {
+            $orders = orders::where('user_id', Auth::user()->id)->get();
 
-            return view('shop.user-account');
+            return view('shop.user-account', compact('orders'));
         } else {
             return redirect()->route('login');
         }
@@ -344,5 +355,35 @@ class DashboardController extends Controller
                 $variantId = (int) str_replace('variant_', '', $key);
                 return [$variantId => (int) $value];
             });
+    }
+
+    public function reviewStore(Request $request)
+    {
+        $validator = Validator::make(
+            $request->all(),
+            [
+                'name' => 'required|string',
+                'email' => 'required|email',
+                'review' => 'required|string',
+                'rating' => 'required|integer|min:1|max:5',
+            ]
+        );
+
+        if ($validator->fails()) {
+            return back()->withErrors($validator)->withInput();
+        }
+
+        Review::create(
+            [
+                'product_id' => $request->productId,
+                'user_id' => Auth::user()->id,
+                'name'   => $request->name,
+                'email'  => $request->email,
+                'review' => $request->review,
+                'rating' => $request->rating,
+            ]
+        );
+
+        return redirect()->back()->with('Product Review is submitted successfully!');
     }
 }

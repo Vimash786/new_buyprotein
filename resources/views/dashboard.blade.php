@@ -210,20 +210,6 @@
                                                         alt="product">
                                                     {{-- <img src="assets/images/grocery/01.jpg" alt="grocery"> --}}
                                                 </a>
-                                                <div class="action-share-option">
-                                                    <div class="single-action openuptip message-show-action" data-flow="up"
-                                                        title="Add To Wishlist">
-                                                        <i class="fa-light fa-heart"></i>
-                                                    </div>
-                                                    <div class="single-action openuptip" data-flow="up" title="Compare"
-                                                        data-bs-toggle="modal" data-bs-target="#exampleModal">
-                                                        <i class="fa-solid fa-arrows-retweet"></i>
-                                                    </div>
-                                                    <div class="single-action openuptip cta-quickview product-details-popup-btn"
-                                                        data-flow="up" title="Quick View">
-                                                        <i class="fa-regular fa-eye"></i>
-                                                    </div>
-                                                </div>
                                             </div>
                                             <!-- iamge and sction area start -->
 
@@ -404,21 +390,6 @@
                                                     <img src="{{ asset('storage/' . $lat_pro->thumbnail_image) }}"
                                                         alt="product">
                                                 </a>
-                                                <div class="action-share-option">
-                                                    <span class="single-action openuptip message-show-action"
-                                                        data-flow="up" title="Add To Wishlist">
-                                                        <i class="fa-light fa-heart"></i>
-                                                    </span>
-                                                    <span class="single-action openuptip" data-flow="up" title="Compare"
-                                                        data-bs-toggle="modal" data-bs-target="#exampleModal">
-                                                        <i class="fa-solid fa-arrows-retweet"></i>
-                                                    </span>
-                                                    <span
-                                                        class="single-action openuptip cta-quickview product-details-popup-btn"
-                                                        data-flow="up" title="Quick View">
-                                                        <i class="fa-regular fa-eye"></i>
-                                                    </span>
-                                                </div>
                                             </div>
                                             <!-- iamge and sction area start -->
                                             <div class="body-content">
@@ -488,7 +459,7 @@
                         <div class="single-feature-card bg_image one" style="background-image: url('{{ asset('storage/' . $seller->brand_logo) }}');">
                             <div class="content-area">
                                 <h3 class="title">{{ $seller->brand }}</h3>
-                                <a href="shop-grid-sidebar.html" class="shop-now-goshop-btn">
+                                <a href="{{ route('shop', ['type' => 'brand', 'id' => Crypt::encrypt($seller->id)]) }}" class="shop-now-goshop-btn">
                                     <span class="text">Shop Now</span>
                                     <div class="plus-icon">
                                         <i class="fa-sharp fa-regular fa-plus"></i>

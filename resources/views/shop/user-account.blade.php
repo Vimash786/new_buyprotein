@@ -29,7 +29,8 @@
                             <button class="nav-link" id="v-pills-settingsb-tab" data-bs-toggle="pill"
                                 data-bs-target="#v-pills-settingsb" type="button" role="tab"
                                 aria-controls="v-pills-settingsb" aria-selected="false">
-                                <a href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                                <a href="{{ route('logout') }}"
+                                    onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
                                     <i class="fa-light fa-right-from-bracket"></i>Log Out
                                 </a>
                             </button>
@@ -67,27 +68,15 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <tr>
-                                                <td>#1357</td>
-                                                <td>March 45, 2020</td>
-                                                <td>Processing</td>
-                                                <td>$125.00 for 2 item</td>
-                                                <td><a href="#" class="btn-small d-block">View</a></td>
-                                            </tr>
-                                            <tr>
-                                                <td>#2468</td>
-                                                <td>June 29, 2020</td>
-                                                <td>Completed</td>
-                                                <td>$364.00 for 5 item</td>
-                                                <td><a href="#" class="btn-small d-block">View</a></td>
-                                            </tr>
-                                            <tr>
-                                                <td>#2366</td>
-                                                <td>August 02, 2020</td>
-                                                <td>Completed</td>
-                                                <td>$280.00 for 3 item</td>
-                                                <td><a href="#" class="btn-small d-block">View</a></td>
-                                            </tr>
+                                            @foreach ($orders as $order)
+                                                <tr>
+                                                    <td>#{{ $order->id }}</td>
+                                                    <td>{{ $order->created_at }}</td>
+                                                    <td>{{ $order->status }}</td>
+                                                    <td>{{ $order->quantity * $order->unit_price }} for {{ $order->quantity }} item</td>
+                                                    <td><a href="#" class="btn-small d-block">View</a></td>
+                                                </tr>
+                                            @endforeach
                                         </tbody>
                                     </table>
                                 </div>
