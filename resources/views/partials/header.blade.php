@@ -163,10 +163,16 @@
                                 <i class="fa-light fa-user"></i>
                                 <span>Account</span>
                             </a>
+                            @php
+                                use App\Models\Wishlist;
+                                if (Auth::user()) {
+                                    $wishlistItem = Wishlist::where('user_id', Auth::user()->id)->get();
+                                }
+                            @endphp
                             <a href="{{ route('user.wishlist') }}" class="btn-border-only wishlist">
                                 <i class="fa-regular fa-heart"></i>
                                 <span class="text">Wishlist</span>
-                                <span class="number">2</span>
+                                <span class="number">{{ isset($wishlistItem) ? $wishlistItem->count() : 0 }}</span>
                             </a>
                             @php
                                 use App\Models\Cart;
@@ -196,7 +202,8 @@
                                 <span class="text">My Cart</span>
                                 <span class="number">{{ isset($cartData) ? $cartData->count() : 0 }}</span>
                                 <div class="category-sub-menu card-number-show">
-                                    <h5 class="shopping-cart-number">Shopping Cart ({{ isset($cartData) ? $cartData->count() : 0 }})</h5>
+                                    <h5 class="shopping-cart-number">Shopping Cart
+                                        ({{ isset($cartData) ? $cartData->count() : 0 }})</h5>
                                     <div class="cart-items-scroll-vertical">
                                         @if (isset($cartData) && $cartData && $cartData->count() > 0)
                                             @foreach ($cartData as $cartItem)
@@ -238,7 +245,8 @@
                                         <div class="bottom-content-deals mt--10">
                                             <div class="top">
                                                 <span>Sub Total:</span>
-                                                <span class="number-c">₹{{ isset($totalPrice) ? $totalPrice : '' }}</span>
+                                                <span
+                                                    class="number-c">₹{{ isset($totalPrice) ? $totalPrice : '' }}</span>
                                             </div>
                                             <div class="single-progress-area-incard">
                                                 <div class="progress">
@@ -249,13 +257,14 @@
                                             </div>
                                         </div>
                                         <div class="button-wrapper d-flex align-items-center justify-content-between">
-                                            <a href="cart.html" class="rts-btn btn-primary ">View Cart</a>
+                                            <a href="{{ route('user.cart') }}" class="rts-btn btn-primary ">View
+                                                Cart</a>
                                             <a href="checkout.html"
                                                 class="rts-btn btn-primary border-only">CheckOut</a>
                                         </div>
                                     </div>
                                 </div>
-                                <a href="cart.html" class="over_link"></a>
+                                <a href="{{ route('user.cart') }}" class="over_link"></a>
                             </div>
 
                         </div>
@@ -398,7 +407,7 @@
                                         </ul>
                                     </li>
                                     <li class="parent"><a href="{{ route('about.us') }}">About</a></li>
-                                    <li class="parent"><a href="contact.html">Contact</a></li>
+                                    <li class="parent"><a href="{{ route('contact') }}">Contact</a></li>
                                 </ul>
                             </nav>
                         </div>
@@ -415,7 +424,7 @@
                 </div>
                 <div class="col-lg-12">
                     <div class="logo-search-category-wrapper after-md-device-header">
-                        <a href="index.html" class="logo-area">
+                        <a href="{{ route('home') }}" class="logo-area">
                             <img src="{{ asset('buy-protein.jpg') }}" alt="logo-main"
                                 style="height: 94px; width: 288px;" class="logo">
                         </a>
@@ -586,7 +595,8 @@
                                             </div>
                                             <div
                                                 class="button-wrapper d-flex align-items-center justify-content-between">
-                                                <a href="cart.html" class="rts-btn btn-primary ">View Cart</a>
+                                                <a href="{{ route('user.cart') }}" class="rts-btn btn-primary ">View
+                                                    Cart</a>
                                                 <a href="checkout.html"
                                                     class="rts-btn btn-primary border-only">CheckOut</a>
                                             </div>

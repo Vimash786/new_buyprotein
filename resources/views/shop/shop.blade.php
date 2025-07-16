@@ -75,7 +75,7 @@
                             <div class="row g-4">
                                 @if (isset($products))
                                     @foreach ($products as $product)
-                                        <div class="col-lg-20 col-lg-4 col-md-6 col-sm-6 col-12">
+                                        <div class="col-md-3">
                                             <div class="single-shopping-card-one">
                                                 <div class="image-and-action-area-wrapper">
                                                     <a href="{{ route('product.details', Crypt::encrypt($product->id)) }}"
@@ -114,12 +114,13 @@
                                                     </a>
                                                     <span class="availability">500g Pack</span>
                                                     <div class="price-area">
-                                                        <span class="current">₹{{ $product->regular_user_final_price }}</span>
-                                                        <div class="previous">₹{{ $product->regular_user_price }}</div>
+                                                        <span class="current">{{ format_price($product->id) }}</span>
+                                                        <div class="previous">{{ format_price($product->id) }}</div>
                                                     </div>
                                                     <div class="cart-counter-action">
                                                         <div class="quantity-edit">
-                                                            <input type="text" class="input" value="1">
+                                                            <input type="text" class="input quantity-input"
+                                                                value="1">
                                                             <div class="button-wrapper-action">
                                                                 <button class="button"><i
                                                                         class="fa-regular fa-chevron-down"></i></button>
@@ -128,7 +129,8 @@
                                                             </div>
                                                         </div>
                                                         <a href="#"
-                                                            class="rts-btn btn-primary radious-sm with-icon">
+                                                            class="rts-btn btn-primary radious-sm with-icon add-to-cart-btn"
+                                                            data-product-id="{{ $product->id }}">
                                                             <div class="btn-text">
                                                                 Add To Cart
                                                             </div>
@@ -160,3 +162,60 @@
         </div>
     </div>
 @endsection
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('.add-to-cart-btn').on('click', function(e) {
+            e.preventDefault();
+
+            const productId = $(this).data('product-id');
+            const quantity = $(this).closest('.cart-counter-action').find('.quantity-input').val() || 1;
+
+            $.ajax({
+                url: '{{ route('cart.add') }}',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    product_id: productId,
+                    quantity: quantity,
+                    _token: '{{ csrf_token() }}'
+                },
+                success: function(response) {
+                    if (response.status == 'success') {
+                        Toastify({
+                            text: "Product added to cart!",
+                            duration: 1000,
+                            gravity: "top",
+                            position: "right",
+                            backgroundColor: "#009ec9",
+                        }).showToast();
+                        
+                        setTimeout(function() {
+                            location.reload();
+                        }, 2000);
+                    }
+                },
+                error: function(xhr) {
+                    if (xhr.status == 401) {
+                        Toastify({
+                            text: "Please Login to add product to cart.",
+                            duration: 3000,
+                            gravity: "top",
+                            position: "right",
+                            backgroundColor: "#dc3545",
+                        }).showToast();
+                    } else {
+                        Toastify({
+                            text: "Failed to add product to cart. Please try again.",
+                            duration: 3000,
+                            gravity: "top",
+                            position: "right",
+                            backgroundColor: "#dc3545",
+                        }).showToast();
+                    }
+                }
+            });
+        });
+    });
+</script>

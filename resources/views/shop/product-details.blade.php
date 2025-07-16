@@ -20,7 +20,7 @@
         <div class="container">
             <div class="shopdetails-style-1-wrapper">
                 <div class="row g-5">
-                    <div class="col-lg-9">
+                    <div class="col-lg-12">
                         <div class="product-details-popup-wrapper in-shopdetails">
                             <div
                                 class="rts-product-details-section rts-product-details-section2 product-details-popup-section">
@@ -100,7 +100,13 @@
                                                 style="color: #DC2626; font-weight: 600;" id="product-price">
                                                 ₹{{ $product->regular_user_price }}<span
                                                     class="old-price ml--15">$69.35</span></span>
-                                            <div class="product-bottom-action">
+                                            @if (Auth::user() && Auth::user()->role == 'Gym Owner/Trainer/Influencer/Dietitian')
+                                            <a class="mb-4" data-bs-toggle="modal"
+                                                data-bs-target="#exampleModal">
+                                                Bulk Order
+                                            </a>
+                                            @endif
+                                            <div class="product-bottom-action mt-4">
                                                 <div class="cart-edits">
                                                     <div class="quantity-edit action-item">
                                                         <button class="button"><i class="fal fa-minus minus"></i></button>
@@ -127,6 +133,74 @@
                                                     class="rts-btn btn-primary add-to-wishlist ml--20"><i
                                                         class="fa-light fa-heart"></i></a>
                                             </div>
+
+                                            @if ($product->variants && $product->variants->count() > 0)
+                                                <div class="col-lg-3  rts-item">
+                                                    <div class="">
+                                                        <div class="shop-sidevbar">
+                                                            <h6 class="title">Varients</h6>
+                                                            @foreach ($product->variants as $variant)
+                                                                <h4>{{ $variant->name }}</h4>
+
+                                                                @php
+                                                                    $allData = isset($product->variantCombinations)
+                                                                        ? $product->variantCombinations
+                                                                        : collect();
+                                                                    $allOptions = collect();
+
+                                                                    if (
+                                                                        $product->variantCombinations &&
+                                                                        $product->variantCombinations->count()
+                                                                    ) {
+                                                                        foreach (
+                                                                            $product->variantCombinations
+                                                                            as $combination
+                                                                        ) {
+                                                                            $optionIds = is_array(
+                                                                                $combination->variant_options,
+                                                                            )
+                                                                                ? $combination->variant_options
+                                                                                : json_decode(
+                                                                                    $combination->variant_options,
+                                                                                    true,
+                                                                                );
+
+                                                                            $options = \App\Models\ProductVariantOption::whereIn(
+                                                                                'id',
+                                                                                $optionIds,
+                                                                            )
+                                                                                ->where(
+                                                                                    'product_variant_id',
+                                                                                    $variant->id,
+                                                                                )
+                                                                                ->get();
+
+                                                                            $allOptions = $allOptions->merge($options);
+                                                                        }
+
+                                                                        $uniqueOptions = $allOptions->unique('id');
+                                                                    }
+                                                                @endphp
+
+                                                                @if (!empty($uniqueOptions) && $uniqueOptions->count())
+                                                                    @foreach ($uniqueOptions as $index => $option)
+                                                                        <label class="variant-radio mb-2 mx-2">
+                                                                            <input type="radio"
+                                                                                name="variant_{{ $variant->id }}"
+                                                                                value="{{ $option->id }}"
+                                                                                {{ $loop->first ? 'checked' : '' }}>
+                                                                            {{ $option->value }}
+                                                                        </label>
+                                                                    @endforeach
+                                                                @else
+                                                                    <p>No combinations available</p>
+                                                                @endif
+                                                            @endforeach
+
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            @endif
                                         </div>
                                     </div>
                                 </div>
@@ -364,14 +438,35 @@
                             </div>
                         </div>
                     </div>
-                    @if ($product->variants && $product->variants->count() > 0)
-                        <div class="col-lg-3  rts-sticky-column-item">
-                            <div class="theiaStickySidebar">
-                                <div class="shop-sight-sticky-sidevbar  mb--20">
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-3" id="exampleModalLabel">Bulk Order</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form action="{{ route('bulk.order') }}" method="POST">
+                    @csrf
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="quantity" class="form-label">Quantity:</label>
+                            <input type="number" name="quantity" placeholder="Enter Product Quantity" value="50"
+                                min="50" required>
+                                <input type="hidden" value="{{ $product->name }}" name="productName">
+                        </div>
+                        @if ($product->variants && $product->variants->count() > 0)
+                            <div class="rts-item p-4">
+                                <div class="shop-sidevbar">
                                     <h6 class="title">Varients</h6>
                                     @foreach ($product->variants as $variant)
                                         <h4>{{ $variant->name }}</h4>
-
                                         @php
                                             $allData = isset($product->variantCombinations)
                                                 ? $product->variantCombinations
@@ -403,22 +498,32 @@
 
                                         @if (!empty($uniqueOptions) && $uniqueOptions->count())
                                             @foreach ($uniqueOptions as $index => $option)
-                                                <label>
-                                                    <input type="radio" name="variant_{{ $variant->id }}"
+                                                <label class="variant-radio mb-2">
+                                                    <input type="radio" name="{{ $variant->id }}"
                                                         value="{{ $option->id }}" {{ $loop->first ? 'checked' : '' }}>
                                                     {{ $option->value }}
-                                                </label><br>
+                                                </label>
                                             @endforeach
                                         @else
                                             <p>No combinations available</p>
                                         @endif
                                     @endforeach
-
                                 </div>
                             </div>
+                        @endif
+
+                    </div>
+                    <div class="modal-footer">
+                        <div class="d-flex">
+                            <button type="submit" class="btn btn-primary float-end me-auto">
+                                Bulk Order
+                            </button>
+                            <button type="button" class="btn p-2 m-0 btn-light float-end" data-bs-dismiss="modal" aria-label="Close">
+                                Close
+                            </button>
                         </div>
-                    @endif
-                </div>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -517,12 +622,12 @@
                                                 </a>
                                                 <span class="availability">500g Pack</span>
                                                 <div class="price-area">
-                                                    <span class="current">₹{{ $product->price }}</span>
-                                                    <div class="previous">₹{{ $product->price }}</div>
+                                                    <span class="current">{{ format_price($product->id) }}</span>
+                                                    <div class="previous">{{ format_price($product->id) }}</div>
                                                 </div>
                                                 <div class="cart-counter-action">
                                                     <div class="quantity-edit">
-                                                        <input type="text" class="input" value="1">
+                                                        <input type="text" class="input quantity-input" value="1" >
                                                         <div class="button-wrapper-action">
                                                             <button class="button"><i
                                                                     class="fa-regular fa-chevron-down"></i></button>
@@ -530,7 +635,7 @@
                                                                     class="fa-regular fa-chevron-up"></i></button>
                                                         </div>
                                                     </div>
-                                                    <a href="#" class="rts-btn btn-primary radious-sm with-icon">
+                                                    <a href="#" class="rts-btn btn-primary radious-sm with-icon add-to-cart-btn-other" data-product-id="{{ $product->id }}">
                                                         <div class="btn-text">
                                                             Add To Cart
                                                         </div>
@@ -869,7 +974,58 @@
                     }).showToast();
                 },
                 error: function(xhr) {
-                    console.log(xhr.status);
+                    if (xhr.status == 401) {
+                        Toastify({
+                            text: "Please Login to add product to cart.",
+                            duration: 3000,
+                            gravity: "top",
+                            position: "right",
+                            backgroundColor: "#dc3545",
+                        }).showToast();
+                    } else {
+                        Toastify({
+                            text: "Failed to add product to cart. Please try again.",
+                            duration: 3000,
+                            gravity: "top",
+                            position: "right",
+                            backgroundColor: "#dc3545",
+                        }).showToast();
+                    }
+                }
+            });
+        });
+
+        $('.add-to-cart-btn-other').on('click', function(e) {
+            e.preventDefault();
+
+            const productId = $(this).data('product-id');
+            const quantity = $(this).closest('.cart-counter-action').find('.quantity-input').val() || 1;
+
+            $.ajax({
+                url: '{{ route('cart.add') }}',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    product_id: productId,
+                    quantity: quantity,
+                    _token: '{{ csrf_token() }}'
+                },
+                success: function(response) {
+                    if (response.status == 'success') {
+                        Toastify({
+                            text: "Product added to cart!",
+                            duration: 1500,
+                            gravity: "top",
+                            position: "right",
+                            backgroundColor: "#009ec9",
+                        }).showToast();
+
+                        setTimeout(function() {
+                            location.reload();
+                        }, 2000);
+                    }
+                },
+                error: function(xhr) {
                     if (xhr.status == 401) {
                         Toastify({
                             text: "Please Login to add product to cart.",

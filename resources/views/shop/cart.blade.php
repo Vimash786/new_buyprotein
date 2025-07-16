@@ -84,13 +84,6 @@
                                 </div>
                             </div>
                         @endforeach
-                        <div class="bottom-cupon-code-cart-area">
-                            <form action="#">
-                                <input type="text" placeholder="Cupon Code">
-                                <button class="rts-btn btn-primary">Apply Coupon</button>
-                            </form>
-                            <a href="#" class="rts-btn btn-primary mr--50">Clear All</a>
-                        </div>
                     </div>
                 </div>
                 <div class="col-xl-3 col-lg-12 col-md-12 col-12 order-1 order-xl-2 order-lg-1 order-md-1 order-sm-1">

@@ -8,6 +8,7 @@ use App\Models\Category;
 use App\Models\orders;
 use App\Models\products;
 use App\Models\ProductVariantCombination;
+use App\Models\ProductVariantOption;
 use App\Models\Sellers;
 use App\Models\Wishlist;
 use Exception;
@@ -29,8 +30,9 @@ class DashboardController extends Controller
         $latestProducts = products::orderBy('created_at', 'desc')->take(12)->get();
         $offers = products::where('section_category', 'exclusive_deal')->limit(8)->get();
         $banners = Banner::where('status', 'active')->orderBy('created_at', 'desc')->get();
+        $sellers = Sellers::where('status', 'approved')->limit(4)->get();
 
-        return view('dashboard', compact('categories', 'products', 'everyDayEssentials', 'populerProducts', 'latestProducts', 'offers', 'banners'));
+        return view('dashboard', compact('categories', 'products', 'everyDayEssentials', 'populerProducts', 'latestProducts', 'offers', 'banners', 'sellers'));
     }
 
     public function shop(Request $request, $type = null, $id = null)
@@ -84,6 +86,7 @@ class DashboardController extends Controller
     public function userAccount()
     {
         if (Auth::user() != null) {
+
             return view('shop.user-account');
         } else {
             return redirect()->route('login');
@@ -98,7 +101,23 @@ class DashboardController extends Controller
         ]);
 
         $product = products::findOrFail($request->product_id);
-        $variantOptionIds = $request->variant_option_ids ? array_map('intval', $request->variant_option_ids) : [];
+        $variantData = ProductVariantCombination::where('product_id', $product->id)->first();
+
+        if (!$request->has('variant_option_ids') && $variantData) {
+            $varOption = ProductVariantOption::whereIn('id', $variantData->variant_options)->get();
+
+            $collection = collect($varOption);
+
+            $result = $collection->mapWithKeys(function ($item) {
+                return [$item->product_variant_id => $item->id];
+            });
+
+            $arrayResult = $result->toArray();
+
+            $variantOptionIds = $arrayResult ? array_map('intval', $arrayResult) : [];
+        } else {
+            $variantOptionIds = $request->variant_option_ids ? array_map('intval', $request->variant_option_ids) : [];
+        }
 
         $price = $this->calculatePrice($product, $variantOptionIds, $request->variant_option_ids);
 
@@ -289,8 +308,41 @@ class DashboardController extends Controller
         return view('informativePages.terms-condition');
     }
 
+    public function shippingPolicy()
+    {
+        return view('informativePages.shopping-policy');
+    }
+
+    public function privacyPolicy()
+    {
+        return view('informativePages.privacy-policy');
+    }
+
+    public function returnPolicy()
+    {
+        return view('informativePages.return-policy');
+    }
+
     public function contact()
     {
         return view('informativePages.contact');
+    }
+
+    public function contactSubmit(Request $request)
+    {
+        dd($request->all());
+        return redirect()->back()->with('success', 'Thank you for Ansking an question');
+    }
+
+    public function bulkOrder(Request $request)
+    {
+        $variantSelections = collect($request->all())
+            ->filter(function ($value, $key) {
+                return str_starts_with($key, 'variant_');
+            })
+            ->mapWithKeys(function ($value, $key) {
+                $variantId = (int) str_replace('variant_', '', $key);
+                return [$variantId => (int) $value];
+            });
     }
 }

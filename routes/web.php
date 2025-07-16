@@ -18,6 +18,7 @@ Route::get('/shipping-policy', [DashboardController::class, 'shippingPolicy'])->
 Route::get('/privacy-policy', [DashboardController::class, 'privacyPolicy'])->name('privacy.policy');
 Route::get('/return-policy', [DashboardController::class, 'returnPolicy'])->name('return.policy');
 Route::get('/contact', [DashboardController::class, 'contact'])->name('contact');
+Route::get('/contact-submit', [DashboardController::class, 'contactSubmit'])->name('contact.submit');
 
 // Public Blog Routes
 Volt::route('/blog', 'blogs.index')->name('blog.index');
@@ -60,6 +61,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/wishlist/update-quantity', [DashboardController::class, 'updateQuantity'])->name('wishlist.updateQuantity');
     Route::delete('/wishlist/remove', [DashboardController::class, 'removeWishlist'])->name('wishlist.remove');
     Route::post('/wish-to-cart', [DashboardController::class, 'wishToCart'])->name('wishlist.to.cart');
+    Route::post('/bulk-order', [DashboardController::class, 'bulkOrder'])->name('bulk.order');
 
     Route::get('/checkout', [DashboardController::class, 'checkout'])->name('user.checkout');
 
