@@ -20,8 +20,6 @@ Route::get('/return-policy', [DashboardController::class, 'returnPolicy'])->name
 Route::get('/contact', [DashboardController::class, 'contact'])->name('contact');
 Route::get('/contact-submit', [DashboardController::class, 'contactSubmit'])->name('contact.submit');
 
-// Public Blog Routes
-Volt::route('/blog', 'blogs.index')->name('blog.index');
 
 // Route::get('/', function () {
 //     return view('dashboard');
