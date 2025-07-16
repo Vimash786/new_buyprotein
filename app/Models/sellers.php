@@ -4,8 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 class Sellers extends Model
 {
@@ -47,10 +47,52 @@ class Sellers extends Model
     }
 
     /**
-     * Get all orders through products.
+     * Get all order items for this seller.
      */
-    public function orders(): HasManyThrough
+    public function orderSellerProducts(): HasMany
     {
-        return $this->hasManyThrough(orders::class, products::class, 'seller_id', 'product_id');
+        return $this->hasMany(OrderSellerProduct::class, 'seller_id');
+    }
+
+    /**
+     * Get all orders through order-seller-products.
+     */
+    public function orders()
+    {
+        return $this->belongsToMany(orders::class, 'order_seller_products', 'seller_id', 'order_id')
+                    ->withPivot(['product_id', 'quantity', 'unit_price', 'total_amount', 'status', 'notes'])
+                    ->withTimestamps();
+    }
+
+    /**
+     * Get orders with specific status for this seller.
+     */
+    public function getOrdersByStatus($status)
+    {
+        return $this->orderSellerProducts()
+                    ->where('status', $status)
+                    ->with(['order', 'product'])
+                    ->get();
+    }
+
+    /**
+     * Get total sales amount for this seller.
+     */
+    public function getTotalSales()
+    {
+        return $this->orderSellerProducts()
+                    ->whereIn('status', ['delivered', 'completed'])
+                    ->sum('total_amount');
+    }
+
+    /**
+     * Get pending orders for this seller.
+     */
+    public function getPendingOrders()
+    {
+        return $this->orderSellerProducts()
+                    ->whereIn('status', ['pending', 'confirmed'])
+                    ->with(['order', 'product'])
+                    ->get();
     }
 }

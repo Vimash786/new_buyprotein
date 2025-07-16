@@ -74,6 +74,30 @@ class User extends Authenticatable
     }
 
     /**
+     * Get all shipping addresses for this user.
+     */
+    public function shippingAddresses()
+    {
+        return $this->hasMany(ShippingAddress::class);
+    }
+
+    /**
+     * Get the default shipping address for this user.
+     */
+    public function defaultShippingAddress()
+    {
+        return $this->hasOne(ShippingAddress::class)->where('is_default', true);
+    }
+
+    /**
+     * Get active shipping addresses for this user.
+     */
+    public function activeShippingAddresses()
+    {
+        return $this->hasMany(ShippingAddress::class)->where('is_active', true);
+    }
+
+    /**
      * Check if user is a seller.
      */
     public function isSeller(): bool

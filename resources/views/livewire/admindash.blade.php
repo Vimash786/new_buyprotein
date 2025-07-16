@@ -2,6 +2,7 @@
 
 use App\Models\Sellers;
 use App\Models\products;
+use App\Models\OrderSellerProduct;
 use App\Models\orders;
 use App\Models\Coupon;
 use App\Models\User;
@@ -27,19 +28,21 @@ new class extends Component
                 'approvedSellers' => $seller->status === 'approved' ? 1 : 0,
                 'pendingSellers' => $seller->status === 'not_approved' ? 1 : 0,
                 'totalProducts' => products::where('seller_id', $seller->id)->count(),
-                'totalOrders' => orders::whereIn('product_id', 
+                'totalOrders' => OrderSellerProduct::whereIn('product_id', 
                     products::where('seller_id', $seller->id)->pluck('id')
                 )->count(),
-                'totalsellers' => orders::whereIn('product_id', 
+                'totalsellers' => OrderSellerProduct::whereIn('product_id', 
                     products::where('seller_id', $seller->id)->pluck('id')
                 )->count(),
-                'totalSales' => orders::whereIn('product_id', 
+
+                'totalSales' => OrderSellerProduct::where('seller_id', $seller->id)->where('status', 'delivered')
+                ->sum('total_amount'),
+
+                'totalRevenue' => OrderSellerProduct::whereIn('product_id', 
                     products::where('seller_id', $seller->id)->pluck('id')
-                )->where('status', 'delivered')->sum('total_amount'),
-                
-                'totalRevenue' => orders::whereIn('product_id', 
-                    products::where('seller_id', $seller->id)->pluck('id')
-                )->where('status', 'delivered')->sum(DB::raw("total_amount * {$seller->commission} / 100")),
+                )->whereHas('order', function($query) {
+                    $query->where('status', 'delivered');
+                })->sum(DB::raw("total_amount * {$seller->commission} / 100")),
 
                 'totalUsers' => User::count(), // Keep global count for reference
                 'totalCategories' => Category::count(),
@@ -51,9 +54,9 @@ new class extends Component
                 'isSeller' => true, 
                 'sellerName' => $seller->company_name,
                 'sellerStatus' => $seller->status,
-                'orderCount' => orders::whereIn('product_id', 
+                'orderCount' => OrderSellerProduct::whereIn('product_id', 
                     products::where('seller_id', $seller->id)->pluck('id')
-                )->with(['product', 'user'])->latest()->take(10)->get(),
+                )->with(['product', 'order.user'])->latest()->take(10)->get(),
             ];
         } else {
             // Admin/Super Admin data (global)
@@ -64,7 +67,7 @@ new class extends Component
                 'totalProducts' => products::count(),
                 'totalOrders' => orders::count(),
                 'totalUsers' => User::count(),
-                'totalSales' => orders::where('status', 'delivered')->sum('total_amount'),
+                'totalSales' => orders::where('status', 'delivered')->sum('total_order_amount'),
                 'totalCategories' => Category::count(),
                 'totalSubCategories' => SubCategory::count(),
                 'totalBanners' => Banner::count(),
@@ -533,7 +536,7 @@ new class extends Component
                                                 {{ $order->product->name ?? 'Product not found' }}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                                                {{ $order->user->name ?? 'User not found' }}
+                                                {{ $order->order->user->name ?? 'User not found' }}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600">
                                                 ₹{{ number_format($order->total_amount, 2) }}
