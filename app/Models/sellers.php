@@ -95,4 +95,55 @@ class Sellers extends Model
                     ->with(['order', 'product'])
                     ->get();
     }
+
+    /**
+     * Get all payouts for this seller.
+     */
+    public function payouts(): HasMany
+    {
+        return $this->hasMany(Payout::class, 'seller_id');
+    }
+
+    /**
+     * Get the latest payout for this seller.
+     */
+    public function latestPayout()
+    {
+        return $this->hasOne(Payout::class, 'seller_id')->latest();
+    }
+
+    /**
+     * Get pending payouts for this seller.
+     */
+    public function pendingPayouts()
+    {
+        return $this->hasMany(Payout::class, 'seller_id')->where('payment_status', 'unpaid');
+    }
+
+    /**
+     * Calculate total earnings for a period.
+     */
+    public function calculateEarnings($startDate, $endDate)
+    {
+        $orderItems = $this->orderSellerProducts()
+            ->whereHas('order', function($query) use ($startDate, $endDate) {
+                $query->whereBetween('created_at', [$startDate, $endDate])
+                      ->whereIn('overall_status', ['delivered', 'completed']);
+            })
+            ->get();
+
+        $totalOrders = $orderItems->count();
+        $totalSales = $orderItems->sum('total_amount');
+        $commissionRate = floatval($this->commission);
+        $commissionAmount = $totalSales * ($commissionRate / 100);
+        $payoutAmount = $totalSales - $commissionAmount;
+
+        return [
+            'total_orders' => $totalOrders,
+            'total_sales' => $totalSales,
+            'commission_amount' => $commissionAmount,
+            'payout_amount' => $payoutAmount,
+            'commission_rate' => $commissionRate
+        ];
+    }
 }
