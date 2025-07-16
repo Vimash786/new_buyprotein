@@ -81,7 +81,7 @@ class Sellers extends Model
     public function getTotalSales()
     {
         return $this->orderSellerProducts()
-                    ->whereIn('status', ['delivered', 'completed'])
+                    ->whereIn('status', ['delivered'])
                     ->sum('total_amount');
     }
 
@@ -126,10 +126,8 @@ class Sellers extends Model
     public function calculateEarnings($startDate, $endDate)
     {
         $orderItems = $this->orderSellerProducts()
-            ->whereHas('order', function($query) use ($startDate, $endDate) {
-                $query->whereBetween('created_at', [$startDate, $endDate])
-                      ->whereIn('overall_status', ['delivered', 'completed']);
-            })
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->whereIn('status', ['delivered'])
             ->get();
 
         $totalOrders = $orderItems->count();
