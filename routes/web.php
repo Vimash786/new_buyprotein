@@ -19,6 +19,7 @@ Route::get('/privacy-policy', [DashboardController::class, 'privacyPolicy'])->na
 Route::get('/return-policy', [DashboardController::class, 'returnPolicy'])->name('return.policy');
 Route::get('/contact', [DashboardController::class, 'contact'])->name('contact');
 Route::get('/contact-submit', [DashboardController::class, 'contactSubmit'])->name('contact.submit');
+Route::get('/our-blogs', [DashboardController::class, 'blogs'])->name('user.blogs');
 
 // Public Blog Routes
 Volt::route('/blog', 'blogs.index')->name('blog.index');

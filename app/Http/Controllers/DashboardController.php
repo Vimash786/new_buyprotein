@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Banner;
 use App\Models\BillingDetail;
+use App\Models\Blog;
 use App\Models\Cart;
 use App\Models\Category;
 use App\Models\orders;
@@ -393,5 +394,11 @@ class DashboardController extends Controller
         );
 
         return redirect()->back()->with('Product Review is submitted successfully!');
+    }
+
+    public function blogs() {
+        $blogs = Blog::paginate(8);
+
+        return view('blogs.index', compact('blogs'));
     }
 }
