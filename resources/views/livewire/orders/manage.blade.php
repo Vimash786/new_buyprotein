@@ -193,10 +193,28 @@ new class extends Component
                 ->sum('total_order_amount');
         }
 
+        // Debug: Get products for seller
+        $sellerProducts = null;
+        if ($isSeller) {
+            $sellerProducts = products::with('seller')->where('seller_id', $seller->id)->get();
+            $activeSellerProducts = products::with('seller')->where('seller_id', $seller->id)->where('status', 'active')->get();
+            
+            \Log::info('Seller Products Debug', [
+                'seller_id' => $seller->id,
+                'total_products' => $sellerProducts->count(),
+                'active_products' => $activeSellerProducts->count(),
+                'all_products' => $sellerProducts->pluck('name', 'id')->toArray(),
+                'active_products_details' => $activeSellerProducts->pluck('name', 'id')->toArray(),
+                'product_statuses' => $sellerProducts->pluck('status', 'id')->toArray(),
+            ]);
+        }
+
         return [
             'orderCount'=> $isSeller ? $seller_query: null,
             'orders' => $query->latest()->paginate(10),
-            'products' => products::with('seller')->where('status', 'active')->get(),
+            'products' => $isSeller 
+                ? products::with('seller')->where('seller_id', $seller->id)->get()
+                : products::with('seller')->where('status', 'active')->get(),
             'sellers' => \App\Models\Sellers::all(),
             'users' => User::all(),
             'totalOrders' => $totalOrders,
@@ -325,14 +343,14 @@ new class extends Component
         // Convert selectedProducts to integers for validation
         $this->selectedProducts = array_map('intval', $this->selectedProducts);
         
+        // Get current user and seller info
+        $user = auth()->user();
+        $currentSeller = \App\Models\Sellers::where('user_id', $user->id)->first();
+        $isSeller = $currentSeller !== null;
+        
         $this->validate();
 
         if ($this->editMode) {
-            // Check if this is a seller editing their order item
-            $user = auth()->user();
-            $seller = \App\Models\Sellers::where('user_id', $user->id)->first();
-            $isSeller = $seller !== null;
-            
             if ($isSeller) {
                 // Seller editing their order item
                 $orderItem = OrderSellerProduct::findOrFail($this->orderId);
@@ -382,7 +400,7 @@ new class extends Component
                 session()->flash('message', 'Order updated successfully!');
             }
         } else {
-            // Create new order (admin only)
+            // Create new order
             $order = orders::create([
                 'user_id' => $this->user_id,
                 'order_number' => 'ORD-' . date('Ymd') . '-' . strtoupper(\Illuminate\Support\Str::random(6)),
@@ -391,11 +409,11 @@ new class extends Component
                 'status' => $this->overall_status,
             ]);
 
-            // Create order items for each selected product
+            // Create order items
             foreach ($this->orderItems as $item) {
                 OrderSellerProduct::create([
                     'order_id' => $order->id,
-                    'seller_id' => $item['seller_id'],
+                    'seller_id' => $isSeller ? $currentSeller->id : $item['seller_id'],
                     'product_id' => $item['product_id'],
                     'quantity' => $item['quantity'],
                     'unit_price' => $item['unit_price'],
@@ -405,7 +423,7 @@ new class extends Component
                 ]);
             }
 
-            session()->flash('message', 'Order created successfully!');
+            session()->flash('message', $isSeller ? 'Order created successfully for customer!' : 'Order created successfully!');
         }
 
         $this->closeModal();
@@ -597,17 +615,15 @@ new class extends Component
                     </div>
 
                     <!-- Add Button -->
-                    @if(!$isSeller)
-                        <button 
-                            wire:click="openModal"
-                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2"
-                        >
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                            </svg>
-                            Add Order
-                        </button>
-                    @endif
+                    <button 
+                        wire:click="openModal"
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2"
+                    >
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        {{ $isSeller ? 'Create Order' : 'Add Order' }}
+                    </button>
                 </div>
             </div>
         </div>
@@ -862,6 +878,22 @@ new class extends Component
                                 </div>
                             @endif
                             
+                            <!-- Debug info for seller products -->
+                            @if($isSeller)
+                                <div class="text-xs text-gray-500 mb-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
+                                    <strong>Debug - Seller Products:</strong><br>
+                                    Total Products Available: {{ count($products) }}<br>
+                                    Seller ID: {{ $currentSeller->id ?? 'N/A' }}<br>
+                                    @if(count($products) > 0)
+                                        Product IDs: {{ $products->pluck('id')->implode(', ') }}<br>
+                                        Product Names: {{ $products->pluck('name')->implode(', ') }}<br>
+                                        Product Statuses: {{ $products->pluck('status')->implode(', ') }}
+                                    @else
+                                        <span class="text-red-600">No products found for this seller!</span>
+                                    @endif
+                                </div>
+                            @endif
+                            
                             <div class="border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-zinc-800 max-h-48 overflow-y-auto">
                                 @foreach($products as $product)
                                     @php
@@ -880,7 +912,7 @@ new class extends Component
                                             <div class="text-xs text-gray-500 dark:text-gray-400">
                                                 ₹{{ number_format($product->regular_user_final_price ?? $product->regular_user_price ?? 0, 2) }}
                                                 | Seller: {{ $product->seller->company_name ?? 'N/A' }}
-                                                | ID: {{ $product->id }} | Selected: {{ $isChecked ? 'Yes' : 'No' }}
+                                                | ID: {{ $product->id }} | Status: {{ $product->status }} | Selected: {{ $isChecked ? 'Yes' : 'No' }}
                                             </div>
                                         </div>
                                     </label>
