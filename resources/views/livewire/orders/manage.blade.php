@@ -24,36 +24,72 @@ new class extends Component
     
     // Form fields
     public $user_id = '';
-    public $seller_id = '';
+    public $selectedProducts = []; // Array of selected product IDs
+    public $orderItems = []; // Array to hold multiple products with their details
     public $overall_status = 'pending';
-    public $orderItems = []; // Array to hold multiple products
     public $notes = '';
 
     protected $rules = [
         'user_id' => 'required|exists:users,id',
-        'seller_id' => 'required|exists:sellers,id',
+        'selectedProducts' => 'required|array|min:1',
+        'selectedProducts.*' => 'required|exists:products,id',
         'overall_status' => 'required|in:pending,confirmed,shipped,delivered,cancelled',
         'orderItems' => 'required|array|min:1',
         'orderItems.*.product_id' => 'required|exists:products,id',
         'orderItems.*.quantity' => 'required|integer|min:1',
         'orderItems.*.unit_price' => 'required|numeric|min:0',
+        'orderItems.*.seller_id' => 'required|exists:sellers,id',
         'notes' => 'nullable|string',
     ];
 
     public function addOrderItem()
     {
-        $this->orderItems[] = [
-            'product_id' => '',
-            'quantity' => 1,
-            'unit_price' => 0,
-            'total_amount' => 0,
-        ];
+        // This method is no longer needed as we'll handle items based on selected products
     }
 
     public function removeOrderItem($index)
     {
-        unset($this->orderItems[$index]);
-        $this->orderItems = array_values($this->orderItems); // Re-index array
+        if (isset($this->orderItems[$index])) {
+            // Remove from selectedProducts array as well
+            $productId = (string) $this->orderItems[$index]['product_id']; // Convert to string for comparison
+            $this->selectedProducts = array_filter($this->selectedProducts, function($id) use ($productId) {
+                return $id != $productId;
+            });
+            
+            unset($this->orderItems[$index]);
+            $this->orderItems = array_values($this->orderItems); // Re-index array
+        }
+    }
+
+    public function updatedSelectedProducts()
+    {
+        // Update orderItems based on selected products
+        $currentProductIds = collect($this->orderItems)->pluck('product_id')->toArray();
+        $selectedProductIds = array_map('intval', $this->selectedProducts); // Convert strings to integers
+
+        // Remove items for unselected products
+        $this->orderItems = array_filter($this->orderItems, function($item) use ($selectedProductIds) {
+            return in_array($item['product_id'], $selectedProductIds);
+        });
+
+        // Add items for newly selected products
+        foreach ($selectedProductIds as $productId) {
+            if (!in_array($productId, $currentProductIds)) {
+                $product = products::find($productId);
+                if ($product) {
+                    $this->orderItems[] = [
+                        'product_id' => $productId,
+                        'quantity' => 1,
+                        'unit_price' => $product->regular_user_final_price ?? $product->regular_user_price ?? 0,
+                        'total_amount' => $product->regular_user_final_price ?? $product->regular_user_price ?? 0,
+                        'seller_id' => $product->seller_id,
+                    ];
+                }
+            }
+        }
+
+        // Re-index array
+        $this->orderItems = array_values($this->orderItems);
     }
 
     public function updatedOrderItems($value, $key)
@@ -74,7 +110,7 @@ new class extends Component
     {
         if (isset($this->orderItems[$index])) {
             $item = &$this->orderItems[$index];
-            if ($item['quantity'] && $item['unit_price']) {
+            if (isset($item['quantity']) && isset($item['unit_price']) && $item['quantity'] && $item['unit_price']) {
                 $item['total_amount'] = $item['quantity'] * $item['unit_price'];
             }
         }
@@ -82,9 +118,7 @@ new class extends Component
 
     public function updatedSellerId()
     {
-        // Reset order items when seller changes
-        $this->orderItems = [];
-        $this->addOrderItem();
+        // This method is no longer needed as seller_id is determined by product selection
     }
 
     public function with()
@@ -162,7 +196,7 @@ new class extends Component
         return [
             'orderCount'=> $isSeller ? $seller_query: null,
             'orders' => $query->latest()->paginate(10),
-            'products' => products::where('status', 'active')->get(),
+            'products' => products::with('seller')->where('status', 'active')->get(),
             'sellers' => \App\Models\Sellers::all(),
             'users' => User::all(),
             'totalOrders' => $totalOrders,
@@ -229,16 +263,17 @@ new class extends Component
         
         $this->orderId = $orderItem->id;
         $this->user_id = $orderItem->order->user_id;
-        $this->seller_id = $orderItem->seller_id;
         $this->overall_status = $orderItem->status;
         $this->notes = $orderItem->notes ?? '';
         
-        // Load order items (single item for seller)
+        // Load selected products and order items (single item for seller) - convert to strings
+        $this->selectedProducts = [(string) $orderItem->product_id];
         $this->orderItems = [[
             'product_id' => $orderItem->product_id,
             'quantity' => $orderItem->quantity,
             'unit_price' => $orderItem->unit_price,
             'total_amount' => $orderItem->total_amount,
+            'seller_id' => $orderItem->seller_id,
         ]];
         
         $this->editMode = true;
@@ -278,16 +313,18 @@ new class extends Component
     {
         $this->orderId = null;
         $this->user_id = '';
-        $this->seller_id = '';
+        $this->selectedProducts = [];
         $this->overall_status = 'pending';
         $this->orderItems = [];
         $this->notes = '';
-        $this->addOrderItem(); // Add one empty item
         $this->resetValidation();
     }
 
     public function save()
     {
+        // Convert selectedProducts to integers for validation
+        $this->selectedProducts = array_map('intval', $this->selectedProducts);
+        
         $this->validate();
 
         if ($this->editMode) {
@@ -332,7 +369,7 @@ new class extends Component
                 foreach ($this->orderItems as $item) {
                     OrderSellerProduct::create([
                         'order_id' => $order->id,
-                        'seller_id' => $this->seller_id,
+                        'seller_id' => $item['seller_id'],
                         'product_id' => $item['product_id'],
                         'quantity' => $item['quantity'],
                         'unit_price' => $item['unit_price'],
@@ -354,11 +391,11 @@ new class extends Component
                 'status' => $this->overall_status,
             ]);
 
-            // Create order items
+            // Create order items for each selected product
             foreach ($this->orderItems as $item) {
                 OrderSellerProduct::create([
                     'order_id' => $order->id,
-                    'seller_id' => $this->seller_id,
+                    'seller_id' => $item['seller_id'],
                     'product_id' => $item['product_id'],
                     'quantity' => $item['quantity'],
                     'unit_price' => $item['unit_price'],
@@ -376,25 +413,35 @@ new class extends Component
 
     public function edit($id)
     {
-        $order = orders::with('orderSellerProducts')->findOrFail($id);
+        $order = orders::with('orderSellerProducts.product')->findOrFail($id);
         
         $this->orderId = $order->id;
         $this->user_id = $order->user_id;
         $this->overall_status = $order->overall_status;
         $this->notes = $order->orderSellerProducts->first()->notes ?? '';
         
-        // Get seller ID from first order item
-        $this->seller_id = $order->orderSellerProducts->first()->seller_id ?? '';
+        // Load selected products - convert to strings to match checkbox values
+        $this->selectedProducts = $order->orderSellerProducts->pluck('product_id')->map(function($id) {
+            return (string) $id;
+        })->toArray();
         
-        // Load order items
+        // Load order items with seller information
         $this->orderItems = $order->orderSellerProducts->map(function($item) {
             return [
                 'product_id' => $item->product_id,
                 'quantity' => $item->quantity,
                 'unit_price' => $item->unit_price,
                 'total_amount' => $item->total_amount,
+                'seller_id' => $item->seller_id,
             ];
         })->toArray();
+        
+        // Debug: Log the values to see what's happening
+        \Log::info('Edit Order Debug', [
+            'order_id' => $this->orderId,
+            'selectedProducts' => $this->selectedProducts,
+            'orderItems' => $this->orderItems
+        ]);
         
         $this->editMode = true;
         $this->showModal = true;
@@ -789,111 +836,180 @@ new class extends Component
                     </div>
 
                     <form wire:submit="save" class="space-y-4">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <!-- Product -->
-                            <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Product</label>
-                                <select 
-                                    wire:model="product_id"
-                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-                                >
-                                    <option value="">Select a product</option>
-                                    @foreach($products as $product)
-                                        <option value="{{ $product->id }}">{{ $product->name }} - ₹{{ $product->price }}</option>
-                                    @endforeach
-                                </select>
-                                @error('product_id') <span class="text-red-500 text-sm">{{ $errors->first('product_id') }}</span> @enderror
-                            </div>
-
-                            <!-- Customer -->
-                            <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Customer</label>
-                                <select 
-                                    wire:model="user_id"
-                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-                                >
-                                    <option value="">Select a customer</option>
-                                    @foreach($users as $user)
-                                        <option value="{{ $user->id }}">{{ $user->name }} ({{ $user->email }})</option>
-                                    @endforeach
-                                </select>
-                                @error('user_id') <span class="text-red-500 text-sm">{{ $errors->first('user_id') }}</span> @enderror
-                            </div>
-
-                            <!-- Quantity -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Quantity</label>
-                                <input 
-                                    type="number" 
-                                    wire:model.live="quantity"
-                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-                                    placeholder="1"
-                                    min="1"
-                                >
-                                @error('quantity') <span class="text-red-500 text-sm">{{ $errors->first('quantity') }}</span> @enderror
-                            </div>
-
-                            <!-- Unit Price -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Unit Price (₹)</label>
-                                <input 
-                                    type="number" 
-                                    step="0.01"
-                                    wire:model.live="unit_price"
-                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-                                    placeholder="0.00"
-                                >
-                                @error('unit_price') <span class="text-red-500 text-sm">{{ $errors->first('unit_price') }}</span> @enderror
-                            </div>
-
-                            <!-- Total Amount -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Total Amount (₹)</label>
-                                <input 
-                                    type="number" 
-                                    step="0.01"
-                                    wire:model="total_amount"
-                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 dark:bg-zinc-800 text-gray-900 dark:text-white"
-                                    placeholder="0.00"
-                                    readonly
-                                >
-                                @error('total_amount') <span class="text-red-500 text-sm">{{ $errors->first('total_amount') }}</span> @enderror
-                            </div>
-
-                            <!-- Status -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Status</label>
-                                <select 
-                                    wire:model="status"
-                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-                                >
-                                    <option value="pending">Pending</option>
-                                    <option value="confirmed">Confirmed</option>
-                                    <option value="shipped">Shipped</option>
-                                    <option value="delivered">Delivered</option>
-                                    <option value="cancelled">Cancelled</option>
-                                </select>
-                                @error('status') <span class="text-red-500 text-sm">{{ $errors->first('status') }}</span> @enderror
-                            </div>
-
-                            <!-- Notes -->
-                            <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Notes</label>
-                                <textarea 
-                                    wire:model="notes"
-                                    rows="3"
-                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-                                    placeholder="Order notes (optional)"
-                                ></textarea>
-                                @error('notes') <span class="text-red-500 text-sm">{{ $errors->first('notes') }}</span> @enderror
-                            </div>
+                        <!-- Customer -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Customer</label>
+                            <select 
+                                wire:model="user_id"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
+                            >
+                                <option value="">Select a customer</option>
+                                @foreach($users as $user)
+                                    <option value="{{ $user->id }}">{{ $user->name }} ({{ $user->email }})</option>
+                                @endforeach
+                            </select>
+                            @error('user_id') <span class="text-red-500 text-sm">{{ $errors->first('user_id') }}</span> @enderror
                         </div>
+
+                        <!-- Products Multi-Select -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Products</label>
+                            
+                            <!-- Debug info -->
+                            @if($editMode)
+                                <div class="text-xs text-gray-500 mb-2">
+                                    Debug - Selected Products: {{ json_encode($selectedProducts) }}
+                                </div>
+                            @endif
+                            
+                            <div class="border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-zinc-800 max-h-48 overflow-y-auto">
+                                @foreach($products as $product)
+                                    @php
+                                        $isChecked = in_array((string)$product->id, $selectedProducts);
+                                    @endphp
+                                    <label class="flex items-center space-x-3 p-2 hover:bg-gray-50 dark:hover:bg-zinc-700 rounded cursor-pointer">
+                                        <input 
+                                            type="checkbox" 
+                                            wire:model.live="selectedProducts" 
+                                            value="{{ $product->id }}"
+                                            {{ $isChecked ? 'checked' : '' }}
+                                            class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                                        >
+                                        <div class="flex-1">
+                                            <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $product->name }}</div>
+                                            <div class="text-xs text-gray-500 dark:text-gray-400">
+                                                ₹{{ number_format($product->regular_user_final_price ?? $product->regular_user_price ?? 0, 2) }}
+                                                | Seller: {{ $product->seller->company_name ?? 'N/A' }}
+                                                | ID: {{ $product->id }} | Selected: {{ $isChecked ? 'Yes' : 'No' }}
+                                            </div>
+                                        </div>
+                                    </label>
+                                @endforeach
+                            </div>
+                            @error('selectedProducts') <span class="text-red-500 text-sm">{{ $errors->first('selectedProducts') }}</span> @enderror
+                        </div>
+
+                        <!-- Order Items Details -->
+                        @if(count($orderItems) > 0)
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Order Items</label>
+                                <div class="space-y-3">
+                                    @foreach($orderItems as $index => $item)
+                                        @php
+                                            $product = $products->firstWhere('id', $item['product_id']);
+                                        @endphp
+                                        <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-gray-50 dark:bg-zinc-800">
+                                            <div class="flex items-center justify-between mb-3">
+                                                <div>
+                                                    <h4 class="font-medium text-gray-900 dark:text-white">{{ $product->name ?? 'Product not found' }}</h4>
+                                                    <!-- Debug info for product lookup -->
+                                                    <div class="text-xs text-gray-500">
+                                                        Looking for Product ID: {{ $item['product_id'] }} | Found: {{ $product ? 'Yes' : 'No' }}
+                                                        @if($product)
+                                                            | Product Name: {{ $product->name }}
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                                <button 
+                                                    type="button"
+                                                    wire:click="removeOrderItem({{ $index }})"
+                                                    class="text-red-600 hover:text-red-800"
+                                                >
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                            
+                                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                                <!-- Quantity -->
+                                                <div>
+                                                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Quantity</label>
+                                                    <input 
+                                                        type="number" 
+                                                        wire:model.live="orderItems.{{ $index }}.quantity"
+                                                        class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
+                                                        min="1"
+                                                    >
+                                                    @error("orderItems.{$index}.quantity") <span class="text-red-500 text-xs">{{ $errors->first("orderItems.{$index}.quantity") }}</span> @enderror
+                                                </div>
+
+                                                <!-- Unit Price -->
+                                                <div>
+                                                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Unit Price (₹)</label>
+                                                    <input 
+                                                        type="number" 
+                                                        step="0.01"
+                                                        wire:model.live="orderItems.{{ $index }}.unit_price"
+                                                        class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
+                                                    >
+                                                    @error("orderItems.{$index}.unit_price") <span class="text-red-500 text-xs">{{ $errors->first("orderItems.{$index}.unit_price") }}</span> @enderror
+                                                </div>
+
+                                                <!-- Total Amount -->
+                                                <div>
+                                                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Total Amount (₹)</label>
+                                                    <input 
+                                                        type="number" 
+                                                        step="0.01"
+                                                        wire:model="orderItems.{{ $index }}.total_amount"
+                                                        class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-100 dark:bg-zinc-600 text-gray-900 dark:text-white"
+                                                        readonly
+                                                    >
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+
+                        <!-- Overall Status -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Overall Status</label>
+                            <select 
+                                wire:model="overall_status"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
+                            >
+                                <option value="pending">Pending</option>
+                                <option value="confirmed">Confirmed</option>
+                                <option value="shipped">Shipped</option>
+                                <option value="delivered">Delivered</option>
+                                <option value="cancelled">Cancelled</option>
+                            </select>
+                            @error('overall_status') <span class="text-red-500 text-sm">{{ $errors->first('overall_status') }}</span> @enderror
+                        </div>
+
+                        <!-- Notes -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Notes</label>
+                            <textarea 
+                                wire:model="notes"
+                                rows="3"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
+                                placeholder="Order notes (optional)"
+                            ></textarea>
+                            @error('notes') <span class="text-red-500 text-sm">{{ $errors->first('notes') }}</span> @enderror
+                        </div>
+
+                        <!-- Order Total -->
+                        @if(count($orderItems) > 0)
+                            <div class="border-t border-gray-200 dark:border-gray-600 pt-4">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-lg font-medium text-gray-900 dark:text-white">Total Order Amount:</span>
+                                    <span class="text-xl font-bold text-green-600">
+                                        ₹{{ number_format(collect($orderItems)->sum('total_amount'), 2) }}
+                                    </span>
+                                </div>
+                            </div>
+                        @endif
 
                         <!-- Buttons -->
                         <div class="flex gap-3 pt-4">
                             <button 
                                 type="submit"
                                 class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium"
+                                @if(count($orderItems) === 0) disabled @endif
                             >
                                 {{ $editMode ? 'Update Order' : 'Create Order' }}
                             </button>
