@@ -51,6 +51,7 @@ Route::middleware(['auth'])->group(function () {
     Volt::route('blogs', 'blogs.manage')->name('blogs.manage');
     Route::get('coupons', \App\Livewire\Coupons\ManageCoupons::class)->name('coupons.manage');
     Volt::route('payouts', 'payouts.manage')->name('payouts.sellers');
+    Volt::route('transactions', 'transactions.manage')->name('transactions.manage');
 
 
     Route::get('/user-account', [DashboardController::class, 'userAccount'])->name('user.account');

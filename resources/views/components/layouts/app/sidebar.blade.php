@@ -42,6 +42,7 @@
                     <!-- Payout & Commission -->
                     <flux:navlist.group expandable :heading="__('Payout & Commission')" class="grid">
                         <flux:navlist.item icon="banknotes" :href="route('payouts.sellers')" :current="request()->routeIs('payouts.sellers')" wire:navigate>{{ __('Seller Payouts') }}</flux:navlist.item>
+                        <flux:navlist.item icon="document-text" :href="route('transactions.manage')" :current="request()->routeIs('transactions.manage')" wire:navigate>{{ __('Transaction Management') }}</flux:navlist.item>
                         <flux:navlist.item icon="gift" href="#" :current="request()->routeIs('rewards.influencer')" wire:navigate>{{ __('Influencer Rewards') }}</flux:navlist.item>
                     </flux:navlist.group>
                     
