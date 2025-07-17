@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\RazorpayPaymentController;
-use App\Http\Controllers\SitePageController;
 use Illuminate\Support\Facades\Route;
 use Livewire\Volt\Volt;
 
@@ -13,16 +12,14 @@ Route::get('/dash', function () {
 Route::get('/', [DashboardController::class, 'index'])->name('home');
 Route::get('/shop/{type?}/{id?}', [DashboardController::class, 'shop'])->name('shop');
 Route::get('/product-details/{id}', [DashboardController::class, 'productDetails'])->name('product.details');
-Route::get('/about-us', [SitePageController::class, 'showByType'])->defaults('type', 'about-us')->name('about.us');
-Route::get('/term-condition', [SitePageController::class, 'showByType'])->defaults('type', 'terms-conditions')->name('term.condition');
-Route::get('/shipping-policy', [SitePageController::class, 'showByType'])->defaults('type', 'shipping-policy')->name('shipping.policy');
-Route::get('/privacy-policy', [SitePageController::class, 'showByType'])->defaults('type', 'privacy-policy')->name('privacy.policy');
-Route::get('/return-policy', [SitePageController::class, 'showByType'])->defaults('type', 'return-policy')->name('return.policy');
+Route::get('/about-us', [DashboardController::class, 'aboutUs'])->name('about.us');
+Route::get('/term-condition', [DashboardController::class, 'termCondition'])->name('term.condition');
+Route::get('/shipping-policy', [DashboardController::class, 'shippingPolicy'])->name('shipping.policy');
+Route::get('/privacy-policy', [DashboardController::class, 'privacyPolicy'])->name('privacy.policy');
+Route::get('/return-policy', [DashboardController::class, 'returnPolicy'])->name('return.policy');
+Route::get('/contact', [DashboardController::class, 'contact'])->name('contact');
 Route::get('/contact-submit', [DashboardController::class, 'contactSubmit'])->name('contact.submit');
 Route::get('/our-blogs', [DashboardController::class, 'blogs'])->name('user.blogs');
-
-// Generic site page route (should be after specific routes)
-Route::get('/page/{slug}', [SitePageController::class, 'show'])->name('site-page.show');
 
 
 // Route::get('/', function () {
@@ -51,10 +48,6 @@ Route::middleware(['auth'])->group(function () {
     Volt::route('categories', 'categories.manage')->name('categories.manage');
     Volt::route('banners', 'banners.manage')->name('banners.manage');
     Volt::route('blogs', 'blogs.manage')->name('blogs.manage');
-    Volt::route('site-pages', 'site-settings.pages.manage')->name('site-pages.manage');
-    Volt::route('site-pages/create', 'site-settings.pages.form')->name('site-pages.create');
-    Volt::route('site-pages/create/{type}', 'site-settings.pages.form')->name('site-pages.create.type');
-    Volt::route('site-pages/{id}/edit', 'site-settings.pages.form')->name('site-pages.edit');
     Route::get('coupons', \App\Livewire\Coupons\ManageCoupons::class)->name('coupons.manage');
     Volt::route('payouts', 'payouts.manage')->name('payouts.sellers');
     Volt::route('transactions', 'transactions.manage')->name('transactions.manage');
