@@ -61,6 +61,7 @@
                     <flux:navlist.group expandable :heading="__('Site Settings')" class="grid">
                         <flux:navlist.item icon="photo" :href="route('banners.manage')" :current="request()->routeIs('banners.manage')" wire:navigate>{{ __('Banners') }}</flux:navlist.item>
                         <flux:navlist.item icon="document-text" :href="route('blogs.manage')" :current="request()->routeIs('blogs.manage')" wire:navigate>{{ __('Blogs') }}</flux:navlist.item>
+                        <flux:navlist.item icon="document-duplicate" :href="route('site-pages.manage')" :current="request()->routeIs('site-pages.manage')" wire:navigate>{{ __('Site Pages') }}</flux:navlist.item>
                         <flux:navlist.item icon="currency-dollar" href="#" :current="request()->routeIs('settings.commission')" wire:navigate>{{ __('Global Commission') }}</flux:navlist.item>
                     </flux:navlist.group>
                     
