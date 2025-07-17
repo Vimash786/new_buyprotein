@@ -1727,61 +1727,109 @@ new class extends Component
     <!-- Initialize Quill editor for product description -->
     <script>
       let productDescriptionQuill;
+      let quillContent = '';
+      
+      // Function to initialize or reinitialize Quill editor
+      function initializeQuillEditor() {
+        const editorElement = document.getElementById('product-description-editor');
+        
+        if (!editorElement) {
+          return;
+        }
+        
+        // Destroy existing editor if it exists
+        if (productDescriptionQuill) {
+          // Save current content before destroying
+          quillContent = productDescriptionQuill.root.innerHTML;
+          productDescriptionQuill = null;
+        }
+        
+        // Create new Quill instance
+        productDescriptionQuill = new Quill('#product-description-editor', {
+          theme: 'snow',
+          placeholder: 'Enter product description...',
+          modules: {
+            toolbar: [
+              ['bold', 'italic', 'underline', 'strike'],
+              ['blockquote', 'code-block'],
+              [{ 'header': 1 }, { 'header': 2 }],
+              [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+              [{ 'script': 'sub'}, { 'script': 'super' }],
+              [{ 'indent': '-1'}, { 'indent': '+1' }],
+              [{ 'direction': 'rtl' }],
+              [{ 'size': ['small', false, 'large', 'huge'] }],
+              [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+              [{ 'color': [] }, { 'background': [] }],
+              [{ 'font': [] }],
+              [{ 'align': [] }],
+              ['clean']
+            ]
+          }
+        });
+
+        // Function to load content into Quill
+        function loadContentIntoQuill() {
+          const hiddenInput = document.getElementById('description-input');
+          let contentToLoad = '';
+          
+          // Priority: saved content > hidden input value > empty
+          if (quillContent && quillContent.trim() !== '' && quillContent !== '<p><br></p>') {
+            contentToLoad = quillContent;
+          } else if (hiddenInput && hiddenInput.value && hiddenInput.value.trim() !== '') {
+            contentToLoad = hiddenInput.value;
+          }
+          
+          if (contentToLoad) {
+            productDescriptionQuill.root.innerHTML = contentToLoad;
+          }
+        }
+
+        // Load initial content
+        loadContentIntoQuill();
+
+        // Update hidden input and save content on text change
+        productDescriptionQuill.on('text-change', function() {
+          const content = productDescriptionQuill.root.innerHTML;
+          quillContent = content; // Save to global variable
+          
+          const hiddenInput = document.getElementById('description-input');
+          if (hiddenInput) {
+            hiddenInput.value = content;
+          }
+          
+          // Hide validation error immediately when typing
+          const errorElement = document.querySelector('span.text-red-500');
+          if (errorElement && errorElement.textContent.includes('description field is required')) {
+            errorElement.style.display = 'none';
+          }
+        });
+      }
       
       // Initialize Quill when modal opens
       document.addEventListener('livewire:init', function () {
         Livewire.on('showModal', () => {
+          setTimeout(initializeQuillEditor, 100);
+        });
+
+        // Reinitialize Quill after Livewire updates (e.g., when has_variants changes)
+        Livewire.hook('morph.updated', () => {
           setTimeout(() => {
-            if (!productDescriptionQuill && document.getElementById('product-description-editor')) {
-              productDescriptionQuill = new Quill('#product-description-editor', {
-                theme: 'snow',
-                placeholder: 'Enter product description...',
-                modules: {
-                  toolbar: [
-                    ['bold', 'italic', 'underline', 'strike'],
-                    ['blockquote', 'code-block'],
-                    [{ 'header': 1 }, { 'header': 2 }],
-                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                    [{ 'script': 'sub'}, { 'script': 'super' }],
-                    [{ 'indent': '-1'}, { 'indent': '+1' }],
-                    [{ 'direction': 'rtl' }],
-                    [{ 'size': ['small', false, 'large', 'huge'] }],
-                    [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-                    [{ 'color': [] }, { 'background': [] }],
-                    [{ 'font': [] }],
-                    [{ 'align': [] }],
-                    ['clean']
-                  ]
-                }
-              });
+            const editorElement = document.getElementById('product-description-editor');
+            if (editorElement && (!productDescriptionQuill || !productDescriptionQuill.root.isConnected)) {
+              initializeQuillEditor();
+            }
+          }, 100);
+        });
 
-              // Function to load content into Quill
-              function loadContentIntoQuill() {
-                const hiddenInput = document.getElementById('description-input');
-                if (hiddenInput && hiddenInput.value && hiddenInput.value.trim() !== '') {
-                  productDescriptionQuill.root.innerHTML = hiddenInput.value;
-                }
+        // Listen for Livewire updates to reload content in edit mode
+        Livewire.on('productLoaded', () => {
+          setTimeout(() => {
+            if (productDescriptionQuill) {
+              const hiddenInput = document.getElementById('description-input');
+              if (hiddenInput && hiddenInput.value && hiddenInput.value.trim() !== '') {
+                productDescriptionQuill.root.innerHTML = hiddenInput.value;
+                quillContent = hiddenInput.value;
               }
-
-              // Load initial content
-              loadContentIntoQuill();
-
-              // Only update hidden input on text change (no Livewire sync during typing)
-              productDescriptionQuill.on('text-change', function() {
-                const content = productDescriptionQuill.root.innerHTML;
-                document.getElementById('description-input').value = content;
-                
-                // Hide validation error immediately when typing
-                const errorElement = document.querySelector('span.text-red-500');
-                if (errorElement && errorElement.textContent.includes('description field is required')) {
-                  errorElement.style.display = 'none';
-                }
-              });
-
-              // Listen for Livewire updates to reload content in edit mode
-              Livewire.on('productLoaded', () => {
-                setTimeout(loadContentIntoQuill, 100);
-              });
             }
           }, 100);
         });
@@ -1791,6 +1839,7 @@ new class extends Component
           if (productDescriptionQuill) {
             productDescriptionQuill = null;
           }
+          quillContent = '';
         });
       });
 
@@ -1798,8 +1847,19 @@ new class extends Component
       function syncProductDescriptionContent() {
         if (productDescriptionQuill) {
           const content = productDescriptionQuill.root.innerHTML;
-          document.getElementById('description-input').value = content;
+          quillContent = content;
+          const hiddenInput = document.getElementById('description-input');
+          if (hiddenInput) {
+            hiddenInput.value = content;
+          }
           @this.set('description', content);
+        } else if (quillContent) {
+          // If editor was destroyed but we have saved content
+          const hiddenInput = document.getElementById('description-input');
+          if (hiddenInput) {
+            hiddenInput.value = quillContent;
+          }
+          @this.set('description', quillContent);
         }
       }
     </script>
