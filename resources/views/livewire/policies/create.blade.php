@@ -279,37 +279,139 @@ new class extends Component
     </div>
 </div>
 
+<!-- Quill Editor CSS -->
+<link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
+
+<!-- Custom Quill Dark Mode CSS -->
+<style>
+  /* Dark mode styles for Quill editor */
+  .dark .ql-toolbar.ql-snow {
+    border-color: #4b5563;
+    background-color: #374151;
+  }
+  
+  .dark .ql-toolbar.ql-snow .ql-stroke {
+    stroke: #d1d5db;
+  }
+  
+  .dark .ql-toolbar.ql-snow .ql-fill {
+    fill: #d1d5db;
+  }
+  
+  .dark .ql-toolbar.ql-snow .ql-picker-label {
+    color: #d1d5db;
+  }
+  
+  .dark .ql-container.ql-snow {
+    border-color: #4b5563;
+    background-color: #1f2937;
+    color: #f9fafb;
+  }
+  
+  .dark .ql-editor {
+    color: #f9fafb;
+  }
+  
+  .dark .ql-editor::before {
+    color: #9ca3af;
+  }
+  
+  /* Hover states */
+  .dark .ql-toolbar.ql-snow .ql-picker-label:hover {
+    color: #ffffff;
+  }
+  
+  .dark .ql-toolbar.ql-snow button:hover {
+    color: #ffffff;
+  }
+  
+  .dark .ql-toolbar.ql-snow button:hover .ql-stroke {
+    stroke: #ffffff;
+  }
+  
+  .dark .ql-toolbar.ql-snow button:hover .ql-fill {
+    fill: #ffffff;
+  }
+</style>
+
 <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
 
 <!-- Initialize Quill editor -->
 <script>
   let quill;
+  let quillContent = '';
   
-  document.addEventListener('DOMContentLoaded', function() {
+  // Function to initialize or reinitialize Quill editor
+  function initializeQuillEditor() {
+    const editorElement = document.getElementById('editor');
+    
+    if (!editorElement) {
+      return;
+    }
+    
+    // Destroy existing editor if it exists
+    if (quill) {
+      // Save current content before destroying
+      try {
+        quillContent = quill.root.innerHTML;
+      } catch (e) {
+        // Editor might already be destroyed
+      }
+      quill = null;
+    }
+    
+    // Create new Quill instance
     quill = new Quill('#editor', {
-      theme: 'snow'
+      theme: 'snow',
+      placeholder: 'Enter policy content...',
+      modules: {
+        toolbar: [
+          ['bold', 'italic', 'underline', 'strike'],
+          ['blockquote', 'code-block'],
+          [{ 'header': 1 }, { 'header': 2 }],
+          [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+          [{ 'script': 'sub'}, { 'script': 'super' }],
+          [{ 'indent': '-1'}, { 'indent': '+1' }],
+          [{ 'direction': 'rtl' }],
+          [{ 'size': ['small', false, 'large', 'huge'] }],
+          [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+          [{ 'color': [] }, { 'background': [] }],
+          [{ 'font': [] }],
+          [{ 'align': [] }],
+          ['clean']
+        ]
+      }
     });
 
     // Function to load content into Quill
     function loadContentIntoQuill() {
       const hiddenInput = document.getElementById('content-input');
-      if (hiddenInput && hiddenInput.value && hiddenInput.value.trim() !== '') {
-        quill.root.innerHTML = hiddenInput.value;
+      let contentToLoad = '';
+      
+      // Priority: saved content > hidden input value > empty
+      if (quillContent && quillContent.trim() !== '' && quillContent !== '<p><br></p>') {
+        contentToLoad = quillContent;
+      } else if (hiddenInput && hiddenInput.value && hiddenInput.value.trim() !== '') {
+        contentToLoad = hiddenInput.value;
+      }
+      
+      if (contentToLoad) {
+        quill.root.innerHTML = contentToLoad;
       }
     }
 
     // Load initial content
     loadContentIntoQuill();
 
-    // Listen for Livewire updates
-    document.addEventListener('livewire:init', function () {
-      setTimeout(loadContentIntoQuill, 200);
-    });
-
-    // Only update hidden input on text change (no Livewire sync during typing)
+    // Update hidden input and save content on text change
     quill.on('text-change', function() {
       const content = quill.root.innerHTML;
-      document.getElementById('content-input').value = content;
+      quillContent = content; // Save to global variable
+      
+      const hiddenInput = document.getElementById('content-input');
+      if (hiddenInput) {
+        hiddenInput.value = content;
+      }
       
       // Hide validation error immediately when typing
       const errorElement = document.querySelector('.text-red-500');
@@ -317,14 +419,43 @@ new class extends Component
         errorElement.style.display = 'none';
       }
     });
+  }
+  
+  document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Quill on page load
+    initializeQuillEditor();
+    
+    // Listen for Livewire updates and reinitialize if needed
+    document.addEventListener('livewire:init', function () {
+      // Reinitialize after Livewire updates
+      Livewire.hook('morph.updated', () => {
+        setTimeout(() => {
+          const editorElement = document.getElementById('editor');
+          if (editorElement && (!quill || !quill.root.isConnected)) {
+            initializeQuillEditor();
+          }
+        }, 100);
+      });
+    });
   });
 
   // Function to sync content before form submission
   function syncQuillContent() {
     if (quill) {
       const content = quill.root.innerHTML;
-      document.getElementById('content-input').value = content;
+      quillContent = content;
+      const hiddenInput = document.getElementById('content-input');
+      if (hiddenInput) {
+        hiddenInput.value = content;
+      }
       @this.set('content', content);
+    } else if (quillContent) {
+      // If editor was destroyed but we have saved content
+      const hiddenInput = document.getElementById('content-input');
+      if (hiddenInput) {
+        hiddenInput.value = quillContent;
+      }
+      @this.set('content', quillContent);
     }
   }
 </script>
