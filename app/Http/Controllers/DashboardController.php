@@ -3,12 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\Banner;
+use App\Models\BillingDetail;
+use App\Models\Blog;
 use App\Models\Cart;
 use App\Models\Category;
 use App\Models\orders;
 use App\Models\products;
 use App\Models\ProductVariantCombination;
 use App\Models\ProductVariantOption;
+use App\Models\Review;
 use App\Models\Sellers;
 use App\Models\Wishlist;
 use Exception;
@@ -16,15 +19,16 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 class DashboardController extends Controller
 {
     public function index()
     {
         $categories = Category::limit(10)->get();
-        $productCounts = orders::select('product_id', DB::raw('count(*) as total'))->groupBy('product_id')->orderBy('product_id')->get();
-        $productIds = $productCounts->pluck('product_id');
-        $products = products::with(['subCategory', 'category'])->whereIn('id', $productIds)->get();
+        // $productCounts = orders::select('product_id', DB::raw('count(*) as total'))->groupBy('product_id')->orderBy('product_id')->get();
+        // $productIds = $productCounts->pluck('product_id');
+        // $products = products::with(['subCategory', 'category'])->whereIn('id', $productIds)->get();
         $everyDayEssentials = products::with(['subCategory', 'category'])->where('section_category', 'everyday_essential')->limit(10)->get();
         $populerProducts = products::where('section_category', 'popular_pick')->limit(6)->get();
         $latestProducts = products::orderBy('created_at', 'desc')->take(12)->get();
@@ -32,7 +36,7 @@ class DashboardController extends Controller
         $banners = Banner::where('status', 'active')->orderBy('created_at', 'desc')->get();
         $sellers = Sellers::where('status', 'approved')->limit(4)->get();
 
-        return view('dashboard', compact('categories', 'products', 'everyDayEssentials', 'populerProducts', 'latestProducts', 'offers', 'banners', 'sellers'));
+        return view('dashboard', compact('categories', 'everyDayEssentials', 'populerProducts', 'latestProducts', 'offers', 'banners', 'sellers'));
     }
 
     public function shop(Request $request, $type = null, $id = null)
@@ -76,8 +80,16 @@ class DashboardController extends Controller
                 ->where('id', '!=', $id)
                 ->limit(10)
                 ->get();
+            $reviews = Review::where('product_id', $id)->get();
+            $totalReviews = $reviews->count();
+            $averageRating = $reviews->avg('rating');
 
-            return view('shop.product-details', compact('product', 'relatedProducts'));
+            $ratingCounts = [];
+            for ($i = 1; $i <= 5; $i++) {
+                $ratingCounts[$i] = $reviews->where('rating', $i)->count();
+            }
+
+            return view('shop.product-details', compact('product', 'relatedProducts', 'reviews', 'totalReviews', 'averageRating', 'ratingCounts'));
         } catch (Exception $e) {
             return redirect()->back()->with('error', 'Invalid product ID.');
         }
@@ -86,8 +98,9 @@ class DashboardController extends Controller
     public function userAccount()
     {
         if (Auth::user() != null) {
+            $orders = orders::where('user_id', Auth::user()->id)->get();
 
-            return view('shop.user-account');
+            return view('shop.user-account', compact('orders'));
         } else {
             return redirect()->route('login');
         }
@@ -292,8 +305,15 @@ class DashboardController extends Controller
     public function checkout()
     {
         $cartData = Cart::with('product')->where('user_id', Auth::user()->id)->get();
-
-        return view('shop.checkout', compact('cartData'));
+        $order = orders::where('user_id', Auth::user()->id)->orderBy('created_at', 'desc')->first();
+    
+        $billingAddress = [];
+        if ($order) {
+            $orderId = $order->id;
+            $billingAddress = BillingDetail::where('order_id', $orderId)->get();
+        }
+        
+        return view('shop.checkout', compact('cartData', 'billingAddress'));
     }
 
     public function aboutUs()
@@ -344,5 +364,41 @@ class DashboardController extends Controller
                 $variantId = (int) str_replace('variant_', '', $key);
                 return [$variantId => (int) $value];
             });
+    }
+
+    public function reviewStore(Request $request)
+    {
+        $validator = Validator::make(
+            $request->all(),
+            [
+                'name' => 'required|string',
+                'email' => 'required|email',
+                'review' => 'required|string',
+                'rating' => 'required|integer|min:1|max:5',
+            ]
+        );
+
+        if ($validator->fails()) {
+            return back()->withErrors($validator)->withInput();
+        }
+
+        Review::create(
+            [
+                'product_id' => $request->productId,
+                'user_id' => Auth::user()->id,
+                'name'   => $request->name,
+                'email'  => $request->email,
+                'review' => $request->review,
+                'rating' => $request->rating,
+            ]
+        );
+
+        return redirect()->back()->with('Product Review is submitted successfully!');
+    }
+
+    public function blogs() {
+        $blogs = Blog::paginate(8);
+
+        return view('blogs.index', compact('blogs'));
     }
 }

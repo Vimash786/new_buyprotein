@@ -47,30 +47,55 @@
 
                     <div class="rts-billing-details-area">
                         <h3 class="title">Billing Details</h3>
-                        <form action="#">
-                            <div class="single-input">
-                                <label for="phone">Phone*</label>
-                                <input id="phone" type="text">
+                        @if (!empty($billingAddress) && count($billingAddress) > 0)
+                            <div class="d-flex justify-content-between mb-3">
+                                <p class="m-2">Existing Address:</p>
+                                <button type="button" class="btn btn-outline-primary w-auto" id="showNewAddressForm">
+                                    + Add New Billing Address
+                                </button>
                             </div>
-                            <div class="single-input">
-                                <label for="street">Street Address*</label>
-                                <input id="street" type="text" required>
-                            </div>
-                            <div class="half-input-wrapper">
-                                <div class="single-input">
-                                    <label for="city">Town / City*</label>
-                                    <input id="city" type="text">
-                                </div>
-                                <div class="single-input">
-                                    <label for="state">State*</label>
-                                    <input id="state" type="text">
-                                </div>
-                                <div class="single-input">
-                                    <label for="zip">Zip Code*</label>
-                                    <input id="zip" type="text" required>
-                                </div>
+                            <div class="row">
+                                @foreach ($billingAddress as $billAdd)
+                                    <label class="card card-body mb-4 billAddress" style="border-radius: 15px;">
+                                        <input type="radio" name="billAdd" class="d-none" value="{{ $billAdd->id }}" />
+                                        <div class="p-3 address-content">
+                                            {{ $billAdd->billing_address }},
+                                            {{ $billAdd->billing_city }},
+                                            {{ $billAdd->billing_state }},
+                                            {{ $billAdd->billing_postal_code }},
+                                            {{ $billAdd->billing_country }}
+                                        </div>
+                                    </label>
+                                @endforeach
                             </div>
 
+                            <!-- Button to show new address form -->
+                        @endif
+                        <form action="#">
+                            <div id="newAddressForm" style="display: {{ count($billingAddress) > 0 ? 'none' : 'block' }};">
+                                <div class="single-input">
+                                    <label for="phone">Phone*</label>
+                                    <input id="billingPhone" type="text" name="billingPhone" required>
+                                </div>
+                                <div class="single-input">
+                                    <label for="street">Street Address*</label>
+                                    <input id="billingStreet" type="text" required name="billingStreet" required>
+                                </div>
+                                <div class="half-input-wrapper">
+                                    <div class="single-input">
+                                        <label for="city">Town / City*</label>
+                                        <input id="billingCity" type="text" name="billingCity" required>
+                                    </div>
+                                    <div class="single-input">
+                                        <label for="state">State*</label>
+                                        <input id="billingState" type="text" name="billingState" required>
+                                    </div>
+                                    <div class="single-input">
+                                        <label for="zip">Zip Code*</label>
+                                        <input id="billingZip" type="text" required class="billingZip" required>
+                                    </div>
+                                </div>
+                            </div>
                             <h3>Shipping address</h3>
                             <div class="billing-address">
                                 <label class="option-card">
@@ -89,33 +114,29 @@
 
                             <div id="billingFields" class="rts-billing-details-area">
                                 <h3 class="title">Shipping Details</h3>
-                                <form action="#">
+                                <div class="single-input">
+                                    <label for="phone">Phone*</label>
+                                    <input id="shippingPhone" type="text" name="shippingPhone">
+                                </div>
+                                <div class="single-input">
+                                    <label for="street">Street Address*</label>
+                                    <input id="shippingStreet" type="text" required name="shippingStreet">
+                                </div>
+                                <div class="half-input-wrapper">
                                     <div class="single-input">
-                                        <label for="phone">Phone*</label>
-                                        <input id="phone" type="text">
+                                        <label for="city">Town / City*</label>
+                                        <input id="shippingCity" type="text" name="shippingCity">
                                     </div>
                                     <div class="single-input">
-                                        <label for="street">Street Address*</label>
-                                        <input id="street" type="text" required>
+                                        <label for="state">State*</label>
+                                        <input id="shippingState" type="text" name="shippingState">
                                     </div>
-                                    <div class="half-input-wrapper">
-                                        <div class="single-input">
-                                            <label for="city">Town / City*</label>
-                                            <input id="city" type="text">
-                                        </div>
-                                        <div class="single-input">
-                                            <label for="state">State*</label>
-                                            <input id="state" type="text">
-                                        </div>
-                                        <div class="single-input">
-                                            <label for="zip">Zip Code*</label>
-                                            <input id="zip" type="text" required>
-                                        </div>
+                                    <div class="single-input">
+                                        <label for="zip">Zip Code*</label>
+                                        <input id="shippingZip" type="text" required name="shippingZip">
                                     </div>
-                                </form>
+                                </div>
                             </div>
-
-                            <button class="rts-btn btn-primary">Update Cart</button>
                         </form>
                     </div>
                 </div>
@@ -132,6 +153,7 @@
                         </div>
                         @php
                             $totalPrice = 0;
+                            $allProduct = [];
                         @endphp
                         @foreach ($cartData as $item)
                             @php
@@ -139,6 +161,7 @@
                                 $lineTotal = $unitPrice * $item->quantity;
                                 $totalPrice += $lineTotal;
                                 $shipTotal = $totalPrice + 100;
+                                $allProduct[] = $item->id;
                             @endphp
                             <div class="single-shop-list">
                                 <div class="left-area">
@@ -324,15 +347,62 @@
         $('#pay-button').on('click', function(e) {
             e.preventDefault();
 
+            const allProductData = @json($allProduct);
+            const paymentAmount = {{ $shipTotal * 100 }};
+            const sameAsShipping = document.querySelector('input[name="sameAsShipping"]:checked').value;
+
+            const selectedAddressId = $('input[name="billAdd"]:checked').val();
+            const useExisting = selectedAddressId !== undefined;
+
+            let billingData = {};
+            let shippingData = {};
+
+            if (useExisting) {
+                // Just send the existing address ID
+                billingData = {
+                    existing_billing_id: selectedAddressId
+                };
+            } else {
+                // Get data from form fields
+                billingData = {
+                    phone: $('#billingPhone').val().trim(),
+                    street: $('#billingStreet').val().trim(),
+                    city: $('#billingCity').val().trim(),
+                    state: $('#billingState').val().trim(),
+                    zip: $('#billingZip').val().trim()
+                };
+
+                // Validate manual input
+                if (!billingData.phone || !billingData.street || !billingData.city || !billingData
+                    .state || !billingData.zip) {
+                    alert("Please fill all required billing fields.");
+                    return;
+                }
+            }
+
+            // Shipping data
+            if (sameAsShipping === "no") {
+                shippingData = {
+                    phone: $('#shippingPhone').val().trim(),
+                    street: $('#shippingStreet').val().trim(),
+                    city: $('#shippingCity').val().trim(),
+                    state: $('#shippingState').val().trim(),
+                    zip: $('#shippingZip').val().trim()
+                };
+            } else {
+                shippingData = {
+                    ...billingData
+                };
+            }
+
             let options = {
-                "key": "{{ config('services.razorpay.key') }}", // Razorpay API Key
-                "amount": {{ $shipTotal * 100 }}, // Amount in paise (₹100 = 10000)
+                "key": "{{ config('services.razorpay.key') }}",
+                "amount": paymentAmount,
                 "currency": "INR",
                 "name": "My Laravel Shop",
                 "description": "Order Payment",
                 "image": "https://yourdomain.com/logo.png",
                 "handler": function(response) {
-                    // Send payment info to server for verification
                     $.ajax({
                         url: "{{ route('razorpay.payment') }}",
                         type: "POST",
@@ -341,13 +411,16 @@
                             "X-CSRF-TOKEN": "{{ csrf_token() }}"
                         },
                         data: JSON.stringify({
-                            razorpay_payment_id: response.razorpay_payment_id
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            billing: billingData,
+                            shipping: shippingData,
+                            products: allProductData,
+                            amount: (paymentAmount / 100)
                         }),
                         success: function(data) {
                             if (data.success) {
                                 alert("Payment successful!");
-                                window.location.href =
-                                    "/thank-you"; // redirect after success
+                                window.location.href = "/thank-you";
                             } else {
                                 alert("Payment failed.");
                             }
@@ -356,6 +429,7 @@
                             alert("Server error. Please try again.");
                         }
                     });
+
                 },
                 "prefill": {
                     "name": "Test User",
@@ -383,5 +457,18 @@
 
         // Initial state
         toggleBillingFields();
+    });
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const showNewAddressBtn = document.getElementById('showNewAddressForm');
+        const newAddressForm = document.getElementById('newAddressForm');
+
+        if (showNewAddressBtn) {
+            showNewAddressBtn.addEventListener('click', function() {
+                newAddressForm.style.display = 'block';
+                this.style.display = 'none';
+            });
+        }
     });
 </script>

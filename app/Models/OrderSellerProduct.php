@@ -15,6 +15,7 @@ class OrderSellerProduct extends Model
         'seller_id',
         'product_id',
         'quantity',
+        'variant',
         'unit_price',
         'total_amount',
         'status',

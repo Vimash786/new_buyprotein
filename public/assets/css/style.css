@@ -30301,3 +30301,57 @@ header.header-three .sub-dropdown .submenu.third-lvl.base {
 .variant-radio input[type="radio"]:checked + * {
     color: red;
 }
+
+.my-pagination .pagination {
+    gap: 6px;
+}
+
+.my-pagination .page-link {
+    color: #fff;
+    background-color: #009ec9;
+    border: 1px solid #009ec9;
+    border-radius: 5px;
+}
+
+.my-pagination .page-item.active .page-link {
+    background-color: #0056b3;
+    border-color: #0056b3;
+}
+
+.my-pagination .page-item.disabled .page-link {
+    background-color: #e9ecef;
+    color: #6c757d;
+    border-color: #dee2e6;
+}
+
+.star {
+    font-size: 24px;
+    color: #ccc;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.star.filled {
+    color: #ffc107;
+}
+
+/* Hide the radio buttons */
+.billAddress input[type="radio"] {
+    display: none;
+}
+
+/* Default card style */
+.billAddress {
+    border: 1px solid #ddd;
+    cursor: pointer;
+    transition: border 0.3s, box-shadow 0.3s;
+}
+
+/* When selected, style the card */
+.billAddress input[type="radio"]:checked + .address-content {
+    border: 1px solid #009ec9;
+    box-shadow: 0 0 5px rgba(0, 158, 201, 0.5);
+    border-radius: 10px;
+    background-color: #f0fcff;
+}
+

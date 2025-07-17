@@ -19,6 +19,7 @@ Route::get('/privacy-policy', [DashboardController::class, 'privacyPolicy'])->na
 Route::get('/return-policy', [DashboardController::class, 'returnPolicy'])->name('return.policy');
 Route::get('/contact', [DashboardController::class, 'contact'])->name('contact');
 Route::get('/contact-submit', [DashboardController::class, 'contactSubmit'])->name('contact.submit');
+Route::get('/our-blogs', [DashboardController::class, 'blogs'])->name('user.blogs');
 
 
 // Route::get('/', function () {
@@ -62,6 +63,7 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/wishlist/remove', [DashboardController::class, 'removeWishlist'])->name('wishlist.remove');
     Route::post('/wish-to-cart', [DashboardController::class, 'wishToCart'])->name('wishlist.to.cart');
     Route::post('/bulk-order', [DashboardController::class, 'bulkOrder'])->name('bulk.order');
+    Route::post('/review-store', [DashboardController::class, 'reviewStore'])->name('review.store');
 
     Route::get('/checkout', [DashboardController::class, 'checkout'])->name('user.checkout');
 
