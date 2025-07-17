@@ -202,15 +202,7 @@ new class extends Component
                     <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Policy Management</h1>
                     <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">Manage website policies and legal pages</p>
                 </div>
-                <button 
-                    wire:click="openModal"
-                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-                >
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                    Add New Policy
-                </button>
+               
             </div>
         </div>
 
@@ -630,12 +622,6 @@ new class extends Component
 
                         <!-- Action Buttons -->
                         <div class="flex gap-3 pt-6 border-t border-gray-200 dark:border-gray-700">
-                            <button 
-                                wire:click="edit({{ $selectedPolicy->id }})"
-                                class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium"
-                            >
-                                Edit Policy
-                            </button>
                             <button 
                                 wire:click="closeViewModal"
                                 class="bg-gray-300 hover:bg-gray-400 text-gray-700 px-6 py-2 rounded-lg font-medium"
