@@ -194,12 +194,18 @@ new class extends Component
         if ($seller) {
             $this->seller_id = $seller->id;
         }
+        
+        // Dispatch event for Quill editor initialization
+        $this->dispatch('showModal');
     }
 
     public function closeModal()
     {
         $this->showModal = false;
         $this->resetForm();
+        
+        // Dispatch event for Quill editor cleanup
+        $this->dispatch('closeModal');
     }
 
     public function confirmDelete($id)
@@ -887,6 +893,10 @@ new class extends Component
         
         $this->editMode = true;
         $this->showModal = true;
+        
+        // Dispatch events for Quill editor initialization and content loading
+        $this->dispatch('showModal');
+        $this->dispatch('productLoaded');
     }
 
     public function delete($id = null)
@@ -1655,4 +1665,142 @@ new class extends Component
             </div>
         </div>
     @endif
+
+    <!-- Quill Editor CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
+
+    <!-- Custom Quill Dark Mode CSS -->
+    <style>
+      /* Dark mode styles for Quill editor */
+      .dark .ql-toolbar.ql-snow {
+        border-color: #4b5563;
+        background-color: #374151;
+      }
+      
+      .dark .ql-toolbar.ql-snow .ql-stroke {
+        stroke: #d1d5db;
+      }
+      
+      .dark .ql-toolbar.ql-snow .ql-fill {
+        fill: #d1d5db;
+      }
+      
+      .dark .ql-toolbar.ql-snow .ql-picker-label {
+        color: #d1d5db;
+      }
+      
+      .dark .ql-container.ql-snow {
+        border-color: #4b5563;
+        background-color: #1f2937;
+        color: #f9fafb;
+      }
+      
+      .dark .ql-editor {
+        color: #f9fafb;
+      }
+      
+      .dark .ql-editor::before {
+        color: #9ca3af;
+      }
+      
+      /* Hover states */
+      .dark .ql-toolbar.ql-snow .ql-picker-label:hover {
+        color: #ffffff;
+      }
+      
+      .dark .ql-toolbar.ql-snow button:hover {
+        color: #ffffff;
+      }
+      
+      .dark .ql-toolbar.ql-snow button:hover .ql-stroke {
+        stroke: #ffffff;
+      }
+      
+      .dark .ql-toolbar.ql-snow button:hover .ql-fill {
+        fill: #ffffff;
+      }
+    </style>
+
+    <!-- Quill Editor JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
+
+    <!-- Initialize Quill editor for product description -->
+    <script>
+      let productDescriptionQuill;
+      
+      // Initialize Quill when modal opens
+      document.addEventListener('livewire:init', function () {
+        Livewire.on('showModal', () => {
+          setTimeout(() => {
+            if (!productDescriptionQuill && document.getElementById('product-description-editor')) {
+              productDescriptionQuill = new Quill('#product-description-editor', {
+                theme: 'snow',
+                placeholder: 'Enter product description...',
+                modules: {
+                  toolbar: [
+                    ['bold', 'italic', 'underline', 'strike'],
+                    ['blockquote', 'code-block'],
+                    [{ 'header': 1 }, { 'header': 2 }],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                    [{ 'script': 'sub'}, { 'script': 'super' }],
+                    [{ 'indent': '-1'}, { 'indent': '+1' }],
+                    [{ 'direction': 'rtl' }],
+                    [{ 'size': ['small', false, 'large', 'huge'] }],
+                    [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                    [{ 'color': [] }, { 'background': [] }],
+                    [{ 'font': [] }],
+                    [{ 'align': [] }],
+                    ['clean']
+                  ]
+                }
+              });
+
+              // Function to load content into Quill
+              function loadContentIntoQuill() {
+                const hiddenInput = document.getElementById('description-input');
+                if (hiddenInput && hiddenInput.value && hiddenInput.value.trim() !== '') {
+                  productDescriptionQuill.root.innerHTML = hiddenInput.value;
+                }
+              }
+
+              // Load initial content
+              loadContentIntoQuill();
+
+              // Only update hidden input on text change (no Livewire sync during typing)
+              productDescriptionQuill.on('text-change', function() {
+                const content = productDescriptionQuill.root.innerHTML;
+                document.getElementById('description-input').value = content;
+                
+                // Hide validation error immediately when typing
+                const errorElement = document.querySelector('span.text-red-500');
+                if (errorElement && errorElement.textContent.includes('description field is required')) {
+                  errorElement.style.display = 'none';
+                }
+              });
+
+              // Listen for Livewire updates to reload content in edit mode
+              Livewire.on('productLoaded', () => {
+                setTimeout(loadContentIntoQuill, 100);
+              });
+            }
+          }, 100);
+        });
+
+        // Cleanup when modal closes
+        Livewire.on('closeModal', () => {
+          if (productDescriptionQuill) {
+            productDescriptionQuill = null;
+          }
+        });
+      });
+
+      // Function to sync content before form submission
+      function syncProductDescriptionContent() {
+        if (productDescriptionQuill) {
+          const content = productDescriptionQuill.root.innerHTML;
+          document.getElementById('description-input').value = content;
+          @this.set('description', content);
+        }
+      }
+    </script>
 </div>
