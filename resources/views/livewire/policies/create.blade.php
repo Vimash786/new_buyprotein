@@ -5,6 +5,7 @@ use Livewire\Volt\Component;
 
 new class extends Component
 {
+    public $policyId = null;
     public $type = '';
     public $title = '';
     public $content = '';
@@ -12,14 +13,47 @@ new class extends Component
     public $meta_title = '';
     public $meta_description = '';
 
-    protected $rules = [
-        'type' => 'required|in:about-us,terms-conditions,shipping-policy,privacy-policy,return-policy|unique:policies,type',
-        'title' => 'required|string|max:255',
-        'content' => 'required|string',
-        'is_active' => 'boolean',
-        'meta_title' => 'nullable|string|max:255',
-        'meta_description' => 'nullable|string|max:500',
-    ];
+    public function mount($id = null, Policy $policy = null)
+    {
+        // Handle both route patterns: /policies/create and /policies/{policy}/edit
+        if ($policy && $policy->exists) {
+            $this->policyId = $policy->id;
+            $this->type = $policy->type;
+            $this->title = $policy->title;
+            $this->content = $policy->content;
+            $this->is_active = $policy->is_active;
+            $this->meta_title = $policy->meta_title;
+            $this->meta_description = $policy->meta_description;
+        } elseif ($id) {
+            $this->policyId = $id;
+            $policy = Policy::findOrFail($id);
+            
+            $this->type = $policy->type;
+            $this->title = $policy->title;
+            $this->content = $policy->content;
+            $this->is_active = $policy->is_active;
+            $this->meta_title = $policy->meta_title;
+            $this->meta_description = $policy->meta_description;
+        }
+    }
+
+    protected function rules()
+    {
+        $rules = [
+            'title' => 'required|string|max:255',
+            'content' => 'required|string',
+            'is_active' => 'boolean',
+            'meta_title' => 'nullable|string|max:255',
+            'meta_description' => 'nullable|string|max:500',
+        ];
+
+        // Only validate type when creating new policy
+        if (!$this->policyId) {
+            $rules['type'] = 'required|in:about-us,terms-conditions,shipping-policy,privacy-policy,return-policy|unique:policies,type';
+        }
+
+        return $rules;
+    }
 
     protected $messages = [
         'type.unique' => 'A policy of this type already exists. Please edit the existing policy instead.',
@@ -29,17 +63,28 @@ new class extends Component
     {
         $this->validate();
 
-        Policy::create([
-            'type' => $this->type,
+        $data = [
             'title' => $this->title,
             'content' => $this->content,
             'is_active' => $this->is_active,
             'meta_title' => $this->meta_title,
             'meta_description' => $this->meta_description,
             'updated_by' => auth()->id(),
-        ]);
+        ];
 
-        session()->flash('message', 'Policy created successfully!');
+        if ($this->policyId) {
+            // Update existing policy (don't update type)
+            $policy = Policy::findOrFail($this->policyId);
+            $policy->update($data);
+            $message = 'Policy updated successfully!';
+        } else {
+            // Create new policy (include type)
+            $data['type'] = $this->type;
+            Policy::create($data);
+            $message = 'Policy created successfully!';
+        }
+
+        session()->flash('message', $message);
         
         return redirect()->route('policies.manage');
     }
@@ -53,6 +98,8 @@ new class extends Component
     {
         return [
             'policyTypes' => Policy::TYPES,
+            'isEditing' => $this->policyId !== null,
+            'currentPolicy' => $this->policyId ? Policy::find($this->policyId) : null,
         ];
     }
 }; ?>
@@ -73,9 +120,13 @@ new class extends Component
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                     </svg>
                 </a>
-                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Create New Policy</h1>
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
+                    {{ $isEditing ? 'Edit Policy' : 'Create New Policy' }}
+                </h1>
             </div>
-            <p class="text-sm text-gray-600 dark:text-gray-300">Create a new policy page for your website</p>
+            <p class="text-sm text-gray-600 dark:text-gray-300">
+                {{ $isEditing ? 'Update the policy information below' : 'Create a new policy page for your website' }}
+            </p>
         </div>
 
         <!-- Flash Messages -->
@@ -94,15 +145,22 @@ new class extends Component
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Policy Type <span class="text-red-500">*</span>
                     </label>
-                    <select 
-                        wire:model="type"
-                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-                    >
-                        <option value="">Select policy type</option>
-                        @foreach($policyTypes as $value => $label)
-                            <option value="{{ $value }}">{{ $label }}</option>
-                        @endforeach
-                    </select>
+                    @if($isEditing)
+                        <div class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-zinc-700 text-gray-900 dark:text-white">
+                            {{ $currentPolicy ? ($policyTypes[$currentPolicy->type] ?? $currentPolicy->type) : $type }}
+                        </div>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Policy type cannot be changed after creation</p>
+                    @else
+                        <select 
+                            wire:model="type"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
+                        >
+                            <option value="">Select policy type</option>
+                            @foreach($policyTypes as $value => $label)
+                                <option value="{{ $value }}">{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    @endif
                     @error('type') <span class="text-red-500 text-sm mt-1">{{ $message }}</span> @enderror
                 </div>
 
@@ -135,7 +193,7 @@ new class extends Component
                     
                     
                     <!-- Hidden input for Livewire -->
-                    <input type="hidden" wire:model="content" id="content-input">
+                    <input type="hidden" wire:model="content" id="content-input" value="{{ $content }}">
                     
                     @error('content') <span class="text-red-500 text-sm mt-1 block">{{ $message }}</span> @enderror
                     <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Use the toolbar above to format your content</p>
@@ -187,6 +245,18 @@ new class extends Component
                     @error('is_active') <span class="text-red-500 text-sm mt-1">{{ $message }}</span> @enderror
                 </div>
 
+                <!-- Last Updated Info (Edit Mode Only) -->
+                @if($isEditing && $currentPolicy)
+                    <div class="bg-gray-50 dark:bg-zinc-800 rounded-lg p-4">
+                        <div class="text-sm text-gray-600 dark:text-gray-400">
+                            <div>Last updated: {{ $currentPolicy->updated_at->format('M d, Y H:i') }}</div>
+                            @if($currentPolicy->updatedBy)
+                                <div>Updated by: {{ $currentPolicy->updatedBy->name }}</div>
+                            @endif
+                        </div>
+                    </div>
+                @endif
+
                 <!-- Buttons -->
                 <div class="flex gap-3 pt-6 border-t border-gray-200 dark:border-gray-700">
                     <button 
@@ -194,7 +264,7 @@ new class extends Component
                         onclick="syncQuillContent()"
                         class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium"
                     >
-                        Create Policy
+                        {{ $isEditing ? 'Update Policy' : 'Create Policy' }}
                     </button>
                     <button 
                         type="button"
@@ -220,6 +290,22 @@ new class extends Component
       theme: 'snow'
     });
 
+    // Function to load content into Quill
+    function loadContentIntoQuill() {
+      const hiddenInput = document.getElementById('content-input');
+      if (hiddenInput && hiddenInput.value && hiddenInput.value.trim() !== '') {
+        quill.root.innerHTML = hiddenInput.value;
+      }
+    }
+
+    // Load initial content
+    loadContentIntoQuill();
+
+    // Listen for Livewire updates
+    document.addEventListener('livewire:init', function () {
+      setTimeout(loadContentIntoQuill, 200);
+    });
+
     // Only update hidden input on text change (no Livewire sync during typing)
     quill.on('text-change', function() {
       const content = quill.root.innerHTML;
@@ -231,12 +317,6 @@ new class extends Component
         errorElement.style.display = 'none';
       }
     });
-
-    // Set initial content if exists
-    const initialContent = @this.get('content');
-    if (initialContent) {
-      quill.root.innerHTML = initialContent;
-    }
   });
 
   // Function to sync content before form submission
