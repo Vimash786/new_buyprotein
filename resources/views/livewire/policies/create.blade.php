@@ -57,6 +57,9 @@ new class extends Component
     }
 }; ?>
 
+
+
+
 <div class="min-h-screen bg-gray-50 dark:bg-zinc-800 py-8">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Header -->
@@ -122,29 +125,20 @@ new class extends Component
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Content <span class="text-red-500">*</span>
                     </label>
-                    <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet" />
 
-                    <!-- Create the editor container -->
-                    <div id="editor">
-                    </div>
+                    <div class="mb-4">
+                        <div id="editor" class="bg-white dark:bg-zinc-800 rounded-lg shadow p-4">
+                            
+                        </div>
+                    </div>  
 
-                    <!-- Include the Quill library -->
-                    <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
-
-                    <!-- Initialize Quill editor -->
-                    <script>
-                    const quill = new Quill('#editor', {
-                        theme: 'snow'
-                    });
-                    </script>
-                    <textarea 
-                        wire:model="content"
-                        rows="15"
-                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-                        placeholder="Enter policy content (HTML supported)"
-                    ></textarea>
+                    
+                    
+                    <!-- Hidden input for Livewire -->
+                    <input type="hidden" wire:model="content" id="content-input">
+                    
                     @error('content') <span class="text-red-500 text-sm mt-1 block">{{ $message }}</span> @enderror
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">You can use HTML tags for formatting</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Use the toolbar above to format your content</p>
                 </div>
 
                 <!-- SEO Section -->
@@ -197,6 +191,7 @@ new class extends Component
                 <div class="flex gap-3 pt-6 border-t border-gray-200 dark:border-gray-700">
                     <button 
                         type="submit"
+                        onclick="syncQuillContent()"
                         class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium"
                     >
                         Create Policy
@@ -213,3 +208,43 @@ new class extends Component
         </div>
     </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
+
+<!-- Initialize Quill editor -->
+<script>
+  let quill;
+  
+  document.addEventListener('DOMContentLoaded', function() {
+    quill = new Quill('#editor', {
+      theme: 'snow'
+    });
+
+    // Only update hidden input on text change (no Livewire sync during typing)
+    quill.on('text-change', function() {
+      const content = quill.root.innerHTML;
+      document.getElementById('content-input').value = content;
+      
+      // Hide validation error immediately when typing
+      const errorElement = document.querySelector('.text-red-500');
+      if (errorElement && errorElement.textContent.includes('content field is required')) {
+        errorElement.style.display = 'none';
+      }
+    });
+
+    // Set initial content if exists
+    const initialContent = @this.get('content');
+    if (initialContent) {
+      quill.root.innerHTML = initialContent;
+    }
+  });
+
+  // Function to sync content before form submission
+  function syncQuillContent() {
+    if (quill) {
+      const content = quill.root.innerHTML;
+      document.getElementById('content-input').value = content;
+      @this.set('content', content);
+    }
+  }
+</script>
