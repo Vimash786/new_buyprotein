@@ -51,6 +51,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('coupons', \App\Livewire\Coupons\ManageCoupons::class)->name('coupons.manage');
     Volt::route('payouts', 'payouts.manage')->name('payouts.sellers');
     Volt::route('transactions', 'transactions.manage')->name('transactions.manage');
+    
+    // Policy Management Routes
+    Volt::route('policies', 'policies.manage')->name('policies.manage');
+    Volt::route('policies/create', 'policies.create')->name('policies.create');
+    Volt::route('policies/{policy}', 'policies.show')->name('policies.show');
+    Volt::route('policies/{policy}/edit', 'policies.edit')->name('policies.edit');
 
 
     Route::get('/user-account', [DashboardController::class, 'userAccount'])->name('user.account');
