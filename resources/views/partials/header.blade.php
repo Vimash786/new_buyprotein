@@ -38,7 +38,7 @@
                                     $catData = Category::limit(10)->get();
                                 @endphp
                                 <ul class="category-sub-menu" id="category-active-four">
-                                    @foreach($catData as $cat)
+                                    @foreach ($catData as $cat)
                                         <li>
                                             <a href="#" class="menu-item">
                                                 <span>{{ $cat->name }}</span>
@@ -48,8 +48,7 @@
                                 </ul>
                             </div>
                             <form action="#" class="search-header">
-                                <input type="text" placeholder="Search for products, categories or brands"
-                                    required>
+                                <input type="text" placeholder="Search for products, categories or brands" required>
                                 <a href="#" class="rts-btn btn-primary radious-sm with-icon">
                                     <div class="btn-text">
                                         Search
@@ -212,129 +211,25 @@
                                         <a class="nav-link" href="{{ route('home') }}">Home</a>
                                     </li>
                                     <li class="parent with-megamenu">
-                                        <a href="#">Shop</a>
-                                        <div class="rts-megamenu">
-                                            <div class="wrapper">
-                                                <div class="row align-items-center">
-                                                    <div class="col-lg-8">
-                                                        <div class="megamenu-item-wrapper">
-                                                            <!-- single item areas start -->
-                                                            <div class="single-megamenu-wrapper">
-                                                                <p class="title">Shop Layout</p>
-                                                                <ul>
-                                                                    <li><a href="shop-grid-sidebar.html">Shop Grid
-                                                                            Sidebar</a></li>
-                                                                    <li><a href="shop-list-sidebar.html">Shop list
-                                                                            Sidebar</a></li>
-                                                                    <li><a href="shop-grid-top-filter.html">Shop Top
-                                                                            Filter Grid</a></li>
-                                                                    <li><a href="shop-list-top-filter.html">Shop Top
-                                                                            Filter List</a></li>
-                                                                </ul>
-                                                            </div>
-                                                            <!-- single item areas end -->
-                                                            <!-- single item areas start -->
-                                                            <div class="single-megamenu-wrapper">
-                                                                <p class="title">Shop Details</p>
-                                                                <ul>
-                                                                    <li><a class="sub-b"
-                                                                            href="shop-details.html">Shop Details</a>
-                                                                    </li>
-                                                                    <li><a class="sub-b"
-                                                                            href="shop-details-2.html">Shop Details
-                                                                            V2</a></li>
-                                                                    <li><a class="sub-b"
-                                                                            href="shop-details-right-sidebar.html">Shop
-                                                                            Details V3</a></li>
-                                                                    <li><a class="sub-b"
-                                                                            href="shop-details-4.html">Shop Details
-                                                                            V4</a></li>
-                                                                </ul>
-                                                            </div>
-                                                            <!-- single item areas end -->
-                                                            <!-- single item areas start -->
-                                                            <div class="single-megamenu-wrapper">
-                                                                <p class="title">Product Feature</p>
-                                                                <ul>
-                                                                    <li><a class="sub-b"
-                                                                            href="shop-details-variable.html">Variable
-                                                                            product</a></li>
-                                                                    <li><a class="sub-b"
-                                                                            href="shop-details-affiliats.html">Affiliate
-                                                                            product</a></li>
-                                                                    <li><a class="sub-b"
-                                                                            href="shop-details-group.html">Shop Details
-                                                                            Group</a></li>
-                                                                    <li><a class="sub-b"
-                                                                            href="shop-compare.html">Shop Compare</a>
-                                                                    </li>
-                                                                </ul>
-                                                            </div>
-                                                            <!-- single item areas end -->
-                                                            <!-- single item areas start -->
-                                                            <div class="single-megamenu-wrapper">
-                                                                <p class="title">Shop Others</p>
-                                                                <ul>
-                                                                    <li><a class="sub-b" href="cart.html">Cart</a>
-                                                                    </li>
-                                                                    <li><a class="sub-b"
-                                                                            href="checkout.html">Checkout</a></li>
-                                                                    <li><a class="sub-b" href="trackorder.html">Track
-                                                                            Order</a></li>
-                                                                </ul>
-                                                            </div>
-                                                            <!-- single item areas end -->
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-lg-4">
-                                                        <a href="shop-grid-sidebar.html"
-                                                            class="feature-add-megamenu-area">
-                                                            <img src="{{ asset('assets/images/feature/05.jpg') }}"
-                                                                alt="feature_product">
-                                                        </a>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
+                                        <a href="{{ route('shop') }}">Shop</a>
                                     </li>
                                     <li class="parent has-dropdown">
-                                        <a class="nav-link" href="#">Vendors</a>
-                                        <ul class="submenu">
-                                            <li><a class="sub-b" href="vendor-list.html">Vendor List</a></li>
-                                            <li><a class="sub-b" href="vendor-grid.html">Vendor Grid</a></li>
-                                            <li><a class="sub-b" href="vendor-details.html">Vendor Details</a></li>
-                                        </ul>
+                                        <a class="nav-link" href="{{ route('user.blogs') }}">Blog</a>
                                     </li>
                                     <li class="parent has-dropdown">
-                                        <a class="nav-link" href="#">Pages</a>
-                                        <ul class="submenu">
-                                            <li><a class="sub-b" href="about.html">About</a></li>
-                                            <li><a class="sub-b" href="store.html">Store</a></li>
-                                            <li><a class="sub-b" href="faq.html">Faq's</a></li>
-                                            <li><a class="sub-b" href="invoice.html">Invoice</a></li>
-                                            <li><a class="sub-b" href="contact.html">Contact</a></li>
-                                            <li><a class="sub-b" href="register.html">Register</a></li>
-                                            <li><a class="sub-b" href="login.html">Login</a></li>
-                                            <li><a class="sub-b" href="privacy-policy.html">Privacy Policy</a></li>
-                                            <li><a class="sub-b" href="cookies-policy.html">Cookies Policy</a></li>
-                                            <li><a class="sub-b" href="terms-condition.html">Terms & Condition</a>
-                                            </li>
-                                            <li><a class="sub-b" href="404.html">Error</a></li>
-                                        </ul>
-                                    </li>
-                                    <li class="parent has-dropdown">
-                                        <a class="nav-link" href="#">Blog</a>
-                                        <ul class="submenu">
-                                            <li><a class="sub-b" href="blog.html">Blog</a></li>
-                                            <li><a class="sub-b" href="blog-list-left-sidebar.html">Blog List Right
-                                                    Sidebar</a></li>
-                                            <li><a class="sub-b" href="blog-list-right-sidebar.html">Blog List Left
-                                                    Sidebar</a></li>
-                                            <li><a class="sub-b" href="blog-details.html">Blog Details</a></li>
-                                        </ul>
+                                        <a class="nav-link" href="{{ route('term.condition') }}">Terms &
+                                            Condition</a>
                                     </li>
                                     <li class="parent"><a href="{{ route('about.us') }}">About</a></li>
                                     <li class="parent"><a href="{{ route('contact') }}">Contact</a></li>
+                                    <li class="parent has-dropdown">
+                                        <a class="nav-link" href="{{ route('privacy.policy') }}">Policies</a>
+                                        <ul class="submenu">
+                                            <li><a class="sub-b" href="{{ route('privacy.policy') }}">Privacy Policy</a></li>
+                                            <li><a class="sub-b" href="{{ route('shipping.policy') }}">Shipping Policy</a></li>
+                                            <li><a class="sub-b" href="{{ route('return.policy') }}">Return Policy</a></li>
+                                        </ul>
+                                    </li>
                                 </ul>
                             </nav>
                         </div>
@@ -566,6 +461,7 @@
 <!-- rts header area start -->
 <!-- rts header area end -->
 <!-- rts header area end -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <script>
     $(document).on('click', '.delete-cart-item', function(e) {

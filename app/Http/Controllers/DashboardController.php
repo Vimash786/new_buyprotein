@@ -5,20 +5,24 @@ namespace App\Http\Controllers;
 use App\Models\Banner;
 use App\Models\BillingDetail;
 use App\Models\Blog;
+use App\Models\BlogComment;
 use App\Models\Cart;
 use App\Models\Category;
+use App\Models\Contact;
 use App\Models\orders;
 use App\Models\products;
 use App\Models\ProductVariantCombination;
 use App\Models\ProductVariantOption;
 use App\Models\Review;
 use App\Models\Sellers;
+use App\Models\User;
 use App\Models\Wishlist;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 
 class DashboardController extends Controller
@@ -98,12 +102,51 @@ class DashboardController extends Controller
     public function userAccount()
     {
         if (Auth::user() != null) {
-            $orders = orders::where('user_id', Auth::user()->id)->get();
+            $orders = orders::with(['orderSellerProducts', 'billingDetail', 'billingDetail.shippingAddress'])->where('user_id', Auth::user()->id)->get();
 
             return view('shop.user-account', compact('orders'));
         } else {
             return redirect()->route('login');
         }
+    }
+
+    public function updateUserDetails(Request $request)
+    {
+        $userId = Auth::user()->id;
+
+        $user = User::find($userId);
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255',
+        ]);
+
+        $user->name = $request->name;
+        $user->email = $request->email;
+
+        if ($request->filled('current_password') && $request->filled('new_password') && $request->filled('confirm_new_password')) {
+            if (!Hash::check($request->current_password, $user->password)) {
+                return back()->withErrors([
+                    'current_password' => 'Current password is incorrect.',
+                ])->withInput();
+            }
+
+            if ($request->new_password !== $request->confirm_new_password) {
+                return back()->withErrors([
+                    'confirm_new_password' => 'New password and confirmation do not match.',
+                ])->withInput();
+            }
+
+            $request->validate([
+                'new_password' => 'required|string|min:8',
+            ]);
+
+            $user->password = Hash::make($request->new_password);
+        }
+
+        $user->save();
+
+        return back()->with('success', 'Account details updated successfully.');
     }
 
     public function addToCart(Request $request)
@@ -306,13 +349,13 @@ class DashboardController extends Controller
     {
         $cartData = Cart::with('product')->where('user_id', Auth::user()->id)->get();
         $order = orders::where('user_id', Auth::user()->id)->orderBy('created_at', 'desc')->first();
-    
+
         $billingAddress = [];
         if ($order) {
             $orderId = $order->id;
             $billingAddress = BillingDetail::where('order_id', $orderId)->get();
         }
-        
+
         return view('shop.checkout', compact('cartData', 'billingAddress'));
     }
 
@@ -350,8 +393,16 @@ class DashboardController extends Controller
 
     public function contactSubmit(Request $request)
     {
-        dd($request->all());
-        return redirect()->back()->with('success', 'Thank you for Ansking an question');
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email',
+            'subject' => 'nullable|string|max:255',
+            'message' => 'required|string',
+        ]);
+
+        Contact::create($request->only('name', 'email', 'subject', 'message'));
+
+        return redirect()->back()->with('success', 'Your message has been sent successfully!');
     }
 
     public function bulkOrder(Request $request)
@@ -396,9 +447,45 @@ class DashboardController extends Controller
         return redirect()->back()->with('Product Review is submitted successfully!');
     }
 
-    public function blogs() {
+    public function blogs()
+    {
         $blogs = Blog::paginate(8);
 
         return view('blogs.index', compact('blogs'));
+    }
+
+    public function blogDetails($id)
+    {
+        try {
+            $blogId = Crypt::decrypt($id);
+            $blog = Blog::find($blogId);
+            $blogComments = BlogComment::with('user')->get();
+
+            return view('blogs.details', compact('blog', 'blogComments'));
+        } catch (Exception $e) {
+            return redirect()->back();
+        }
+    }
+
+    public function blogComment(Request $request, $id)
+    {
+        $validator = Validator::make(
+            $request->all(),
+            [
+                'message' => 'required|string',
+            ]
+        );
+
+        if ($validator->fails()) {
+            return back()->withErrors($validator)->withInput();
+        }
+
+        BlogComment::create([
+            'blog_id' => $id,
+            'user_id' => Auth::user()->id,
+            'content' => $request->message,
+        ]);
+
+        return redirect()->back()->with('success', 'Review submitted successfully!');
     }
 }

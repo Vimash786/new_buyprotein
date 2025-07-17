@@ -57,8 +57,8 @@ class orders extends Model
     public function sellers()
     {
         return $this->belongsToMany(Sellers::class, 'order_seller_products', 'order_id', 'seller_id')
-                    ->withPivot(['product_id', 'quantity', 'unit_price', 'total_amount', 'status', 'notes'])
-                    ->withTimestamps();
+            ->withPivot(['product_id', 'quantity', 'unit_price', 'total_amount', 'status', 'notes'])
+            ->withTimestamps();
     }
 
     /**
@@ -67,8 +67,8 @@ class orders extends Model
     public function products()
     {
         return $this->belongsToMany(products::class, 'order_seller_products', 'order_id', 'product_id')
-                    ->withPivot(['seller_id', 'quantity', 'unit_price', 'total_amount', 'status', 'notes'])
-                    ->withTimestamps();
+            ->withPivot(['seller_id', 'quantity', 'unit_price', 'total_amount', 'status', 'notes'])
+            ->withTimestamps();
     }
 
     /**
@@ -85,7 +85,7 @@ class orders extends Model
     public function getSellerTotal($sellerId)
     {
         return $this->orderSellerProducts()
-                    ->where('seller_id', $sellerId)
-                    ->sum('total_amount');
+            ->where('seller_id', $sellerId)
+            ->sum('total_amount');
     }
 }

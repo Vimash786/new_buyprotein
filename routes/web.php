@@ -20,6 +20,8 @@ Route::get('/return-policy', [DashboardController::class, 'returnPolicy'])->name
 Route::get('/contact', [DashboardController::class, 'contact'])->name('contact');
 Route::get('/contact-submit', [DashboardController::class, 'contactSubmit'])->name('contact.submit');
 Route::get('/our-blogs', [DashboardController::class, 'blogs'])->name('user.blogs');
+Route::get('/our-blogs/{id}', [DashboardController::class, 'blogDetails'])->name('blog.details');
+Route::post('/submit-commet/{id}', [DashboardController::class, 'blogComment'])->name('blog.comment');
 
 // Public Blog Routes
 Volt::route('/blog', 'blogs.index')->name('blog.index');
@@ -52,8 +54,8 @@ Route::middleware(['auth'])->group(function () {
     Volt::route('blogs', 'blogs.manage')->name('blogs.manage');
     Route::get('coupons', \App\Livewire\Coupons\ManageCoupons::class)->name('coupons.manage');
 
-
     Route::get('/user-account', [DashboardController::class, 'userAccount'])->name('user.account');
+    Route::post('/update-user-details', [DashboardController::class, 'updateUserDetails'])->name('update.user.details');
     Route::get('/cart', [DashboardController::class, 'cart'])->name('user.cart');
     Route::post('/add-to-cart', [DashboardController::class, 'addToCart'])->name('cart.add');
     Route::delete('/remove-cart/{id}', [DashboardController::class, 'removeCart'])->name('cart.remove');
