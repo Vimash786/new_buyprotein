@@ -51,6 +51,7 @@ Route::middleware(['auth'])->group(function () {
     Volt::route('banners', 'banners.manage')->name('banners.manage');
     Volt::route('blogs', 'blogs.manage')->name('blogs.manage');
     Route::get('coupons', \App\Livewire\Coupons\ManageCoupons::class)->name('coupons.manage');
+    Route::get('commission', \App\Livewire\Settings\GlobalCommissionSettings::class)->name('settings.commission');
     Volt::route('payouts', 'payouts.manage')->name('payouts.sellers');
     Volt::route('transactions', 'transactions.manage')->name('transactions.manage');
     

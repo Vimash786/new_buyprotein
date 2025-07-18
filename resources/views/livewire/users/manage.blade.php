@@ -84,6 +84,9 @@ new class extends Component
         $this->showModal = true;
         $this->editMode = false;
         $this->resetForm();
+        
+        // Set default commission from global commission (only for new sellers)
+        $this->commission = \App\Models\GlobalCommission::getActiveCommissionRate();
     }
 
     public function closeModal()

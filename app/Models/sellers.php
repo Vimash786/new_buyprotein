@@ -37,6 +37,13 @@ class Sellers extends Model
      */
     protected static function booted()
     {
+        static::creating(function ($seller) {
+            // Set default commission from global commission if not set
+            if (empty($seller->commission)) {
+                $seller->commission = GlobalCommission::getActiveCommissionRate();
+            }
+        });
+        
         static::updated(function ($seller) {
             // When a seller is approved, set their next payout date if not already set
             if ($seller->isDirty('status') && $seller->status === 'approved' && !$seller->next_payout_date) {
