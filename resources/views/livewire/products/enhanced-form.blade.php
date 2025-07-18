@@ -292,7 +292,7 @@
             <div class="md:col-span-2">
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Thumbnail Image
-                    <span class="text-xs text-gray-500">(Size: 200KB - 400KB)</span>
+                    <span class="text-xs text-gray-500">(Maximum Size Allow - 400kb each)</span>
                 </label>
                 <input 
                     type="file" 
@@ -312,7 +312,7 @@
             <div class="md:col-span-2">
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Additional Images (maximum 3 images)
-                    <span class="text-xs text-gray-500">(Size: 200KB - 400KB each)</span>
+                    <span class="text-xs text-gray-500">(Maximum Size Allow - 400kb each)</span>
                 </label>
                 <input 
                     type="file" 
@@ -599,7 +599,7 @@
                                             <div class="flex items-center justify-between mb-2">
                                                 <label class="text-xs font-medium text-gray-700 dark:text-gray-300">
                                                     Variant Thumbnail Image
-                                                    <span class="text-xs text-gray-500">(Size: 200KB - 400KB)</span>
+                                                    <span class="text-xs text-gray-500">(Maximum Size Allow - 400kb each)</span>
                                                 </label>
                                             </div>
                                             <input 
@@ -649,7 +649,7 @@
                                             <div class="flex items-center justify-between mb-2">
                                                 <label class="text-xs font-medium text-gray-700 dark:text-gray-300">
                                                     Variant Images (maximum 3 images)
-                                                    <span class="text-xs text-gray-500">(Size: 200KB - 400KB each)</span>
+                                                    <span class="text-xs text-gray-500">(Maximum Size Allow - 400kb each)</span>
                                                 </label>
                                             </div>
                                             <input 

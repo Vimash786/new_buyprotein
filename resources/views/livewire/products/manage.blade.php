@@ -103,12 +103,12 @@ new class extends Component
         'status' => 'required|in:active,inactive',
         'section_category' => 'required|in:everyday_essential,popular_pick,exclusive_deal',
         'has_variants' => 'boolean',
-        'thumbnail_image' => 'nullable|image|min:200|max:400', // 200KB to 400KB
+        'thumbnail_image' => 'nullable|image|max:400', // Maximum 400KB
         'product_images' => 'nullable|array|max:3', // Maximum 3 images
-        'product_images.*' => 'nullable|image|min:200|max:400', // 200KB to 400KB
+        'product_images.*' => 'nullable|image|max:400', // Maximum 400KB
         'variant_images.*' => 'nullable|array|max:3', // Maximum 3 images per variant
-        'variant_images.*.*' => 'nullable|image|min:200|max:400', // 200KB to 400KB
-        'variant_thumbnails.*' => 'nullable|image|min:200|max:400', // 200KB to 400KB
+        'variant_images.*.*' => 'nullable|image|max:400', // Maximum 400KB
+        'variant_thumbnails.*' => 'nullable|image|max:400', // Maximum 400KB
     ];
 
     public function with()
@@ -178,7 +178,7 @@ new class extends Component
             'variantProducts' => $variantProducts,
             'isSeller' => $isSeller,
             'seller' => Sellers::where('user_id', $user->id)->first(),
-            'currentSeller' => $seller,
+            'currentSeller' => $seller, 
         ];
     }
 
@@ -1269,17 +1269,16 @@ new class extends Component
     }
 
     /**
-     * Validate image file size (200KB to 400KB).
+     * Validate image file size (maximum 400KB).
      */
     private function validateImageSize($file)
     {
         if (!$file) return false;
         
-        $minSize = 200 * 1024; // 200KB in bytes
         $maxSize = 400 * 1024; // 400KB in bytes
         $fileSize = $file->getSize();
         
-        return $fileSize >= $minSize && $fileSize <= $maxSize;
+        return $fileSize <= $maxSize;
     }
 
     /**
@@ -1288,7 +1287,7 @@ new class extends Component
     private function storeImageWithValidation($file, $path)
     {
         if (!$this->validateImageSize($file)) {
-            throw new \Exception('Image size must be between 200KB and 400KB. Current size: ' . $this->formatFileSize($file->getSize()));
+            throw new \Exception('Image size must be maximum 400KB. Current size: ' . $this->formatFileSize($file->getSize()));
         }
         
         return $file->store($path, 'public');
