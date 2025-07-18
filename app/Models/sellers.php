@@ -23,12 +23,28 @@ class Sellers extends Model
         'brand_logo',
         'brand_certificate',
         'status',
+        'next_payout_date',
     ];
 
     protected $casts = [
         'product_category' => 'array',
         'status' => 'string',
+        'next_payout_date' => 'datetime',
     ];
+
+    /**
+     * The "booted" method of the model.
+     */
+    protected static function booted()
+    {
+        static::updated(function ($seller) {
+            // When a seller is approved, set their next payout date if not already set
+            if ($seller->isDirty('status') && $seller->status === 'approved' && !$seller->next_payout_date) {
+                $seller->next_payout_date = now()->addDays(15);
+                $seller->saveQuietly(); // Save without triggering events again
+            }
+        });
+    }
 
     /**
      * Get the user that owns the seller profile.

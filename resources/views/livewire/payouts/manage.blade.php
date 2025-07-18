@@ -88,6 +88,10 @@ new class extends Component
         return [
             'payouts' => $query->latest()->paginate(15),
             'sellers' => Sellers::where('status', 'approved')->get(),
+            'sellersWithNextPayout' => Sellers::where('status', 'approved')
+                ->whereNotNull('next_payout_date')
+                ->orderBy('next_payout_date', 'asc')
+                ->get(),
             'stats' => $payoutService->getPayoutStats(),
         ];
     }
@@ -255,7 +259,10 @@ new class extends Component
             <div class="flex justify-between items-center">
                 <div>
                     <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Seller Payouts</h1>
-                    <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">Manage seller payouts and commission payments</p>
+                    <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                        Automatic payouts are generated every 15 days for each seller. 
+                        Manual generation is available for custom periods.
+                    </p>
                 </div>
                 <div class="flex space-x-3">
                     <button 
@@ -274,11 +281,99 @@ new class extends Component
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                         </svg>
-                        Generate Payouts
+                        Manual Generation
                     </button>
                 </div>
             </div>
         </div>
+
+        <!-- Auto-Generation Info Banner -->
+        <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-8">
+            <div class="flex items-start">
+                <div class="flex-shrink-0">
+                    <svg class="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-blue-800 dark:text-blue-300">
+                        Automatic Payout Generation
+                    </h3>
+                    <div class="mt-2 text-sm text-blue-700 dark:text-blue-400">
+                        <p>• Payouts are automatically generated every 15 days for each seller</p>
+                        <p>• First payout is scheduled 15 days after seller approval</p>
+                        <p>• System runs daily at 9:00 AM to check for due payouts</p>
+                        <p>• Only periods with sales will generate payouts</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Next Payout Schedule -->
+        @if($sellersWithNextPayout->isNotEmpty())
+            <div class="bg-white dark:bg-zinc-900 rounded-lg shadow mb-8">
+                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Upcoming Automatic Payouts</h3>
+                    <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Next scheduled payout dates for sellers</p>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead class="bg-gray-50 dark:bg-zinc-800">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Seller</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Next Payout Date</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Days Until Due</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white dark:bg-zinc-900 divide-y divide-gray-200 dark:divide-gray-700">
+                            @foreach($sellersWithNextPayout->take(10) as $seller)
+                                @php
+                                    $nextPayoutDate = \Carbon\Carbon::parse($seller->next_payout_date);
+                                    $daysUntilDue = $nextPayoutDate->diffInDays(now(), false);
+                                    $isDue = $daysUntilDue <= 0;
+                                    $isComingSoon = $daysUntilDue > 0 && $daysUntilDue <= 3;
+                                @endphp
+                                <tr class="hover:bg-gray-50 dark:hover:bg-zinc-800">
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $seller->company_name }}</div>
+                                        <div class="text-sm text-gray-500 dark:text-gray-400">#S{{ $seller->id }}</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                        {{ $nextPayoutDate->format('M d, Y') }}
+                                        <div class="text-xs text-gray-500 dark:text-gray-400">{{ $nextPayoutDate->format('h:i A') }}</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                        @if($isDue)
+                                            <span class="text-red-600 dark:text-red-400 font-medium">Due now</span>
+                                        @elseif($isComingSoon)
+                                            <span class="text-yellow-600 dark:text-yellow-400 font-medium">{{ abs($daysUntilDue) }} days</span>
+                                        @else
+                                            <span class="text-gray-600 dark:text-gray-400">{{ abs($daysUntilDue) }} days</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        @if($isDue)
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-300">
+                                                Due
+                                            </span>
+                                        @elseif($isComingSoon)
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-300">
+                                                Soon
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-900/50 text-gray-800 dark:text-gray-300">
+                                                Scheduled
+                                            </span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        @endif
 
         <!-- Stats Cards -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -533,12 +628,18 @@ new class extends Component
             <div class="bg-white dark:bg-zinc-900 rounded-lg max-w-md w-full">
                 <div class="p-6">
                     <div class="flex items-center justify-between mb-6">
-                        <h2 class="text-xl font-bold text-gray-900 dark:text-white">Generate New Payouts</h2>
+                        <h2 class="text-xl font-bold text-gray-900 dark:text-white">Manual Payout Generation</h2>
                         <button wire:click="closeGenerateModal" class="text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-gray-100">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                             </svg>
                         </button>
+                    </div>
+
+                    <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-6">
+                        <p class="text-sm text-yellow-800 dark:text-yellow-300">
+                            <strong>Note:</strong> This is for manual generation only. The system automatically generates payouts every 15 days for each seller.
+                        </p>
                     </div>
 
                     <form wire:submit="generatePayouts" class="space-y-4">

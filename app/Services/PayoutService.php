@@ -57,6 +57,93 @@ class PayoutService
         
         return $generatedPayouts;
     }
+
+    /**
+     * Generate automatic payouts for sellers whose next payout date has passed.
+     */
+    public function generateAutomaticPayouts($force = false)
+    {
+        $now = Carbon::now();
+        $generatedPayouts = [];
+        
+        // Get all approved sellers
+        $sellers = Sellers::where('status', 'approved')->get();
+        
+        foreach ($sellers as $seller) {
+            // Set initial next payout date if not set
+            if (!$seller->next_payout_date) {
+                $seller->next_payout_date = $this->calculateInitialPayoutDate($seller);
+                $seller->save();
+            }
+            
+            // Convert to Carbon instance if it's not already
+            $nextPayoutDate = Carbon::parse($seller->next_payout_date);
+            
+            // Check if payout is due (or force flag is used)
+            if ($force || $now->gte($nextPayoutDate)) {
+                $periodEnd = $nextPayoutDate;
+                $periodStart = $periodEnd->copy()->subDays(15);
+                
+                // Check if payout already exists for this period
+                $existingPayout = Payout::where('seller_id', $seller->id)
+                    ->where('period_start', $periodStart->toDateString())
+                    ->where('period_end', $periodEnd->toDateString())
+                    ->exists();
+                    
+                if ($existingPayout) {
+                    // Update next payout date for next cycle
+                    $seller->next_payout_date = $periodEnd->copy()->addDays(15);
+                    $seller->save();
+                    continue;
+                }
+                
+                $earnings = $seller->calculateEarnings($periodStart, $periodEnd);
+                
+                // Only create payout if there are sales
+                if ($earnings['total_sales'] > 0) {
+                    $payout = Payout::create([
+                        'seller_id' => $seller->id,
+                        'seller_name' => $seller->company_name,
+                        'total_orders' => $earnings['total_orders'],
+                        'total_sales' => $earnings['total_sales'],
+                        'commission_amount' => $earnings['commission_amount'],
+                        'payout_amount' => $earnings['payout_amount'],
+                        'due_date' => $periodEnd->copy()->addDays(5), // Due in 5 days
+                        'payout_date' => $periodEnd->copy()->addDays(15), // Payout date 15 days later
+                        'payment_status' => 'unpaid',
+                        'period_start' => $periodStart,
+                        'period_end' => $periodEnd,
+                        'notes' => 'Auto-generated payout for 15-day period',
+                    ]);
+                    
+                    $generatedPayouts[] = $payout;
+                }
+                
+                // Update next payout date for next cycle
+                $seller->next_payout_date = $periodEnd->copy()->addDays(15);
+                $seller->save();
+            }
+        }
+        
+        return $generatedPayouts;
+    }
+
+    /**
+     * Calculate initial payout date for a seller (15 days from approval/registration).
+     */
+    private function calculateInitialPayoutDate($seller)
+    {
+        // Use the seller's created_at date as the base
+        $baseDate = $seller->created_at;
+        $now = Carbon::now();
+        
+        // Calculate how many 15-day periods have passed since registration
+        $daysSinceRegistration = $baseDate->diffInDays($now);
+        $periodsElapsed = floor($daysSinceRegistration / 15);
+        
+        // Calculate the next payout date
+        return $baseDate->copy()->addDays(($periodsElapsed + 1) * 15);
+    }
     
     /**
      * Calculate next payout date based on seller registration/approval date.
