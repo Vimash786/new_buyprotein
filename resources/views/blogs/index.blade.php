@@ -13,7 +13,7 @@
                 @foreach ($blogs as $blog)
                     <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12 col-12">
                         <div class="single-blog-style-card-border">
-                            <a href="blog-details.html" class="thumbnail">
+                            <a href="{{ route('blog.details', Crypt::encrypt($blog->id)) }}" class="thumbnail">
                                 <img src="{{ asset('storage/' . $blog->featured_image) }}" alt="blog-area">
                             </a>
                             <div class="inner-content-body">
@@ -24,13 +24,13 @@
                                     </div>
                                 </div>
 
-                                <a class="title-main" href="blog-details.html">
+                                <a class="title-main" href="{{ route('blog.details', Crypt::encrypt($blog->id)) }}">
                                     <h3 class="title">
                                         {{ $blog->title }}
                                     </h3>
                                 </a>
                                 <div class="button-area">
-                                    <a href="blog-details.html" class="rts-btn btn-primary radious-sm with-icon">
+                                    <a href="{{ route('blog.details', Crypt::encrypt($blog->id)) }}" class="rts-btn btn-primary radious-sm with-icon">
                                         <div class="btn-text">
                                             Read Details
                                         </div>

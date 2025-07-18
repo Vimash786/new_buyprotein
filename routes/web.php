@@ -20,6 +20,8 @@ Route::get('/return-policy', [DashboardController::class, 'returnPolicy'])->name
 Route::get('/contact', [DashboardController::class, 'contact'])->name('contact');
 Route::get('/contact-submit', [DashboardController::class, 'contactSubmit'])->name('contact.submit');
 Route::get('/our-blogs', [DashboardController::class, 'blogs'])->name('user.blogs');
+Route::get('/our-blogs/{id}', [DashboardController::class, 'blogDetails'])->name('blog.details');
+Route::post('/submit-commet/{id}', [DashboardController::class, 'blogComment'])->name('blog.comment');
 
 
 // Route::get('/', function () {
@@ -55,8 +57,8 @@ Route::middleware(['auth'])->group(function () {
     // Policy Management Routes
     Volt::route('policies', 'policies.manage')->name('policies.manage');
 
-
     Route::get('/user-account', [DashboardController::class, 'userAccount'])->name('user.account');
+    Route::post('/update-user-details', [DashboardController::class, 'updateUserDetails'])->name('update.user.details');
     Route::get('/cart', [DashboardController::class, 'cart'])->name('user.cart');
     Route::post('/add-to-cart', [DashboardController::class, 'addToCart'])->name('cart.add');
     Route::delete('/remove-cart/{id}', [DashboardController::class, 'removeCart'])->name('cart.remove');

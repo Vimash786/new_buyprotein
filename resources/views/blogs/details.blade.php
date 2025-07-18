@@ -1,178 +1,132 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="account-tab-area-start rts-section-gap">
-        <div class="container-2">
+    <div class="rts-navigation-area-breadcrumb">
+        <div class="container">
             <div class="row">
-                <div class="col-lg-3">
-                    <div class="nav accout-dashborard-nav flex-column nav-pills me-3" id="v-pills-tab" role="tablist"
-                        aria-orientation="vertical">
-                        <button class="nav-link active" id="v-pills-home-tab" data-bs-toggle="pill"
-                            data-bs-target="#v-pills-home" type="button" role="tab" aria-controls="v-pills-home"
-                            aria-selected="true"><i class="fa-regular fa-chart-line"></i>Dashboard</button>
-                        <button class="nav-link" id="v-pills-profile-tab" data-bs-toggle="pill"
-                            data-bs-target="#v-pills-profile" type="button" role="tab" aria-controls="v-pills-profile"
-                            aria-selected="false"><i class="fa-regular fa-bag-shopping"></i>Order</button>
-                        <button class="nav-link" id="v-pills-messages-tab" data-bs-toggle="pill"
-                            data-bs-target="#v-pills-messages" type="button" role="tab"
-                            aria-controls="v-pills-messages" aria-selected="false"><i
-                                class="fa-sharp fa-regular fa-tractor"></i> Track Your Order</button>
-                        <button class="nav-link" id="v-pills-settings-tab" data-bs-toggle="pill"
-                            data-bs-target="#v-pills-settings" type="button" role="tab"
-                            aria-controls="v-pills-settings" aria-selected="false"><i
-                                class="fa-sharp fa-regular fa-location-dot"></i>My Address</button>
-                        <button class="nav-link" id="v-pills-settingsa-tab" data-bs-toggle="pill"
-                            data-bs-target="#v-pills-settingsa" type="button" role="tab"
-                            aria-controls="v-pills-settingsa" aria-selected="false"><i class="fa-light fa-user"></i>Account
-                            Details</button>
-                        @auth
-                            <button class="nav-link" id="v-pills-settingsb-tab" data-bs-toggle="pill"
-                                data-bs-target="#v-pills-settingsb" type="button" role="tab"
-                                aria-controls="v-pills-settingsb" aria-selected="false">
-                                <a href="{{ route('logout') }}"
-                                    onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                                    <i class="fa-light fa-right-from-bracket"></i>Log Out
-                                </a>
-                            </button>
-                            <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
-                                @csrf
-                            </form>
-                        @endauth
-                    </div>
-                </div>
-                <div class="col-lg-9 pl--50 pl_md--10 pl_sm--10 pt_md--30 pt_sm--30">
-                    <div class="tab-content" id="v-pills-tabContent">
-                        <div class="tab-pane fade show active" id="v-pills-home" role="tabpanel"
-                            aria-labelledby="v-pills-home-tab" tabindex="0">
-                            <div class="dashboard-account-area">
-                                <h2 class="title">Hello {{ Auth::user()->name }}!</h2>
-                                <p class="disc">
-                                    From your account dashboard you can view your recent orders, manage your shipping and
-                                    billing addresses, and edit your password and account details.
-                                </p>
-                            </div>
-                        </div>
-                        <div class="tab-pane fade" id="v-pills-profile" role="tabpanel"
-                            aria-labelledby="v-pills-profile-tab" tabindex="0">
-                            <div class="order-table-account">
-                                <div class="h2 title">Your Orders</div>
-                                <div class="table-responsive">
-                                    <table class="table">
-                                        <thead>
-                                            <tr>
-                                                <th>Order</th>
-                                                <th>Date</th>
-                                                <th>Status</th>
-                                                <th>Total</th>
-                                                <th>Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach ($orders as $order)
-                                                <tr>
-                                                    <td>#{{ $order->id }}</td>
-                                                    <td>{{ $order->created_at }}</td>
-                                                    <td>{{ $order->status }}</td>
-                                                    <td>₹{{ $order->total_order_amount }} for
-                                                        {{ $order->orderSellerProducts->count() }} item</td>
-                                                    <td><a href="#" class="btn-small d-block">View</a></td>
-                                                </tr>
-                                            @endforeach
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="tab-pane fade" id="v-pills-messages" role="tabpanel"
-                            aria-labelledby="v-pills-messages-tab" tabindex="0">
-                            <div class="tracing-order-account">
-                                <h2 class="title">Orders tracking</h2>
-                                <p>
-                                    To keep up with the status of your order, kindly input your OrderID in the designated
-                                    box below and click the "Track" button. This unique identifier can be found on your
-                                    receipt as well as in the confirmation email that was sent to you.
-                                </p>
-                                <form action="#" class="order-tracking">
-                                    <div class="single-input">
-                                        <label for="order-id">Order Id</label>
-                                        <input type="text" placeholder="Found in your order confirmation email"
-                                            required>
-                                    </div>
-                                    <div class="single-input">
-                                        <label for="order-id">Billing email</label>
-                                        <input type="text" placeholder="Email You use during checkout">
-                                    </div>
-                                    <button class="rts-btn btn-primary">Track</button>
-                                </form>
-                            </div>
-                        </div>
-                        <div class="tab-pane fade" id="v-pills-settings" role="tabpanel"
-                            aria-labelledby="v-pills-settings-tab" tabindex="0">
-
-                            <div class="shipping-address-billing-address-account">
-                                <div class="half">
-                                    <h2 class="title">Billing Address</h2>
-                                    @php
-                                        $lastOrder = $orders->last();
-                                    @endphp
-                                    @if (isset($lastOrder->billingDetail))
-                                        <p class="address">
-                                            {{ $lastOrder->billingDetail->billing_address }} <br>
-                                            {{ $lastOrder->billingDetail->billing_city }}, <br>
-                                            {{ $lastOrder->billingDetail->billing_state }}
-                                            {{ $lastOrder->billingDetail->billing_postal_code }} <br>
-                                            {{ $lastOrder->billingDetail->billing_country }}
-                                        </p>
-                                    @endif
-                                </div>
-                                <div class="half">
-                                    <h2 class="title">Shipping Address</h2>
-                                    @if (isset($lastOrder->billingDetail->shippingAddress))
-                                        <p class="address">
-                                            {{ $lastOrder->billingDetail->shippingAddress->address_line_1 }} <br>
-                                            {{ $lastOrder->billingDetail->shippingAddress->city }}, <br>
-                                            {{ $lastOrder->billingDetail->shippingAddress->state }}
-                                            {{ $lastOrder->billingDetail->shippingAddress->postal_code }} <br>
-                                            {{ $lastOrder->billingDetail->shippingAddress->country }}
-                                        </p>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
-                        <div class="tab-pane fade" id="v-pills-settingsa" role="tabpanel"
-                            aria-labelledby="v-pills-settingsa-tab" tabindex="0">
-                            <form action="{{ route('update.user.details') }}" method="POST"
-                                class="account-details-area">
-                                @csrf
-                                @method('POST')
-                                <h2 class="title">Account Details</h2>
-                                <input type="text" placeholder="Name" name="name"
-                                    value="{{ Auth::user()->name }}" required>
-                                <input type="email" placeholder="Email Address *" name="email"
-                                    value="{{ Auth::user()->email }}" required>
-                                <input type="password" placeholder="Current Password *" name="current_password">
-                                <input type="password" placeholder="New Password *" name="new_password">
-                                <input type="password" placeholder="Confirm Password *" name="confirm_new_password">
-                                @if($errors->any())
-                                <div class="alert alert-danger">
-                                    <ul class="mb-0">
-                                        @foreach ($errors->all() as $error)
-                                            <li>{{ $error }}</li>
-                                        @endforeach
-                                    </ul>
-                                </div>
-                                @endif
-                                <button type="submit" class="rts-btn btn-primary" id="updateUserData">Save
-                                    Change</button>
-                            </form>
-                        </div>
-                        <div class="tab-pane fade" id="v-pills-settingsb" role="tabpanel"
-                            aria-labelledby="v-pills-settingsb-tab" tabindex="0">...</div>
+                <div class="col-lg-12">
+                    <div class="navigator-breadcrumb-wrapper">
+                        <a href="index.html">Home</a>
+                        <i class="fa-regular fa-chevron-right"></i>
+                        <a class="current" href="index.html">Blog Lists With Sidebar</a>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <div class="section-seperator">
+        <div class="container">
+            <hr class="section-seperator">
+        </div>
+    </div>
+
+    <!-- blog sidebar area start -->
+    <div class="blog-sidebar-area rts-section-gap">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 order-lg-1 order-md-2 order-sm-2 order-2">
+                    <div class="blog-details-area-1">
+                        <div class="thumbnail">
+                            <img src="{{ asset('storage/' . $blog->featured_image) }}" alt="">
+                        </div>
+                        <div class="body-content-blog-details">
+                            <div class="top-tag-time">
+                                <div class="single">
+                                    <i class="fa-solid fa-clock"></i>
+                                    <span>{{ \Carbon\Carbon::parse($blog->created_at)->format('d M, Y') }}</span>
+                                </div>
+                            </div>
+                            <h1 class="title">{{ $blog->title }}</h1>
+                            <p class="disc">
+                                {!! $blog->content !!}
+                            </p>
+
+                            <div class="tag-social-share-wrapper-area-wrapper">
+                                <div class="tags-area">
+                                    <span>Tags</span>
+                                    @foreach ($blog->tags as $tag)
+                                        <button>{{ $tag }}</button>
+                                    @endforeach
+                                </div>
+                                <div class="social-icons">
+                                    <span>Social Icon</span>
+                                    <ul>
+                                        <li><a href="#"><i class="fa-brands fa-facebook-f"></i></a></li>
+                                        <li><a href="#"><i class="fa-brands fa-twitter"></i></a></li>
+                                        <li><a href="#"><i class="fa-brands fa-instagram"></i></a></li>
+                                        <li><a href="#"><i class="fa-brands fa-dribbble"></i></a></li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="comment-replay-area-start">
+                                <h3 class="title">{{ $blogComments->count() }} Comments</h3>
+                                @foreach ($blogComments as $comment)
+                                    <div class="single-comment-area">
+                                        <div class="comment-information">
+                                            <div class="top-area">
+                                                <div class="left">
+                                                    <span>{{ \Carbon\Carbon::parse($comment->created_at)->format('d M, Y') }}</span>
+                                                    <h5 class="title">{{ $comment->user->name }}</h5>
+                                                </div>
+                                            </div>
+                                            <p class="disc">
+                                                {{ $comment->content }}
+                                            </p>
+                                        </div>
+                                    </div><br>
+                                    <hr>
+                                @endforeach
+
+                                @if (Auth::user())
+                                    <div class="contact-form-wrapper-1 mt--50">
+                                        <h3 class="title mb--20">Add a Review</h3>
+                                        <form action="{{ route('blog.comment', $blog->id) }}" method="post"
+                                            class="contact-form-1">
+                                            @csrf
+                                            <textarea name="message" placeholder="Write Message Here"></textarea>
+                                            <button class="rts-btn btn-primary mt--20">Submit Now</button>
+                                        </form>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div
+                    class="col-lg-4 pl--60 order-lg-2 order-md-1 order-sm-1 order-1 pl_md--10 pl_sm--10 rts-sticky-column-item">
+                    <div class="blog-sidebar-single-wized with-title">
+                        <h4 class="title">Tags</h4>
+                        <div class="tags-area-blog-short-main">
+                            @foreach ($blog->tags as $tag)
+                                <button class="single-category">{{ $tag }}</button>
+                            @endforeach
+                        </div>
+                    </div>
+                    <div class="blog-sidebar-single-wized with-add bg_image">
+                        <div class="add-are-content">
+                            <span class="pre">Weekend Discount</span>
+                            <h5 class="title">
+                                Discover Real organic <br>
+                                <span>Flavors Vegetable</span>
+                            </h5>
+                            <a href="#" class="shop-now-goshop-btn">
+                                <span class="text">Shop Now</span>
+                                <div class="plus-icon">
+                                    <i class="fa-sharp fa-regular fa-plus"></i>
+                                </div>
+                                <div class="plus-icon">
+                                    <i class="fa-sharp fa-regular fa-plus"></i>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- blog sidebar area ends -->
 
     <div class="rts-shorts-service-area rts-section-gap bg_primary">
         <div class="container">
