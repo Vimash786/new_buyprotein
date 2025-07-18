@@ -25,6 +25,18 @@
                     @endif
                     
                     <!-- Products -->
+                    @php
+                        $user = auth()->user();
+                        $seller = null;
+                        $isApprovedSeller = false;
+                        
+                        if ($user && $user->role === 'Seller') {
+                            $seller = \App\Models\Sellers::where('user_id', $user->id)->first();
+                            $isApprovedSeller = $seller && $seller->status === 'approved';
+                        }
+                    @endphp
+                    
+                    @if($user->role === 'Super' || $isApprovedSeller)
                     <flux:navlist.group expandable :heading="__('Products')" class="grid">
                         <flux:navlist.item icon="cube" :href="route('products.manage')" :current="request()->routeIs('products.manage')" wire:navigate>{{ __('All Products') }}</flux:navlist.item>
                         @if(auth()->user()->role === 'Super')
@@ -32,11 +44,14 @@
                         <flux:navlist.item icon="square-3-stack-3d" :href="route('categories.manage')" :current="request()->routeIs('categories.manage')" wire:navigate>{{ __('Categories') }}</flux:navlist.item>
                         @endif
                     </flux:navlist.group>
+                    @endif
                     
                     <!-- Orders -->
+                    @if($user->role === 'Super' || $isApprovedSeller)
                     <flux:navlist.group expandable :heading="__('Orders')" class="grid">
                         <flux:navlist.item icon="shopping-bag" :href="route('orders.manage')" :current="request()->routeIs('orders.manage')" wire:navigate>{{ __('All Orders') }}</flux:navlist.item>
                     </flux:navlist.group>
+                    @endif
                     
                     @if(auth()->user()->role === 'Super')
                     <!-- Payout & Commission -->

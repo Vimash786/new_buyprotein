@@ -43,9 +43,9 @@ Route::middleware(['auth'])->group(function () {
     // Management Pages
     Volt::route('sellers', 'sellers.manage')->name('sellers.manage');
     Volt::route('sellers/requests', 'sellers.requests')->name('sellers.requests');
-    Volt::route('products', 'products.manage')->name('products.manage');
+    Volt::route('products', 'products.manage')->middleware('seller.approved')->name('products.manage');
      Volt::route('products/requests', 'products.requests')->name('products.requests');
-    Volt::route('orders', 'orders.manage')->name('orders.manage');
+    Volt::route('orders', 'orders.manage')->middleware('seller.approved')->name('orders.manage');
     Volt::route('users', 'users.manage')->name('users.manage');
     Volt::route('categories', 'categories.manage')->name('categories.manage');
     Volt::route('banners', 'banners.manage')->name('banners.manage');

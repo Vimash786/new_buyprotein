@@ -25,24 +25,24 @@ new class extends Component
             // Seller-specific data
             return [
                 'totalSellers' => 1, // Just the current seller
-                'approvedSellers' => $seller->status === 'approved' ? 1 : 0,
-                'pendingSellers' => $seller->status === 'not_approved' ? 1 : 0,
-                'totalProducts' => products::where('seller_id', $seller->id)->count(),
+                'approvedSellers' => $seller && $seller->status === 'approved' ? 1 : 0,
+                'pendingSellers' => $seller && $seller->status === 'not_approved' ? 1 : 0,
+                'totalProducts' => products::where('seller_id', $seller->id ?? 0)->count(),
                 'totalOrders' => OrderSellerProduct::whereIn('product_id', 
-                    products::where('seller_id', $seller->id)->pluck('id')
+                    products::where('seller_id', $seller->id ?? 0)->pluck('id')
                 )->count(),
                 'totalsellers' => OrderSellerProduct::whereIn('product_id', 
-                    products::where('seller_id', $seller->id)->pluck('id')
+                    products::where('seller_id', $seller->id ?? 0)->pluck('id')
                 )->count(),
 
-                'totalSales' => OrderSellerProduct::where('seller_id', $seller->id)->where('status', 'delivered')
+                'totalSales' => OrderSellerProduct::where('seller_id', $seller->id ?? 0)->where('status', 'delivered')
                 ->sum('total_amount'),
 
                 'totalRevenue' => OrderSellerProduct::whereIn('product_id', 
-                    products::where('seller_id', $seller->id)->pluck('id')
+                    products::where('seller_id', $seller->id ?? 0)->pluck('id')
                 )->whereHas('order', function($query) {
                     $query->where('status', 'delivered');
-                })->sum(DB::raw("total_amount * {$seller->commission} / 100")),
+                })->sum(DB::raw("total_amount * " . ($seller->commission ?? 0) . " / 100")),
 
                 'totalUsers' => User::count(), // Keep global count for reference
                 'totalCategories' => Category::count(),
@@ -52,10 +52,11 @@ new class extends Component
                 'totalBlogs' => Blog::count(),
                 'publishedBlogs' => Blog::where('status', 'published')->count(),
                 'isSeller' => true, 
-                'sellerName' => $seller->company_name,
-                'sellerStatus' => $seller->status,
+                'sellerName' => $seller->company_name ?? 'N/A',
+                'sellerStatus' => $seller->status ?? 'not_approved',
+                'isApprovedSeller' => $seller && $seller->status === 'approved',
                 'orderCount' => OrderSellerProduct::whereIn('product_id', 
-                    products::where('seller_id', $seller->id)->pluck('id')
+                    products::where('seller_id', $seller->id ?? 0)->pluck('id')
                 )->with(['product', 'order.user'])->latest()->take(10)->get(),
             ];
         } else {
@@ -87,6 +88,29 @@ new class extends Component
 <div>
      <div class="min-h-screen bg-gray-50 dark:bg-zinc-800 py-8">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- Flash Messages -->
+            @if (session()->has('error'))
+                <div class="mb-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                        </svg>
+                        {{ session('error') }}
+                    </div>
+                </div>
+            @endif
+
+            @if (session()->has('message'))
+                <div class="mb-6 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 px-4 py-3 rounded-lg">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                        </svg>
+                        {{ session('message') }}
+                    </div>
+                </div>
+            @endif
+
             <!-- Header -->
             <div class="mb-8">
                 @if($isSeller)
@@ -378,33 +402,54 @@ new class extends Component
                     <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h2>
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         @if($isSeller)
-                            <!-- Seller Actions -->
-                            <a href="{{ route('products.manage') }}" wire:navigate 
-                               class="bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/30 border border-purple-200 dark:border-purple-800 rounded-lg p-4 flex items-center space-x-3 transition-colors">
-                                <div class="bg-purple-500 p-2 rounded-lg">
-                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                                    </svg>
-                                </div>
-                                <div>
-                                    <h3 class="font-semibold text-gray-900 dark:text-white">My Products</h3>
-                                    <p class="text-sm text-gray-600 dark:text-gray-300">Manage your products</p>
-                                </div>
-                            </a>
+                            @if($isApprovedSeller)
+                                <!-- Approved Seller Actions -->
+                                <a href="{{ route('products.manage') }}" wire:navigate 
+                                   class="bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/30 border border-purple-200 dark:border-purple-800 rounded-lg p-4 flex items-center space-x-3 transition-colors">
+                                    <div class="bg-purple-500 p-2 rounded-lg">
+                                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-semibold text-gray-900 dark:text-white">My Products</h3>
+                                        <p class="text-sm text-gray-600 dark:text-gray-300">Manage your products</p>
+                                    </div>
+                                </a>
 
-                            <a href="{{ route('orders.manage') }}" wire:navigate 
-                               class="bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-lg p-4 flex items-center space-x-3 transition-colors">
-                                <div class="bg-green-500 p-2 rounded-lg">
-                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                                    </svg>
+                                <a href="{{ route('orders.manage') }}" wire:navigate 
+                                   class="bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-lg p-4 flex items-center space-x-3 transition-colors">
+                                    <div class="bg-green-500 p-2 rounded-lg">
+                                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-semibold text-gray-900 dark:text-white">My Orders</h3>
+                                        <p class="text-sm text-gray-600 dark:text-gray-300">View product orders</p>
+                                    </div>
+                                </a>
+                            @else
+                                <!-- Pending Approval Message -->
+                                <div class="col-span-full bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-6 text-center">
+                                    <div class="flex items-center justify-center mb-4">
+                                        <div class="bg-yellow-500 p-3 rounded-full">
+                                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                        </div>
+                                    </div>
+                                    <h3 class="text-lg font-semibold text-yellow-800 dark:text-yellow-300 mb-2">Account Pending Approval</h3>
+                                    <p class="text-yellow-700 dark:text-yellow-400 mb-4">
+                                        Your seller account is currently under review. Once approved by our admin team, you will be able to access product and order management features.
+                                    </p>
+                                    <div class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300">
+                                        Status: Pending Approval
+                                    </div>
                                 </div>
-                                <div>
-                                    <h3 class="font-semibold text-gray-900 dark:text-white">My Orders</h3>
-                                    <p class="text-sm text-gray-600 dark:text-gray-300">View product orders</p>
-                                </div>
-                            </a>
-
+                            @endif
+                            
+                            <!-- Profile Link - Available for all sellers -->
                             <a href="{{ route('settings.profile') }}" wire:navigate 
                                class="bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 flex items-center space-x-3 transition-colors">
                                 <div class="bg-blue-500 p-2 rounded-lg">
