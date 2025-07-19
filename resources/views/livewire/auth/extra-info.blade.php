@@ -256,7 +256,6 @@ new #[Layout('components.layouts.auth')] class extends Component {
                 wire:model="company_name"
                 label="Company Name"
                 type="text"
-                required
                 placeholder="Enter your company name"
             />
 
@@ -265,7 +264,6 @@ new #[Layout('components.layouts.auth')] class extends Component {
                 wire:model="gst_number"
                 label="GST Number"
                 type="text"
-                required
                 placeholder="Enter your GST number"
             />
             
@@ -291,7 +289,6 @@ new #[Layout('components.layouts.auth')] class extends Component {
                     wire:model.live="contact_no"
                     label="Contact No"
                     type="text"
-                    required
                     placeholder="6789012345"
                     description="Enter your 10-digit mobile number (country code +91 will be added automatically)"
                 />
@@ -307,7 +304,6 @@ new #[Layout('components.layouts.auth')] class extends Component {
                 wire:model="brand"
                 label="Brand Name"
                 type="text"
-                required
                 placeholder="Enter your brand name"
             />
 
@@ -326,7 +322,6 @@ new #[Layout('components.layouts.auth')] class extends Component {
                 wire:model="brand_certificate" 
                 label="Brand Certificate" 
                 accept="image/*,application/pdf"
-                required
                 description="Upload your brand certificate or related business document"
             />
         @endif        

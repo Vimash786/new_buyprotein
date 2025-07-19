@@ -17,9 +17,6 @@
     @if($label)
         <label class="text-sm font-medium text-gray-900 dark:text-gray-100">
             {{ $label }}
-            @if($required)
-                <span class="text-red-500">*</span>
-            @endif
         </label>
     @endif
     
