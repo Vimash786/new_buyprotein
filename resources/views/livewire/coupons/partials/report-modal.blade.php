@@ -1,14 +1,52 @@
 <!-- Report Modal -->
-<div x-show="showReportModal" class="fixed inset-0 z-50 overflow-y-auto" x-cloak>
+<div x-data="{ 
+        init() {
+            // Ensure modal state is properly synced
+            this.$watch('$wire.showReportModal', value => {
+                if (value) {
+                    document.body.style.overflow = 'hidden';
+                } else {
+                    document.body.style.overflow = 'auto';
+                }
+            });
+        }
+     }"
+     x-show="$wire.showReportModal" 
+     x-transition:enter="ease-out duration-300"
+     x-transition:enter-start="opacity-0"
+     x-transition:enter-end="opacity-100"
+     x-transition:leave="ease-in duration-200"
+     x-transition:leave-start="opacity-100"
+     x-transition:leave-end="opacity-0"
+     class="fixed inset-0 z-50 overflow-y-auto" 
+     x-cloak
+     style="display: none;"
+     @keydown.escape="$wire.closeReportModal()">
     <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 transition-opacity bg-gray-900 bg-opacity-50" @click="showReportModal = false"></div>
+        <div x-show="$wire.showReportModal"
+             x-transition:enter="ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 transition-opacity bg-gray-900 bg-opacity-50" 
+             @click="$wire.closeReportModal()"></div>
         
-        <div class="inline-block w-full max-w-6xl p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-lg dark:bg-gray-800">
+        <div x-show="$wire.showReportModal"
+             x-transition:enter="ease-out duration-300"
+             x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+             x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+             x-transition:leave="ease-in duration-200"
+             x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+             x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+             class="inline-block w-full max-w-6xl p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-lg dark:bg-gray-800">
             <div class="flex items-center justify-between pb-4 mb-4 border-b border-gray-200 dark:border-gray-600">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
                     Coupon Reports
                 </h3>
-                <button @click="showReportModal = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                <button @click="$wire.closeReportModal()" 
+                        class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200">
                     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
                     </svg>
@@ -41,7 +79,8 @@
                     </select>
                 </div>
                 <div class="flex items-end">
-                    <button wire:click="generateReport" class="w-full px-4 py-2 text-white bg-green-600 rounded-md hover:bg-green-700">
+                    <button wire:click="generateReport" 
+                            class="w-full px-4 py-2 text-white bg-green-600 rounded-md hover:bg-green-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
                         Generate Report
                     </button>
                 </div>
@@ -92,7 +131,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @if($reportData && isset($reportData['coupons']) && count($reportData['coupons']) > 0)
+                        @if($reportData && isset($reportData['coupons']) && is_array($reportData['coupons']) && count($reportData['coupons']) > 0)
                             @foreach($reportData['coupons'] as $coupon)
                                 <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
                                     <td class="px-6 py-4">
@@ -143,15 +182,17 @@
             <!-- Export Options -->
             <div class="flex justify-between items-center mt-6 pt-4 border-t border-gray-200 dark:border-gray-600">
                 <div class="text-sm text-gray-600 dark:text-gray-400">
-                    @if($reportData)
+                    @if($reportData && isset($reportData['coupons']) && is_array($reportData['coupons']))
                         Showing {{ count($reportData['coupons']) }} coupon(s)
                     @endif
                 </div>
                 <div class="flex space-x-2">
-                    <button wire:click="exportReport('csv')" class="px-4 py-2 text-sm text-gray-600 bg-gray-200 rounded-md hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500">
+                    <button wire:click="exportReport('csv')" 
+                            class="px-4 py-2 text-sm text-gray-600 bg-gray-200 rounded-md hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
                         Export CSV
                     </button>
-                    <button wire:click="exportReport('excel')" class="px-4 py-2 text-sm text-white bg-green-600 rounded-md hover:bg-green-700">
+                    <button wire:click="exportReport('excel')" 
+                            class="px-4 py-2 text-sm text-white bg-green-600 rounded-md hover:bg-green-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
                         Export Excel
                     </button>
                 </div>

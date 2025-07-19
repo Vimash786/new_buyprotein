@@ -242,32 +242,11 @@
                             </div>
                         </div>
                     @endif
-
-                    <div class="mt-6">
-                        <button 
-                            wire:click="viewVariantPrices({{ $selectedProduct->id }})"
-                            class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:border-indigo-900 focus:ring ring-indigo-300 disabled:opacity-25 transition mr-2"
-                        >
-                            View Variant Prices
-                        </button>
-                        <button 
-                            wire:click="viewVariantStock({{ $selectedProduct->id }})"
-                            class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 active:bg-green-900 focus:outline-none focus:border-green-900 focus:ring ring-green-300 disabled:opacity-25 transition"
-                        >
-                            View Variant Stock
-                        </button>
-                    </div>
                 @endif
 
                 <div class="mt-6 flex justify-end">
-                    <button 
-                        wire:click="edit({{ $selectedProduct->id }})"
-                        class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 active:bg-blue-900 focus:outline-none focus:border-blue-900 focus:ring ring-blue-300 disabled:opacity-25 transition"
-                    >
-                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                        Edit Product
+                    <button wire:click="closeDetailsModal" class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg font-medium">
+                        Cancel
                     </button>
                 </div>
             </div>

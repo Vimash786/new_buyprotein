@@ -50,6 +50,7 @@ class ManageCoupons extends Component
     public $reportData = null;
     public $reportDateFrom = '';
     public $reportDateTo = '';
+    public $reportCouponId = '';
 
     public function mount()
     {
@@ -310,23 +311,45 @@ class ManageCoupons extends Component
         $dateFrom = $this->reportDateFrom ?: now()->startOfMonth()->toDateString();
         $dateTo = $this->reportDateTo ?: now()->endOfMonth()->toDateString();
         
+        // Get coupons based on filters
+        $couponsQuery = Coupon::query();
+        
+        if ($this->reportCouponId) {
+            $couponsQuery->where('id', $this->reportCouponId);
+        }
+        
+        $coupons = $couponsQuery->withCount([
+            'assignments',
+            'usages' => function($query) use ($dateFrom, $dateTo) {
+                $query->whereBetween('created_at', [$dateFrom, $dateTo]);
+            }
+        ])->get();
+        
+        // Calculate totals
+        $totalUsage = $coupons->sum('usages_count');
+        $totalDiscount = $coupons->sum(function($coupon) {
+            return $coupon->usages->sum('discount_amount') ?? 0;
+        });
+        
         $this->reportData = [
-            'total_coupons' => Coupon::count(),
-            'active_coupons' => Coupon::where('status', 'active')->count(),
-            'expired_coupons' => Coupon::where('expires_at', '<', now())->count(),
-            'total_assignments' => CouponAssignment::count(),
-            'assignments_by_type' => CouponAssignment::selectRaw('assignable_type, count(*) as count')
-                ->groupBy('assignable_type')
-                ->pluck('count', 'assignable_type'),
-            'top_coupons' => Coupon::withCount('assignments')
-                ->orderBy('assignments_count', 'desc')
-                ->limit(10)
-                ->get(),
-            'recent_assignments' => CouponAssignment::with('coupon')
-                ->whereBetween('created_at', [$dateFrom, $dateTo])
-                ->latest()
-                ->limit(20)
-                ->get(),
+            'total_coupons' => $coupons->count(),
+            'total_usage' => $totalUsage,
+            'total_discount' => $totalDiscount,
+            'total_assignments' => $coupons->sum('assignments_count'),
+            'coupons' => $coupons->map(function($coupon) {
+                return (object)[
+                    'id' => $coupon->id,
+                    'name' => $coupon->name,
+                    'code' => $coupon->code,
+                    'type' => $coupon->type,
+                    'value' => $coupon->value,
+                    'status' => $coupon->status,
+                    'usage_limit' => $coupon->usage_limit,
+                    'used_count' => $coupon->usages_count ?? 0,
+                    'assignments_count' => $coupon->assignments_count ?? 0,
+                    'total_discount_amount' => $coupon->usages->sum('discount_amount') ?? 0,
+                ];
+            }),
             'date_range' => [
                 'from' => $dateFrom,
                 'to' => $dateTo
