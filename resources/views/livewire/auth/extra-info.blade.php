@@ -29,6 +29,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
     public string $social_link = '';
     public $business_certificate = null;
     public $business_images = [];
+    public string $contact_message = '';
 
     public function mount()
     {
@@ -40,6 +41,54 @@ new #[Layout('components.layouts.auth')] class extends Component {
         $this->product_category = array_values(array_filter($this->product_category, function($cat) use ($category) {
             return $cat !== $category;
         }));
+    }
+    
+    public function updatedContactNo($value)
+    {
+        // Reset message
+        $this->contact_message = '';
+        
+        // Remove any existing +91 prefix to avoid duplication
+        $value = preg_replace('/^\+91/', '', $value);
+        
+        // Remove any non-numeric characters
+        $cleanValue = preg_replace('/[^0-9]/', '', $value);
+        
+        // Check if non-numeric characters were removed
+        if ($value !== $cleanValue && !empty($value)) {
+            $this->contact_message = 'Only numbers are allowed. Letters and special characters have been removed.';
+        }
+        
+        $value = $cleanValue;
+        
+        // Check if trying to enter more than 10 digits
+        if (strlen($value) > 10) {
+            $this->contact_message = 'Mobile number can only have 10 digits. Extra digits have been removed.';
+            $value = substr($value, 0, 10);
+        }
+        
+        // If the user starts typing a number and it doesn't already have +91, add it
+        if (!empty($value) && is_numeric($value[0])) {
+            $this->contact_no = '+91' . $value;
+            
+            // Show helpful messages based on length
+            if (strlen($value) < 10) {
+                $remaining = 10 - strlen($value);
+                $this->contact_message = "Enter {$remaining} more digit" . ($remaining > 1 ? 's' : '') . " to complete your mobile number.";
+            } elseif (strlen($value) === 10) {
+                // Check if it starts with valid digits (6-9)
+                if (in_array($value[0], ['6', '7', '8', '9'])) {
+                    $this->contact_message = '✓ Valid mobile number format!';
+                } else {
+                    $this->contact_message = 'Mobile number should start with 6, 7, 8, or 9.';
+                }
+            }
+        } else {
+            $this->contact_no = $value;
+            if (!empty($value)) {
+                $this->contact_message = 'Mobile number should start with a digit.';
+            }
+        }
     }
     
      public function with()
@@ -237,14 +286,21 @@ new #[Layout('components.layouts.auth')] class extends Component {
             />
 
             <!-- Contact No -->
-            <flux:input
-                wire:model="contact_no"
-                label="Contact No"
-                type="text"
-                required
-                placeholder="+916789012345"
-                description="Enter your contact number with +91 country code (e.g., +916789012345)"
-            />
+            <div>
+                <flux:input
+                    wire:model.live="contact_no"
+                    label="Contact No"
+                    type="text"
+                    required
+                    placeholder="6789012345"
+                    description="Enter your 10-digit mobile number (country code +91 will be added automatically)"
+                />
+                @if($contact_message)
+                    <div class="mt-1 text-sm {{ str_contains($contact_message, '✓') ? 'text-green-600' : (str_contains($contact_message, 'removed') || str_contains($contact_message, 'should start') ? 'text-red-500' : 'text-blue-600') }}">
+                        {{ $contact_message }}
+                    </div>
+                @endif
+            </div>
 
             <!-- Brand Name -->
             <flux:input
