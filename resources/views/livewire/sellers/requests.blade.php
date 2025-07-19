@@ -27,7 +27,7 @@ new class extends Component
     public $company_name = '';
     public $gst_number = '';
     public $product_category = [];
-    public $contact_person = '';
+    public $contact_no = '';
     public $commission = '';
     public $brand = '';
     public $brand_logo = '';
@@ -41,7 +41,7 @@ new class extends Component
         'gst_number' => 'required|string|max:255|unique:sellers,gst_number',
         'product_category' => 'required|array|min:1',
         'product_category.*' => 'string',
-        'contact_person' => 'required|string|max:255',
+        'contact_no' => ['required', 'string', 'regex:/^\+91[6-9]\d{9}$/'],
         'commission' => 'required|string|max:255',
         'brand' => 'required|string|max:255',
         'brand_logo_file' => 'nullable|file|mimes:jpg,jpeg,png,gif|max:2048',
@@ -57,7 +57,7 @@ new class extends Component
             $query->where(function($q) {
                 $q->where('company_name', 'like', '%' . $this->search . '%')
                   ->orWhere('gst_number', 'like', '%' . $this->search . '%')
-                  ->orWhere('contact_person', 'like', '%' . $this->search . '%')
+                  ->orWhere('contact_no', 'like', '%' . $this->search . '%')
                   ->orWhere('brand', 'like', '%' . $this->search . '%')
                   ->orWhere('product_category', 'like', '%' . $this->search . '%');
             });
@@ -135,7 +135,7 @@ new class extends Component
         $this->company_name = '';
         $this->gst_number = '';
         $this->product_category = [];
-        $this->contact_person = '';
+        $this->contact_no = '';
         $this->commission = '';
         $this->brand = '';
         $this->brand_logo = '';
@@ -161,7 +161,7 @@ new class extends Component
             'company_name' => $this->company_name,
             'gst_number' => $this->gst_number,
             'product_category' => implode(',', array_filter($this->product_category)), // Convert array to comma-separated string
-            'contact_person' => $this->contact_person,
+            'contact_no' => $this->contact_no,
             'commission' => $this->commission,
             'brand' => $this->brand,
             'status' => $this->status,
@@ -204,7 +204,7 @@ new class extends Component
         $this->company_name = $seller->company_name;
         $this->gst_number = $seller->gst_number;
         $this->product_category = $seller->product_category ? array_filter(array_map('trim', preg_split('/,\s*/', $seller->product_category))) : [];
-        $this->contact_person = $seller->contact_person;
+        $this->contact_no = $seller->contact_no;
         $this->commission = $seller->commission;
         $this->brand = $seller->brand;
         $this->brand_logo = $seller->brand_logo;
@@ -482,7 +482,7 @@ new class extends Component
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                                    {{ $seller->contact_person }}
+                                    {{ $seller->contact_no }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <button 
@@ -578,16 +578,16 @@ new class extends Component
                             >
                             @error('commission') <span class="text-red-500 text-sm">{{ $errors->first('commission') }}</span> @enderror
                         </div>
-                        <!-- Contact Person -->
+                        <!-- Contact No -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Contact Person</label>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Contact No</label>
                             <input 
                                 type="text" 
-                                wire:model="contact_person"
+                                wire:model="contact_no"
                                 class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-                                placeholder="Enter contact person name"
+                                placeholder="+916789012345"
                             >
-                            @error('contact_person') <span class="text-red-500 text-sm">{{ $errors->first('contact_person') }}</span> @enderror
+                            @error('contact_no') <span class="text-red-500 text-sm">{{ $errors->first('contact_no') }}</span> @enderror
                         </div>   
 
                         <!-- Brand Name -->
@@ -761,8 +761,8 @@ new class extends Component
                                     <p class="text-gray-900 dark:text-white">{{ $viewingSeller->gst_number }}</p>
                                 </div>
                                 <div>
-                                    <label class="text-sm font-medium text-gray-600 dark:text-gray-300">Contact Person</label>
-                                    <p class="text-gray-900 dark:text-white">{{ $viewingSeller->contact_person }}</p>
+                                    <label class="text-sm font-medium text-gray-600 dark:text-gray-300">Contact No</label>
+                                    <p class="text-gray-900 dark:text-white">{{ $viewingSeller->contact_no }}</p>
                                 </div>
                                 @if($viewingSeller->brand)
                                     <div>

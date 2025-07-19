@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('company_name');
             $table->string('gst_number')->unique();
             $table->json('product_category');
-            $table->string('contact_person');
+            $table->string('contact_no');
             $table->string('brand')->nullable();
             $table->string('brand_logo')->nullable();
             $table->string('brand_certificate')->nullable();

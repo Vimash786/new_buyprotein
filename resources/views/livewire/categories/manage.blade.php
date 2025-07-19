@@ -23,6 +23,7 @@ new class extends Component
     public $name = '';
     public $description = '';
     public $image = null;
+    public $current_image = null;
     public $is_active = true;
     public $sort_order = 0;
     
@@ -31,20 +32,21 @@ new class extends Component
     public $sub_name = '';
     public $sub_description = '';
     public $sub_image = null;
+    public $current_sub_image = null;
     public $sub_is_active = true;
     public $sub_sort_order = 0;
 
     protected $rules = [
         'name' => 'required|string|max:255',
         'description' => 'nullable|string',
-        'image' => 'nullable|image|max:2048',
+        'image' => 'nullable|image|max:400',
         'is_active' => 'boolean',
         'sort_order' => 'integer|min:0',
         
         'category_id' => 'required|exists:categories,id',
         'sub_name' => 'required|string|max:255',
         'sub_description' => 'nullable|string',
-        'sub_image' => 'nullable|image|max:2048',
+        'sub_image' => 'nullable|image|max:400',
         'sub_is_active' => 'boolean',
         'sub_sort_order' => 'integer|min:0',
     ];
@@ -111,6 +113,7 @@ new class extends Component
         $this->name = '';
         $this->description = '';
         $this->image = null;
+        $this->current_image = null;
         $this->is_active = true;
         $this->sort_order = 0;
         $this->resetErrorBag();
@@ -123,6 +126,7 @@ new class extends Component
         $this->sub_name = '';
         $this->sub_description = '';
         $this->sub_image = null;
+        $this->current_sub_image = null;
         $this->sub_is_active = true;
         $this->sub_sort_order = 0;
         $this->resetErrorBag();
@@ -133,7 +137,7 @@ new class extends Component
         $rules = [
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'image' => $this->editMode ? 'nullable|image|max:2048' : 'nullable|image|max:2048',
+            'image' => $this->editMode ? 'nullable|image|max:400' : 'nullable|image|max:400',
             'is_active' => 'boolean',
             'sort_order' => 'integer|min:0',
         ];
@@ -177,7 +181,7 @@ new class extends Component
             'category_id' => 'required|exists:categories,id',
             'sub_name' => 'required|string|max:255',
             'sub_description' => 'nullable|string',
-            'sub_image' => $this->editMode ? 'nullable|image|max:2048' : 'nullable|image|max:2048',
+            'sub_image' => $this->editMode ? 'nullable|image|max:400' : 'nullable|image|max:400',
             'sub_is_active' => 'boolean',
             'sub_sort_order' => 'integer|min:0',
         ];
@@ -223,6 +227,7 @@ new class extends Component
         $this->categoryId = $category->id;
         $this->name = $category->name;
         $this->description = $category->description;
+        $this->current_image = $category->image;
         $this->is_active = $category->is_active;
         $this->sort_order = $category->sort_order;
         
@@ -238,6 +243,7 @@ new class extends Component
         $this->category_id = $subCategory->category_id;
         $this->sub_name = $subCategory->name;
         $this->sub_description = $subCategory->description;
+        $this->current_sub_image = $subCategory->image;
         $this->sub_is_active = $subCategory->is_active;
         $this->sub_sort_order = $subCategory->sort_order;
         
@@ -677,13 +683,24 @@ new class extends Component
                         <!-- Image -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Image</label>
+                            
+                            <!-- Show current image if in edit mode -->
+                            @if($editMode && $current_image)
+                                <div class="mb-3">
+                                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">Current Image:</p>
+                                    <img src="{{ Storage::url($current_image) }}" 
+                                         alt="Current image" 
+                                         class="w-20 h-20 object-cover rounded-lg border border-gray-300">
+                                </div>
+                            @endif
+                            
                             <input 
                                 type="file" 
                                 wire:model="image"
                                 accept="image/*"
                                 class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
                             >
-                            <p class="text-xs text-gray-500 mt-1">Upload image files (max 2MB)</p>
+                            <p class="text-xs text-gray-500 mt-1">Upload image files (max 400KB)</p>
                             @error('image') <span class="text-red-500 text-sm">{{ $errors->first('image') }}</span> @enderror
                         </div>
 
@@ -794,13 +811,24 @@ new class extends Component
                         <!-- Image -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Image</label>
+                            
+                            <!-- Show current image if in edit mode -->
+                            @if($editMode && $current_sub_image)
+                                <div class="mb-3">
+                                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">Current Image:</p>
+                                    <img src="{{ Storage::url($current_sub_image) }}" 
+                                         alt="Current image" 
+                                         class="w-20 h-20 object-cover rounded-lg border border-gray-300">
+                                </div>
+                            @endif
+                            
                             <input 
                                 type="file" 
                                 wire:model="sub_image"
                                 accept="image/*"
                                 class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
                             >
-                            <p class="text-xs text-gray-500 mt-1">Upload image files (max 2MB)</p>
+                            <p class="text-xs text-gray-500 mt-1">Upload image files (max 400KB)</p>
                             @error('sub_image') <span class="text-red-500 text-sm">{{ $errors->first('sub_image') }}</span> @enderror
                         </div>
 

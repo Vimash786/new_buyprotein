@@ -10,7 +10,9 @@ use App\Models\Category;
 use App\Models\SubCategory;
 use App\Models\Banner;
 use App\Models\Blog;
+use App\Models\Payout;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Livewire\Volt\Component;
 
 new class extends Component
@@ -23,26 +25,35 @@ new class extends Component
         
         if ($isSeller) {
             // Seller-specific data
+            $sellerOrderItems = OrderSellerProduct::where('seller_id', $seller->id ?? 0)
+                ->where('status', 'delivered')
+                ->get();
+            
+            $totalSales = $sellerOrderItems->sum('total_amount');
+            $commissionRate = $seller ? ($seller->commission ?? 0) : 0;
+            $commissionAmount = ($totalSales * $commissionRate) / 100;
+            $sellerPayout = $totalSales - $commissionAmount;
+            
+            // Get actual payout data from Payout model
+            $paidPayouts = Payout::where('seller_id', $seller->id ?? 0)
+                ->where('payment_status', 'paid')
+                ->sum('payout_amount');
+            
+            $pendingPayouts = Payout::where('seller_id', $seller->id ?? 0)
+                ->where('payment_status', 'unpaid')
+                ->sum('payout_amount');
+            
             return [
                 'totalSellers' => 1, // Just the current seller
                 'approvedSellers' => $seller && $seller->status === 'approved' ? 1 : 0,
                 'pendingSellers' => $seller && $seller->status === 'not_approved' ? 1 : 0,
                 'totalProducts' => products::where('seller_id', $seller->id ?? 0)->count(),
-                'totalOrders' => OrderSellerProduct::whereIn('product_id', 
-                    products::where('seller_id', $seller->id ?? 0)->pluck('id')
-                )->count(),
-                'totalsellers' => OrderSellerProduct::whereIn('product_id', 
-                    products::where('seller_id', $seller->id ?? 0)->pluck('id')
-                )->count(),
-
-                'totalSales' => OrderSellerProduct::where('seller_id', $seller->id ?? 0)->where('status', 'delivered')
-                ->sum('total_amount'),
-
-                'totalRevenue' => OrderSellerProduct::whereIn('product_id', 
-                    products::where('seller_id', $seller->id ?? 0)->pluck('id')
-                )->whereHas('order', function($query) {
-                    $query->where('status', 'delivered');
-                })->sum(DB::raw("total_amount * " . ($seller->commission ?? 0) . " / 100")),
+                'totalOrders' => OrderSellerProduct::where('seller_id', $seller->id ?? 0)->count(),
+                'totalSales' => $totalSales,
+                'commissionAmount' => $commissionAmount,
+                'sellerPayout' => $sellerPayout,
+                'paidPayouts' => $paidPayouts,
+                'pendingPayouts' => $pendingPayouts,
 
                 'totalUsers' => User::count(), // Keep global count for reference
                 'totalCategories' => Category::count(),
@@ -55,12 +66,29 @@ new class extends Component
                 'sellerName' => $seller->company_name ?? 'N/A',
                 'sellerStatus' => $seller->status ?? 'not_approved',
                 'isApprovedSeller' => $seller && $seller->status === 'approved',
-                'orderCount' => OrderSellerProduct::whereIn('product_id', 
-                    products::where('seller_id', $seller->id ?? 0)->pluck('id')
-                )->with(['product', 'order.user'])->latest()->take(10)->get(),
+                'orderCount' => OrderSellerProduct::where('seller_id', $seller->id ?? 0)
+                    ->with(['product', 'order.user'])->latest()->take(10)->get(),
             ];
         } else {
             // Admin/Super Admin data (global)
+            // Calculate commission earned and payment due
+            $deliveredOrderItems = OrderSellerProduct::whereIn('status', ['delivered'])
+                ->with('seller')
+                ->get();
+            
+            $totalSalesAmount = $deliveredOrderItems->sum('total_amount');
+            $totalCommissionEarned = 0;
+            $totalPaymentDue = 0;
+            
+            // Calculate commission for each order item based on seller's commission rate
+            foreach ($deliveredOrderItems as $orderItem) {
+                $seller = $orderItem->seller;
+                $commissionRate = $seller ? ($seller->commission ?? 0) : 0;
+                $itemCommission = ($orderItem->total_amount * $commissionRate) / 100;
+                $totalCommissionEarned += $itemCommission;
+                $totalPaymentDue += ($orderItem->total_amount - $itemCommission);
+            }
+            
             return [
                 'totalSellers' => Sellers::count(),
                 'approvedSellers' => Sellers::where('status', 'approved')->count(),
@@ -68,7 +96,9 @@ new class extends Component
                 'totalProducts' => products::count(),
                 'totalOrders' => orders::count(),
                 'totalUsers' => User::count(),
-                'totalSales' => orders::where('status', 'delivered')->sum('total_order_amount'),
+                'totalSales' => $totalSalesAmount,
+                'totalCommissionEarned' => $totalCommissionEarned,
+                'totalPaymentDue' => $totalPaymentDue,
                 'totalCategories' => Category::count(),
                 'totalSubCategories' => SubCategory::count(),
                 'totalBanners' => Banner::count(),
@@ -206,8 +236,8 @@ new class extends Component
                     <div class="flex items-center">
                         <div class="flex-1">
                             <h3 class="text-lg font-medium text-gray-900 dark:text-white">Total Payout Received</h3>
-                            <p class="text-3xl font-bold text-green-600">₹{{ $totalSales}}</p>   
-                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">Received revenue</p>
+                            <p class="text-3xl font-bold text-green-600">₹{{ number_format($paidPayouts, 2) }}</p>   
+                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">Already paid by platform</p>
                         </div>
                         <div class="w-12 h-12 bg-green-100 dark:bg-green-900/50 rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -217,13 +247,13 @@ new class extends Component
                     </div>
                 </div>
 
-                <!-- Total Payout pending -->
+                <!-- Total Payout Pending -->
                 <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
                     <div class="flex items-center">
                         <div class="flex-1">
                             <h3 class="text-lg font-medium text-gray-900 dark:text-white">Total Payout Pending</h3>
-                            <p class="text-3xl font-bold text-orange-600">₹{{ $totalSales}}</p>
-                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">Pending revenue</p>
+                            <p class="text-3xl font-bold text-orange-600">₹{{ number_format($pendingPayouts, 2) }}</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">Awaiting payment from platform</p>
                         </div>
                         <div class="w-12 h-12 bg-orange-100 dark:bg-orange-900/50 rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -309,7 +339,7 @@ new class extends Component
                     <div class="flex items-center">
                         <div class="flex-1">
                             <h3 class="text-lg font-medium text-gray-900 dark:text-white">Total Sales</h3>
-                            <p class="text-3xl font-bold text-emerald-600">₹{{ $totalSales }}</p>
+                            <p class="text-3xl font-bold text-emerald-600">₹{{ number_format($totalSales, 2) }}</p>
                             <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">Delivered orders revenue</p>
                         </div>
                         <div class="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/50 rounded-lg flex items-center justify-center">
@@ -324,7 +354,7 @@ new class extends Component
                     <div class="flex items-center">
                         <div class="flex-1">
                             <h3 class="text-lg font-medium text-gray-900 dark:text-white">Commission Earned</h3>
-                            <p class="text-3xl font-bold text-orange-600">₹{{ $totalSales }}</p>
+                            <p class="text-3xl font-bold text-orange-600">₹{{ number_format($totalCommissionEarned, 2) }}</p>
                             <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">Platform commission earned</p>
                         </div>
                         <div class="w-12 h-12 bg-orange-100 dark:bg-orange-900/50 rounded-lg flex items-center justify-center">
@@ -340,8 +370,8 @@ new class extends Component
                     <div class="flex items-center">
                         <div class="flex-1">
                             <h3 class="text-lg font-medium text-gray-900 dark:text-white">Payment Due</h3>
-                            <p class="text-3xl font-bold text-pink-600">₹{{ $totalSales }}</p>
-                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">Total paid to sellers</p>
+                            <p class="text-3xl font-bold text-pink-600">₹{{ number_format($totalPaymentDue, 2) }}</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">Total due to sellers</p>
                         </div>
                         <div class="w-12 h-12 bg-pink-100 dark:bg-pink-900/50 rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
