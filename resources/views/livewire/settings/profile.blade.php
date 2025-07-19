@@ -20,7 +20,7 @@ new class extends Component {
     public string $company_name = '';
     public string $gst_number = '';
     public array $product_category = [];
-    public string $contact_person = '';
+    public string $contact_no = '';
     public string $brand = '';
     public $brand_logo_file = null;
     public $brand_certificate_file = null;
@@ -47,7 +47,7 @@ new class extends Component {
                 $this->company_name = $this->seller->company_name ?? '';
                 $this->gst_number = $this->seller->gst_number ?? '';
                 //$this->product_category = $this->seller->product_category;
-                $this->contact_person = $this->seller->contact_person ?? '';
+                $this->contact_no = $this->seller->contact_no ?? '';
                 $this->brand = $this->seller->brand ?? '';
                 $this->existing_brand_logo = $this->seller->brand_logo ?? '';
                 $this->existing_brand_certificate = $this->seller->brand_certificate ?? '';
@@ -83,7 +83,7 @@ new class extends Component {
                 'company_name' => ['required', 'string', 'max:255'],
                 'gst_number' => ['required', 'string', 'max:255', Rule::unique('sellers', 'gst_number')->ignore($this->seller?->id)],
                 'product_category' => ['required', 'array', 'min:1'],
-                'contact_person' => ['required', 'string', 'max:255'],
+                'contact_no' => ['required', 'string', 'regex:/^\+91[6-9]\d{9}$/'],
                 'brand' => ['required', 'string', 'max:255'],
                 'brand_logo_file' => ['nullable', 'file', 'image', 'max:10240'],
                 'brand_certificate_file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,gif', 'max:10240'],
@@ -110,7 +110,7 @@ new class extends Component {
                 'company_name' => $validated['company_name'],
                 'gst_number' => $validated['gst_number'],
                 'product_category' => $validated['product_category'],
-                'contact_person' => $validated['contact_person'],
+                'contact_no' => $validated['contact_no'],
                 'brand' => $validated['brand'],
             ];
 
@@ -309,13 +309,14 @@ new class extends Component {
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- Contact Person -->
+                        <!-- Contact No -->
                         <flux:input 
-                            wire:model="contact_person" 
-                            :label="__('Contact Person')" 
+                            wire:model="contact_no" 
+                            :label="__('Contact No')" 
                             type="text" 
                             required 
-                            placeholder="Enter contact person name"
+                            placeholder="+916789012345"
+                            description="Enter your contact number with +91 country code (e.g., +916789012345)"
                         />
 
                         <!-- Brand Name -->

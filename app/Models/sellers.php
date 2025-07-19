@@ -17,7 +17,7 @@ class Sellers extends Model
         'company_name',
         'gst_number',
         'product_category',
-        'contact_person',
+        'contact_no',
         'commission',
         'brand',
         'brand_logo',

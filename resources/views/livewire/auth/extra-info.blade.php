@@ -20,7 +20,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
     public string $company_name = '';
     public string $gst_number = '';
     public array $product_category = [];
-    public string $contact_person = '';
+    public string $contact_no = '';
     public string $brand = '';
     public $brand_logo = null;
     public $brand_certificate = null;
@@ -109,7 +109,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
                 'gst_number' => ['required', 'string', 'max:50'],
                 'product_category' => ['required', 'array', 'min:1'],
                 'product_category.*' => ['string'],
-                'contact_person' => ['required', 'string', 'max:255'],
+                'contact_no' => ['required', 'string', 'regex:/^\+91[6-9]\d{9}$/'],
                 'brand' => ['required', 'string', 'max:255'],
                 'brand_logo' => ['nullable', 'file', 'image', 'max:10240'],
                 'brand_certificate' => ['required', 'file', 'max:10240'], // 10MB max
@@ -121,7 +121,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
                 'company_name' => $validated['company_name'],
                 'gst_number' => $validated['gst_number'],
                 'product_category' => implode(', ', $validated['product_category']), // Convert array to comma-separated string
-                'contact_person' => $validated['contact_person'],
+                'contact_no' => $validated['contact_no'],
                 'brand' => $validated['brand'],
                 'brand_logo' => isset($validated['brand_logo']) ? $validated['brand_logo']->store('brand_logos', 'public') : null,
                 // Store brand certificate path
@@ -236,13 +236,14 @@ new #[Layout('components.layouts.auth')] class extends Component {
                 :show-description="true"
             />
 
-            <!-- Contact Person -->
+            <!-- Contact No -->
             <flux:input
-                wire:model="contact_person"
-                label="Contact Person"
+                wire:model="contact_no"
+                label="Contact No"
                 type="text"
                 required
-                placeholder="Enter name of contact person"
+                placeholder="+916789012345"
+                description="Enter your contact number with +91 country code (e.g., +916789012345)"
             />
 
             <!-- Brand Name -->

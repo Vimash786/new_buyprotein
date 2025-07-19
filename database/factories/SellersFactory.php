@@ -26,7 +26,7 @@ class SellersFactory extends Factory
                 ['Protein Supplements', 'Pre-Workout', 'Post-Workout', 'Vitamins', 'Mass Gainers', 'Creatine'],
                 $this->faker->numberBetween(1, 3)
             )),
-            'contact_person' => $this->faker->name(),
+            'contact_no' => '+91' . $this->faker->numerify('##########'),
             'brand' => $this->faker->randomElement(['MuscleTech', 'Optimum Nutrition', 'BSN', 'Dymatize', 'ProteinWorks', 'MyProtein', 'Universal', 'BioTech']),
             
             'brand_certificate' => $this->faker->optional()->word() . '_certificate.pdf',

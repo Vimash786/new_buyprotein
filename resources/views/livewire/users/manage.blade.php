@@ -31,7 +31,7 @@ new class extends Component
     public $company_name = '';
     public $gst_number = '';
     public $product_category = '';
-    public $contact_person = '';
+    public $contact_no = '';
     public $commission = '10';
     public $brand_certificate = '';
     public $brand_certificate_file = null;
@@ -48,7 +48,7 @@ new class extends Component
         'company_name' => 'nullable|string|max:255',
         'gst_number' => 'nullable|string|max:255',
         'product_category' => 'nullable|string|max:255',
-        'contact_person' => 'nullable|string|max:255',
+        'contact_no' => 'nullable|string|max:255',
         'brand_certificate_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,gif|max:2048',
         'status' => 'nullable|in:approved,not_approved',
     ];
@@ -107,7 +107,7 @@ new class extends Component
         $this->company_name = '';
         $this->gst_number = '';
         $this->product_category = '';
-        $this->contact_person = '';
+        $this->contact_no = '';
         $this->brand_certificate = '';
         $this->brand_certificate_file = null;
         $this->status = 'not_approved';
@@ -135,7 +135,7 @@ new class extends Component
             $rules['company_name'] = 'required|string|max:255';
             $rules['gst_number'] = 'required|string|max:255';
             $rules['product_category'] = 'required|string|max:255';
-            $rules['contact_person'] = 'required|string|max:255';
+            $rules['contact_no'] = 'required|string|max:255';
             $rules['brand_certificate_file'] = 'required|file|mimes:pdf,jpg,jpeg,png,gif|max:2048';
             $rules['status'] = 'required|in:approved,not_approved';
             
@@ -190,7 +190,7 @@ new class extends Component
                     'company_name' => $this->company_name,
                     'gst_number' => $this->gst_number,
                     'product_category' => $this->product_category,
-                    'contact_person' => $this->contact_person,
+                    'contact_no' => $this->contact_no,
                     'commission' => $this->commission,
                     'status' => $this->status,
                 ];
@@ -221,7 +221,7 @@ new class extends Component
                     'company_name' => $this->company_name,
                     'gst_number' => $this->gst_number,
                     'product_category' => $this->product_category,
-                    'contact_person' => $this->contact_person,
+                    'contact_no' => $this->contact_no,
                     'commission' => $this->commission,
                     'status' => $this->status,
                 ];
@@ -260,7 +260,7 @@ new class extends Component
                 $this->company_name = $seller->company_name;
                 $this->gst_number = $seller->gst_number;
                 $this->product_category = $seller->product_category;
-                $this->contact_person = $seller->contact_person;
+                $this->contact_no = $seller->contact_no;
                 $this->brand_certificate = $seller->brand_certificate;
                 $this->status = $seller->status;
             }
@@ -793,14 +793,14 @@ new class extends Component
 
                             <!-- Contact Person -->
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Contact Person</label>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Contact No</label>
                                 <input 
                                     type="text" 
-                                    wire:model="contact_person"
+                                    wire:model="contact_no"
                                     class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-                                    placeholder="Enter contact person name"
+                                    placeholder="+916789012345"
                                 >
-                                @error('contact_person') <span class="text-red-500 text-sm">{{ $errors->first('contact_person') }}</span> @enderror
+                                @error('contact_no') <span class="text-red-500 text-sm">{{ $errors->first('contact_no') }}</span> @enderror
                             </div>
 
                             <!-- Brand Certificate -->
@@ -1012,8 +1012,8 @@ new class extends Component
                                             <p class="font-medium">{{ $seller->product_category }}</p>
                                         </div>
                                         <div>
-                                            <span class="text-gray-600 dark:text-gray-300">Contact Person:</span>
-                                            <p class="font-medium">{{ $seller->contact_person }}</p>
+                                            <span class="text-gray-600 dark:text-gray-300">Contact No:</span>
+                                            <p class="font-medium">{{ $seller->contact_no }}</p>
                                         </div>
                                         <div>
                                             <span class="text-gray-600 dark:text-gray-300">Status:</span>
