@@ -14,10 +14,14 @@ new class extends Component
     public $search = '';
     public $showModal = false;
     public $showSubCategoryModal = false;
+    public $showDeleteModal = false;
     public $editMode = false;
     public $categoryId = null;
     public $subCategoryId = null;
     public $activeTab = 'categories'; // 'categories' or 'subcategories'
+    public $deleteType = ''; // 'category' or 'subcategory'
+    public $deleteId = null;
+    public $deleteName = '';
     
     // Category form fields
     public $name = '';
@@ -250,6 +254,40 @@ new class extends Component
         $this->editMode = true;
         $this->showSubCategoryModal = true;
     }
+
+    public function confirmDelete($id, $type = 'category')
+    {
+        if ($type === 'category') {
+            $category = Category::findOrFail($id);
+            $this->deleteName = $category->name;
+        } else {
+            $subCategory = SubCategory::findOrFail($id);
+            $this->deleteName = $subCategory->name;
+        }
+        
+        $this->deleteId = $id;
+        $this->deleteType = $type;
+        $this->showDeleteModal = true;
+    }
+
+    public function cancelDelete()
+    {
+        $this->showDeleteModal = false;
+        $this->deleteId = null;
+        $this->deleteType = '';
+        $this->deleteName = '';
+    }
+
+    public function confirmDeleteAction()
+    {
+        if ($this->deleteType === 'category') {
+            $this->delete($this->deleteId);
+        } else {
+            $this->deleteSubCategory($this->deleteId);
+        }
+        
+        $this->cancelDelete();
+    }
     
     public function delete($id)
     {
@@ -477,9 +515,9 @@ new class extends Component
                                                 </div>
                                             @endif
                                             <div>
-                                                <div class="text-sm font-medium text-gray-900 dark:text-white dark:text-white">{{ $category->name }}</div>
+                                                <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $category->name }}</div>
                                                 @if($category->description)
-                                                    <div class="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400">{{ Str::limit($category->description, 50) }}</div>
+                                                    <div class="text-sm text-gray-500 dark:text-gray-400">{{ Str::limit($category->description, 50) }}</div>
                                                 @endif
                                             </div>
                                         </div>
@@ -514,8 +552,7 @@ new class extends Component
                                                 </svg>
                                             </button>
                                             <button 
-                                                wire:click="delete({{ $category->id }})"
-                                                wire:confirm="Are you sure you want to delete this category? This will also delete all sub-categories."
+                                                wire:click="confirmDelete({{ $category->id }}, 'category')"
                                                 class="text-red-600 hover:text-red-900"
                                             >
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -572,9 +609,9 @@ new class extends Component
                                                 </div>
                                             @endif
                                             <div>
-                                                <div class="text-sm font-medium text-gray-900 dark:text-white dark:text-white">{{ $subCategory->name }}</div>
+                                                <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $subCategory->name }}</div>
                                                 @if($subCategory->description)
-                                                    <div class="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400">{{ Str::limit($subCategory->description, 50) }}</div>
+                                                    <div class="text-sm text-gray-500 dark:text-gray-400">{{ Str::limit($subCategory->description, 50) }}</div>
                                                 @endif
                                             </div>
                                         </div>
@@ -609,8 +646,7 @@ new class extends Component
                                                 </svg>
                                             </button>
                                             <button 
-                                                wire:click="deleteSubCategory({{ $subCategory->id }})"
-                                                wire:confirm="Are you sure you want to delete this sub-category?"
+                                                wire:click="confirmDelete({{ $subCategory->id }}, 'subcategory')"
                                                 class="text-red-600 hover:text-red-900"
                                             >
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -875,6 +911,52 @@ new class extends Component
                             </button>
                         </div>
                     </form>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- Delete Confirmation Modal -->
+    @if($showDeleteModal)
+        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div class="bg-white dark:bg-zinc-900 rounded-lg max-w-md w-full">
+                <div class="p-6">
+                    <div class="flex items-center justify-center mb-4">
+                        <div class="w-12 h-12 bg-red-100 dark:bg-red-900/50 rounded-full flex items-center justify-center">
+                            <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                            </svg>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mb-6">
+                        <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                            Delete {{ $deleteType === 'category' ? 'Category' : 'Sub-Category' }}
+                        </h2>
+                        <p class="text-gray-600 dark:text-gray-300">
+                            Are you sure you want to delete "{{ $deleteName }}"? 
+                            @if($deleteType === 'category')
+                                This action cannot be undone and will remove all associated sub-categories.
+                            @else
+                                This action cannot be undone and will remove all associated data.
+                            @endif
+                        </p>
+                    </div>
+
+                    <div class="flex gap-3">
+                        <button 
+                            wire:click="cancelDelete"
+                            class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 py-2 px-4 rounded-lg font-medium"
+                        >
+                            Cancel
+                        </button>
+                        <button 
+                            wire:click="confirmDeleteAction"
+                            class="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg font-medium"
+                        >
+                            Delete {{ $deleteType === 'category' ? 'Category' : 'Sub-Category' }}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
