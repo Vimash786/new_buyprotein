@@ -31,7 +31,12 @@ if (!function_exists('format_price')) {
                 }
             }
         } else {
-            return '₹' . number_format($product->regular_user_price, 2);
+            $variant = ProductVariantCombination::where('product_id', $product->id)->first();
+            if ($variant) {
+                return '₹' . number_format($variant->regular_user_price, 2);
+            } else {
+                return '₹' . number_format($product->regular_user_price, 2);
+            }
         }
     }
 }

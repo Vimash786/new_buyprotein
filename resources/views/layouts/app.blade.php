@@ -23,6 +23,9 @@
 </head>
 
 <body class="shop-main-h">
+    <div class="loader-wrapper" id="loaderWrapper">
+        <div class="loader"></div>
+    </div>
 
     @include('partials.header')
 
@@ -74,8 +77,6 @@
             </div>
         </div>
     </div> -->
-
-
 
     <div class="product-details-popup-wrapper">
         <div class="rts-product-details-section rts-product-details-section2 product-details-popup-section">
@@ -440,6 +441,19 @@
     <!-- custom js -->
     <script defer src="{{ asset('assets/js/main.js') }}"></script>
     <!-- header style two End -->
+
+    <script>
+        window.addEventListener('load', function() {
+            const loader = document.getElementById('loaderWrapper');
+            if (loader) {
+                loader.classList.add('hidden');
+                setTimeout(() => {
+                    loader.style.display = 'none';
+                }, 500); // matches transition duration
+            }
+        });
+    </script>
+
 
     <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
 
