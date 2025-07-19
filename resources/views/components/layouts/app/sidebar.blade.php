@@ -25,6 +25,18 @@
                     @endif
                     
                     <!-- Products -->
+                    @php
+                        $user = auth()->user();
+                        $seller = null;
+                        $isApprovedSeller = false;
+                        
+                        if ($user && $user->role === 'Seller') {
+                            $seller = \App\Models\Sellers::where('user_id', $user->id)->first();
+                            $isApprovedSeller = $seller && $seller->status === 'approved';
+                        }
+                    @endphp
+                    
+                    @if($user->role === 'Super' || $isApprovedSeller)
                     <flux:navlist.group expandable :heading="__('Products')" class="grid">
                         <flux:navlist.item icon="cube" :href="route('products.manage')" :current="request()->routeIs('products.manage')" wire:navigate>{{ __('All Products') }}</flux:navlist.item>
                         @if(auth()->user()->role === 'Super')
@@ -32,16 +44,20 @@
                         <flux:navlist.item icon="square-3-stack-3d" :href="route('categories.manage')" :current="request()->routeIs('categories.manage')" wire:navigate>{{ __('Categories') }}</flux:navlist.item>
                         @endif
                     </flux:navlist.group>
+                    @endif
                     
                     <!-- Orders -->
+                    @if($user->role === 'Super' || $isApprovedSeller)
                     <flux:navlist.group expandable :heading="__('Orders')" class="grid">
                         <flux:navlist.item icon="shopping-bag" :href="route('orders.manage')" :current="request()->routeIs('orders.manage')" wire:navigate>{{ __('All Orders') }}</flux:navlist.item>
                     </flux:navlist.group>
+                    @endif
                     
                     @if(auth()->user()->role === 'Super')
                     <!-- Payout & Commission -->
                     <flux:navlist.group expandable :heading="__('Payout & Commission')" class="grid">
-                        <flux:navlist.item icon="banknotes" href="#" :current="request()->routeIs('payouts.sellers')" wire:navigate>{{ __('Seller Payouts') }}</flux:navlist.item>
+                        <flux:navlist.item icon="banknotes" :href="route('payouts.sellers')" :current="request()->routeIs('payouts.sellers')" wire:navigate>{{ __('Seller Payouts') }}</flux:navlist.item>
+                        <flux:navlist.item icon="document-text" :href="route('transactions.manage')" :current="request()->routeIs('transactions.manage')" wire:navigate>{{ __('Transaction Management') }}</flux:navlist.item>
                         <flux:navlist.item icon="gift" href="#" :current="request()->routeIs('rewards.influencer')" wire:navigate>{{ __('Influencer Rewards') }}</flux:navlist.item>
                     </flux:navlist.group>
                     
@@ -60,7 +76,8 @@
                     <flux:navlist.group expandable :heading="__('Site Settings')" class="grid">
                         <flux:navlist.item icon="photo" :href="route('banners.manage')" :current="request()->routeIs('banners.manage')" wire:navigate>{{ __('Banners') }}</flux:navlist.item>
                         <flux:navlist.item icon="document-text" :href="route('blogs.manage')" :current="request()->routeIs('blogs.manage')" wire:navigate>{{ __('Blogs') }}</flux:navlist.item>
-                        <flux:navlist.item icon="currency-dollar" href="#" :current="request()->routeIs('settings.commission')" wire:navigate>{{ __('Global Commission') }}</flux:navlist.item>
+                        <flux:navlist.item icon="document-duplicate" :href="route('policies.manage')" :current="request()->routeIs('policies.*')" wire:navigate>{{ __('Policy Management') }}</flux:navlist.item>
+                        <flux:navlist.item icon="currency-dollar" :href="route('settings.commission')" :current="request()->routeIs('settings.commission')" wire:navigate>{{ __('Global Commission') }}</flux:navlist.item>
                     </flux:navlist.group>
                     
                     <!-- Users (only for Super users) -->

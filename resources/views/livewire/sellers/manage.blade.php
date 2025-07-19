@@ -81,6 +81,9 @@ new class extends Component
         $this->showModal = true;
         $this->editMode = false;
         $this->resetForm();
+        
+        // Set default commission from global commission (only for new sellers)
+        $this->commission = \App\Models\GlobalCommission::getActiveCommissionRate();
     }
 
     public function closeModal()
@@ -91,7 +94,7 @@ new class extends Component
 
     public function openViewModal($id)
     {
-        $seller = Sellers::with(['products', 'orders'])->findOrFail($id);
+        $seller = Sellers::with(['products.orderSellerProducts', 'orderSellerProducts.order', 'orderSellerProducts.product'])->findOrFail($id);
         $this->viewingSeller = $seller;
         $this->showViewModal = true;
     }
@@ -254,16 +257,31 @@ new class extends Component
     public function getSellerStats($seller)
     {
         $totalProducts = $seller->products->count();
-        $totalProductsSold = $seller->orders->sum('quantity');
-        $totalRevenue = $seller->orders->sum('total_amount');
+        
+        // Get order items for this seller
+        $orderItems = $seller->orderSellerProducts;
+        
+        // Calculate total quantity sold
+        $totalProductsSold = $orderItems->sum('quantity');
+        
+        // Calculate total revenue from seller's products
+        $totalRevenue = $orderItems->sum('total_amount');
+        
+        // Commission percentage assigned to seller
         $commission = floatval($seller->commission);
-        $sellerRevenue = $totalRevenue * ($commission / 100);
+        
+        // Admin commission earnings from this seller (what admin gets)
+        $adminCommission = $totalRevenue * ($commission / 100);
+        
+        // Seller revenue (what seller gets after commission)
+        $sellerRevenue = $totalRevenue - $adminCommission;
 
         return [
             'totalProducts' => $totalProducts,
             'totalProductsSold' => $totalProductsSold,
             'totalRevenue' => $totalRevenue,
             'sellerRevenue' => $sellerRevenue,
+            'adminCommission' => $adminCommission,
             'commission' => $commission
         ];
     }
@@ -508,7 +526,7 @@ new class extends Component
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                                <td colspan="8" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
                                     No sellers found.
                                 </td>
                             </tr>
@@ -803,19 +821,31 @@ new class extends Component
                                 </div>
                                 <div class="bg-white dark:bg-zinc-700 rounded p-3 border dark:border-gray-600">
                                     <div class="flex items-center justify-between">
-                                        <span class="text-sm font-medium text-gray-600 dark:text-gray-300">Total Order</span>
+                                        <span class="text-sm font-medium text-gray-600 dark:text-gray-300">Total Units Sold</span>
                                         <span class="text-xl font-bold text-green-600 dark:text-green-400">{{ $stats['totalProductsSold'] }}</span>
                                     </div>
                                 </div>
                                 <div class="bg-white dark:bg-zinc-700 rounded p-3 border dark:border-gray-600">
                                     <div class="flex items-center justify-between">
-                                        <span class="text-sm font-medium text-gray-600 dark:text-gray-300">Total Sales</span>
+                                        <span class="text-sm font-medium text-gray-600 dark:text-gray-300">Total Sales Revenue</span>
                                         <span class="text-xl font-bold text-purple-600 dark:text-purple-400">₹{{ number_format($stats['totalRevenue'], 2) }}</span>
                                     </div>
                                 </div>
                                 <div class="bg-white dark:bg-zinc-700 rounded p-3 border dark:border-gray-600">
                                     <div class="flex items-center justify-between">
-                                        <span class="text-sm font-medium text-gray-600 dark:text-gray-300">Pending Payout</span>
+                                        <div>
+                                            <span class="text-sm font-medium text-gray-600 dark:text-gray-300">Admin Commission ({{ $stats['commission'] }}%)</span>
+                                            <p class="text-xs text-gray-500 dark:text-gray-400">Platform earnings from seller</p>
+                                        </div>
+                                        <span class="text-xl font-bold text-red-600 dark:text-red-400">₹{{ number_format($stats['adminCommission'], 2) }}</span>
+                                    </div>
+                                </div>
+                                <div class="bg-white dark:bg-zinc-700 rounded p-3 border dark:border-gray-600">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <span class="text-sm font-medium text-gray-600 dark:text-gray-300">Seller Payout</span>
+                                            <p class="text-xs text-gray-500 dark:text-gray-400">After commission deduction</p>
+                                        </div>
                                         <span class="text-xl font-bold text-orange-600 dark:text-orange-400">₹{{ number_format($stats['sellerRevenue'], 2) }}</span>
                                     </div>
                                 </div>
@@ -873,9 +903,10 @@ new class extends Component
                         </div>
                     @endif
 
-                    <!-- Recent Products -->                        @if($viewingSeller->products->count() > 0)
+                    <!-- Recent Products -->
+                    @if($viewingSeller->products->count() > 0)
                         <div class="mb-6">
-                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Recent Products</h3>
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Products Overview</h3>
                             <div class="bg-gray-50 dark:bg-zinc-800 rounded-lg overflow-hidden">
                                 <div class="overflow-x-auto">
                                     <table class="w-full">
@@ -884,15 +915,29 @@ new class extends Component
                                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Product Name</th>
                                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Price</th>
                                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Stock</th>
+                                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Units Sold</th>
                                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Status</th>
                                             </tr>
                                         </thead>
                                         <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
                                             @foreach($viewingSeller->products->take(5) as $product)
+                                                @php
+                                                    $soldQuantity = $product->orderSellerProducts->sum('quantity');
+                                                @endphp
                                                 <tr class="bg-white dark:bg-zinc-700">
-                                                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">{{ $product->name }}</td>
-                                                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">₹{{ number_format($product->price, 2) }}</td>
-                                                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">{{ $product->stock_quantity }}</td>
+                                                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                                                        <div class="font-medium">{{ $product->name }}</div>
+                                                        <div class="text-xs text-gray-500">ID: {{ $product->id }}</div>
+                                                    </td>
+                                                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">₹{{ number_format($product->regular_user_final_price ?? 0, 2) }}</td>
+                                                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                                                        <span class="{{ $product->stock_quantity <= 10 ? 'text-red-600 font-semibold' : '' }}">
+                                                            {{ $product->stock_quantity }}
+                                                        </span>
+                                                    </td>
+                                                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                                                        <span class="font-medium text-blue-600">{{ $soldQuantity }}</span>
+                                                    </td>
                                                     <td class="px-4 py-3 text-sm">
                                                         <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
                                                                {{ $product->status === 'active' 
@@ -910,6 +955,70 @@ new class extends Component
                                     <div class="px-4 py-3 bg-gray-100 dark:bg-zinc-700 text-center">
                                         <p class="text-sm text-gray-600 dark:text-gray-300">
                                             Showing 5 of {{ $viewingSeller->products->count() }} products
+                                        </p>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    @endif
+
+                    <!-- Recent Orders -->
+                    @if($viewingSeller->orderSellerProducts->count() > 0)
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Recent Order Items</h3>
+                            <div class="bg-gray-50 dark:bg-zinc-800 rounded-lg overflow-hidden">
+                                <div class="overflow-x-auto">
+                                    <table class="w-full">
+                                        <thead class="bg-gray-100 dark:bg-zinc-700">
+                                            <tr>
+                                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Order #</th>
+                                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Product</th>
+                                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Quantity</th>
+                                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Amount</th>
+                                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Status</th>
+                                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Date</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
+                                            @foreach($viewingSeller->orderSellerProducts->sortByDesc('created_at')->take(5) as $orderItem)
+                                                <tr class="bg-white dark:bg-zinc-700">
+                                                    <td class="px-4 py-3 text-sm text-blue-600 dark:text-blue-400 font-medium">
+                                                        #{{ $orderItem->order->order_number ?? 'N/A' }}
+                                                    </td>
+                                                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                                                        {{ $orderItem->product->name ?? 'Product not found' }}
+                                                    </td>
+                                                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                                                        {{ $orderItem->quantity }}
+                                                    </td>
+                                                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-white font-medium">
+                                                        ₹{{ number_format($orderItem->total_amount, 2) }}
+                                                    </td>
+                                                    <td class="px-4 py-3 text-sm">
+                                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
+                                                               {{ match($orderItem->status) {
+                                                                   'pending' => 'bg-yellow-100 text-yellow-800',
+                                                                   'confirmed' => 'bg-blue-100 text-blue-800',
+                                                                   'shipped' => 'bg-purple-100 text-purple-800',
+                                                                   'delivered' => 'bg-green-100 text-green-800',
+                                                                   'cancelled' => 'bg-red-100 text-red-800',
+                                                                   default => 'bg-gray-100 text-gray-800'
+                                                               } }}">
+                                                            {{ ucfirst($orderItem->status) }}
+                                                        </span>
+                                                    </td>
+                                                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                                                        {{ $orderItem->created_at->format('M d, Y') }}
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                                @if($viewingSeller->orderSellerProducts->count() > 5)
+                                    <div class="px-4 py-3 bg-gray-100 dark:bg-zinc-700 text-center">
+                                        <p class="text-sm text-gray-600 dark:text-gray-300">
+                                            Showing 5 of {{ $viewingSeller->orderSellerProducts->count() }} order items
                                         </p>
                                     </div>
                                 @endif

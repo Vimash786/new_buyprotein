@@ -94,7 +94,7 @@
                                             </div>
                                             <h2 class="product-title">{{ $product->name }}</h2>
                                             <p class="mt--20 mb--20">
-                                                {{ $product->description }}
+                                                {!! $product->description !!}
                                             </p>
                                             <span class="product-price mb--15 d-block"
                                                 style="color: #DC2626; font-weight: 600;" id="product-price">

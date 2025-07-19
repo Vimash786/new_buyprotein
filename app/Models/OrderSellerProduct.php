@@ -20,6 +20,7 @@ class OrderSellerProduct extends Model
         'total_amount',
         'status',
         'notes',
+        'variant_combination_id',
     ];
 
     protected $casts = [
@@ -51,5 +52,13 @@ class OrderSellerProduct extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(products::class, 'product_id');
+    }
+
+    /**
+     * Get the variant combination for this item.
+     */
+    public function variantCombination(): BelongsTo
+    {
+        return $this->belongsTo(ProductVariantCombination::class, 'variant_combination_id');
     }
 }

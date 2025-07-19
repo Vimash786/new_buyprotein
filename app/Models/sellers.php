@@ -23,12 +23,35 @@ class Sellers extends Model
         'brand_logo',
         'brand_certificate',
         'status',
+        'next_payout_date',
     ];
 
     protected $casts = [
         'product_category' => 'array',
         'status' => 'string',
+        'next_payout_date' => 'datetime',
     ];
+
+    /**
+     * The "booted" method of the model.
+     */
+    protected static function booted()
+    {
+        static::creating(function ($seller) {
+            // Set default commission from global commission if not set
+            if (empty($seller->commission)) {
+                $seller->commission = GlobalCommission::getActiveCommissionRate();
+            }
+        });
+        
+        static::updated(function ($seller) {
+            // When a seller is approved, set their next payout date if not already set
+            if ($seller->isDirty('status') && $seller->status === 'approved' && !$seller->next_payout_date) {
+                $seller->next_payout_date = now()->addDays(15);
+                $seller->saveQuietly(); // Save without triggering events again
+            }
+        });
+    }
 
     /**
      * Get the user that owns the seller profile.
@@ -81,7 +104,7 @@ class Sellers extends Model
     public function getTotalSales()
     {
         return $this->orderSellerProducts()
-                    ->whereIn('status', ['delivered', 'completed'])
+                    ->whereIn('status', ['delivered'])
                     ->sum('total_amount');
     }
 
@@ -94,5 +117,54 @@ class Sellers extends Model
                     ->whereIn('status', ['pending', 'confirmed'])
                     ->with(['order', 'product'])
                     ->get();
+    }
+
+    /**
+     * Get all payouts for this seller.
+     */
+    public function payouts(): HasMany
+    {
+        return $this->hasMany(Payout::class, 'seller_id');
+    }
+
+    /**
+     * Get the latest payout for this seller.
+     */
+    public function latestPayout()
+    {
+        return $this->hasOne(Payout::class, 'seller_id')->latest();
+    }
+
+    /**
+     * Get pending payouts for this seller.
+     */
+    public function pendingPayouts()
+    {
+        return $this->hasMany(Payout::class, 'seller_id')->where('payment_status', 'unpaid');
+    }
+
+    /**
+     * Calculate total earnings for a period.
+     */
+    public function calculateEarnings($startDate, $endDate)
+    {
+        $orderItems = $this->orderSellerProducts()
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->whereIn('status', ['delivered'])
+            ->get();
+
+        $totalOrders = $orderItems->count();
+        $totalSales = $orderItems->sum('total_amount');
+        $commissionRate = floatval($this->commission);
+        $commissionAmount = $totalSales * ($commissionRate / 100);
+        $payoutAmount = $totalSales - $commissionAmount;
+
+        return [
+            'total_orders' => $totalOrders,
+            'total_sales' => $totalSales,
+            'commission_amount' => $commissionAmount,
+            'payout_amount' => $payoutAmount,
+            'commission_rate' => $commissionRate
+        ];
     }
 }

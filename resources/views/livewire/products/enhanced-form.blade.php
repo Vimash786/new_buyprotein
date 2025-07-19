@@ -38,14 +38,18 @@
         <!-- Description -->
         <div class="md:col-span-2">
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description</label>
-            <textarea 
-                wire:model="description"
-                rows="3"
-                id='edit'
-                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-                placeholder="Enter product description"
-            ></textarea>
+            
+            <div class="mb-4">
+                <div id="product-description-editor" class="bg-white dark:bg-zinc-800 rounded-lg shadow border border-gray-300 dark:border-gray-600" style="min-height: 150px;">
+                    
+                </div>
+            </div>
+            
+            <!-- Hidden input for Livewire -->
+            <input type="hidden" wire:model="description" id="description-input" value="{{ $description }}">
+            
             @error('description') <span class="text-red-500 text-sm">{{ $errors->first('description') }}</span> @enderror
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Use the toolbar above to format your product description</p>
         </div>
 
         <!-- Has Variants Toggle -->
@@ -288,7 +292,7 @@
             <div class="md:col-span-2">
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Thumbnail Image
-                    <span class="text-xs text-gray-500">(Size: 200KB - 400KB)</span>
+                    <span class="text-xs text-gray-500">(Maximum Size Allow - 400kb each)</span>
                 </label>
                 <input 
                     type="file" 
@@ -308,7 +312,7 @@
             <div class="md:col-span-2">
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Additional Images (maximum 3 images)
-                    <span class="text-xs text-gray-500">(Size: 200KB - 400KB each)</span>
+                    <span class="text-xs text-gray-500">(Maximum Size Allow - 400kb each)</span>
                 </label>
                 <input 
                     type="file" 
@@ -595,7 +599,7 @@
                                             <div class="flex items-center justify-between mb-2">
                                                 <label class="text-xs font-medium text-gray-700 dark:text-gray-300">
                                                     Variant Thumbnail Image
-                                                    <span class="text-xs text-gray-500">(Size: 200KB - 400KB)</span>
+                                                    <span class="text-xs text-gray-500">(Maximum Size Allow - 400kb each)</span>
                                                 </label>
                                             </div>
                                             <input 
@@ -645,7 +649,7 @@
                                             <div class="flex items-center justify-between mb-2">
                                                 <label class="text-xs font-medium text-gray-700 dark:text-gray-300">
                                                     Variant Images (maximum 3 images)
-                                                    <span class="text-xs text-gray-500">(Size: 200KB - 400KB each)</span>
+                                                    <span class="text-xs text-gray-500">(Maximum Size Allow - 400kb each)</span>
                                                 </label>
                                             </div>
                                             <input 
@@ -725,6 +729,7 @@
     <div class="flex gap-3 pt-4">
         <button 
             type="submit"
+            onclick="syncProductDescriptionContent()"
             class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium"
             wire:loading.attr="disabled"
         >

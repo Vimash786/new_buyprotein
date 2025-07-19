@@ -24,36 +24,74 @@ new class extends Component
     
     // Form fields
     public $user_id = '';
-    public $seller_id = '';
+    public $selectedProducts = []; // Array of selected product IDs
+    public $orderItems = []; // Array to hold multiple products with their details
     public $overall_status = 'pending';
-    public $orderItems = []; // Array to hold multiple products
     public $notes = '';
 
     protected $rules = [
         'user_id' => 'required|exists:users,id',
-        'seller_id' => 'required|exists:sellers,id',
+        'selectedProducts' => 'required|array|min:1',
+        'selectedProducts.*' => 'required|exists:products,id',
         'overall_status' => 'required|in:pending,confirmed,shipped,delivered,cancelled',
         'orderItems' => 'required|array|min:1',
         'orderItems.*.product_id' => 'required|exists:products,id',
         'orderItems.*.quantity' => 'required|integer|min:1',
         'orderItems.*.unit_price' => 'required|numeric|min:0',
+        'orderItems.*.seller_id' => 'required|exists:sellers,id',
+        'orderItems.*.variant_combination_id' => 'nullable|exists:product_variant_combinations,id',
         'notes' => 'nullable|string',
     ];
 
     public function addOrderItem()
     {
-        $this->orderItems[] = [
-            'product_id' => '',
-            'quantity' => 1,
-            'unit_price' => 0,
-            'total_amount' => 0,
-        ];
+        // This method is no longer needed as we'll handle items based on selected products
     }
 
     public function removeOrderItem($index)
     {
-        unset($this->orderItems[$index]);
-        $this->orderItems = array_values($this->orderItems); // Re-index array
+        if (isset($this->orderItems[$index])) {
+            // Remove from selectedProducts array as well
+            $productId = (string) $this->orderItems[$index]['product_id']; // Convert to string for comparison
+            $this->selectedProducts = array_filter($this->selectedProducts, function($id) use ($productId) {
+                return $id != $productId;
+            });
+            
+            unset($this->orderItems[$index]);
+            $this->orderItems = array_values($this->orderItems); // Re-index array
+        }
+    }
+
+    public function updatedSelectedProducts()
+    {
+        // Update orderItems based on selected products
+        $currentProductIds = collect($this->orderItems)->pluck('product_id')->toArray();
+        $selectedProductIds = array_map('intval', $this->selectedProducts); // Convert strings to integers
+
+        // Remove items for unselected products
+        $this->orderItems = array_filter($this->orderItems, function($item) use ($selectedProductIds) {
+            return in_array($item['product_id'], $selectedProductIds);
+        });
+
+        // Add items for newly selected products
+        foreach ($selectedProductIds as $productId) {
+            if (!in_array($productId, $currentProductIds)) {
+                $product = products::with('activeVariantCombinations')->find($productId);
+                if ($product) {
+                    $this->orderItems[] = [
+                        'product_id' => $productId,
+                        'quantity' => 1,
+                        'unit_price' => $product->regular_user_final_price ?? $product->regular_user_price ?? 0,
+                        'total_amount' => $product->regular_user_final_price ?? $product->regular_user_price ?? 0,
+                        'seller_id' => $product->seller_id,
+                        'variant_combination_id' => null,
+                    ];
+                }
+            }
+        }
+
+        // Re-index array
+        $this->orderItems = array_values($this->orderItems);
     }
 
     public function updatedOrderItems($value, $key)
@@ -64,17 +102,48 @@ new class extends Component
             $index = $keyParts[0];
             $field = $keyParts[1];
             
+            // Handle variant selection
+            if ($field === 'variant_combination_id' && isset($this->orderItems[$index])) {
+                $this->updatePriceForVariant($index, $value);
+            }
+            
             if (in_array($field, ['quantity', 'unit_price']) && isset($this->orderItems[$index])) {
                 $this->calculateItemTotal($index);
             }
         }
     }
 
+    public function updatePriceForVariant($index, $variantCombinationId)
+    {
+        if (!isset($this->orderItems[$index])) {
+            return;
+        }
+
+        $item = &$this->orderItems[$index];
+        
+        if ($variantCombinationId) {
+            // Get the variant combination price
+            $variantCombination = \App\Models\ProductVariantCombination::find($variantCombinationId);
+            if ($variantCombination) {
+                $item['unit_price'] = $variantCombination->regular_user_final_price ?? $variantCombination->regular_user_price ?? 0;
+            }
+        } else {
+            // Use product's base price
+            $product = products::find($item['product_id']);
+            if ($product) {
+                $item['unit_price'] = $product->regular_user_final_price ?? $product->regular_user_price ?? 0;
+            }
+        }
+        
+        // Recalculate total
+        $this->calculateItemTotal($index);
+    }
+
     public function calculateItemTotal($index)
     {
         if (isset($this->orderItems[$index])) {
             $item = &$this->orderItems[$index];
-            if ($item['quantity'] && $item['unit_price']) {
+            if (isset($item['quantity']) && isset($item['unit_price']) && $item['quantity'] && $item['unit_price']) {
                 $item['total_amount'] = $item['quantity'] * $item['unit_price'];
             }
         }
@@ -82,9 +151,7 @@ new class extends Component
 
     public function updatedSellerId()
     {
-        // Reset order items when seller changes
-        $this->orderItems = [];
-        $this->addOrderItem();
+        // This method is no longer needed as seller_id is determined by product selection
     }
 
     public function with()
@@ -159,10 +226,28 @@ new class extends Component
                 ->sum('total_order_amount');
         }
 
+        // Debug: Get products for seller
+        $sellerProducts = null;
+        if ($isSeller) {
+            $sellerProducts = products::with('seller')->where('seller_id', $seller->id)->get();
+            $activeSellerProducts = products::with('seller')->where('seller_id', $seller->id)->where('status', 'active')->get();
+            
+            \Log::info('Seller Products Debug', [
+                'seller_id' => $seller->id,
+                'total_products' => $sellerProducts->count(),
+                'active_products' => $activeSellerProducts->count(),
+                'all_products' => $sellerProducts->pluck('name', 'id')->toArray(),
+                'active_products_details' => $activeSellerProducts->pluck('name', 'id')->toArray(),
+                'product_statuses' => $sellerProducts->pluck('status', 'id')->toArray(),
+            ]);
+        }
+
         return [
             'orderCount'=> $isSeller ? $seller_query: null,
             'orders' => $query->latest()->paginate(10),
-            'products' => products::where('status', 'active')->get(),
+            'products' => $isSeller 
+                ? products::with(['seller', 'activeVariantCombinations'])->where('seller_id', $seller->id)->get()
+                : products::with(['seller', 'activeVariantCombinations'])->where('status', 'active')->get(),
             'sellers' => \App\Models\Sellers::all(),
             'users' => User::all(),
             'totalOrders' => $totalOrders,
@@ -208,6 +293,7 @@ new class extends Component
         $this->newStatusValue = $newStatus;
         $this->showStatusModal = true;
     }
+    
     public function confirmStatus($id, $newStatus)
     {
         $this->orderToToggle = OrderSellerProduct::findOrFail($id);
@@ -222,51 +308,136 @@ new class extends Component
         $this->newStatusValue = null;
     }
 
+    public function editSellerOrder($id)
+    {
+        $orderItem = OrderSellerProduct::with(['order', 'product'])->findOrFail($id);
+        
+        $this->orderId = $orderItem->id;
+        $this->user_id = $orderItem->order->user_id;
+        $this->overall_status = $orderItem->status;
+        $this->notes = $orderItem->notes ?? '';
+        
+        // Load selected products and order items (single item for seller) - convert to strings
+        $this->selectedProducts = [(string) $orderItem->product_id];
+        $this->orderItems = [[
+            'product_id' => $orderItem->product_id,
+            'quantity' => $orderItem->quantity,
+            'unit_price' => $orderItem->unit_price,
+            'total_amount' => $orderItem->total_amount,
+            'seller_id' => $orderItem->seller_id,
+            'variant_combination_id' => $orderItem->variant_combination_id,
+        ]];
+        
+        $this->editMode = true;
+        $this->showModal = true;
+    }
+
+    public function confirmDeleteSellerOrder($id)
+    {
+        $this->orderToDelete = OrderSellerProduct::findOrFail($id);
+        $this->showDeleteModal = true;
+    }
+
+    public function deleteSellerOrder($id = null)
+    {
+        $orderItem = $this->orderToDelete ?? OrderSellerProduct::findOrFail($id);
+        $order = $orderItem->order;
+        
+        // Delete the order item
+        $orderItem->delete();
+        
+        // Check if this was the last item in the order
+        if ($order->orderSellerProducts()->count() === 0) {
+            // Delete the entire order if no items left
+            $order->delete();
+        } else {
+            // Recalculate order total
+            $newTotal = $order->orderSellerProducts()->sum('total_amount');
+            $order->update(['total_order_amount' => $newTotal]);
+        }
+        
+        session()->flash('message', 'Order item deleted successfully!');
+        
+        $this->closeDeleteModal();
+    }
+
     public function resetForm()
     {
         $this->orderId = null;
         $this->user_id = '';
-        $this->seller_id = '';
+        $this->selectedProducts = [];
         $this->overall_status = 'pending';
         $this->orderItems = [];
         $this->notes = '';
-        $this->addOrderItem(); // Add one empty item
         $this->resetValidation();
     }
 
     public function save()
     {
+        // Convert selectedProducts to integers for validation
+        $this->selectedProducts = array_map('intval', $this->selectedProducts);
+        
+        // Get current user and seller info
+        $user = auth()->user();
+        $currentSeller = \App\Models\Sellers::where('user_id', $user->id)->first();
+        $isSeller = $currentSeller !== null;
+        
         $this->validate();
+        
+        // Additional validation for variants
+        $this->validateOrderItems();
 
         if ($this->editMode) {
-            $order = orders::findOrFail($this->orderId);
-            
-            // Update order basic info
-            $order->update([
-                'user_id' => $this->user_id,
-                'overall_status' => $this->overall_status,
-                'total_order_amount' => collect($this->orderItems)->sum('total_amount'),
-                'status' => $this->overall_status,
-            ]);
-
-            // Remove existing order items
-            $order->orderSellerProducts()->delete();
-
-            // Add new order items
-            foreach ($this->orderItems as $item) {
-                OrderSellerProduct::create([
-                    'order_id' => $order->id,
-                    'seller_id' => $this->seller_id,
-                    'product_id' => $item['product_id'],
-                    'quantity' => $item['quantity'],
-                    'unit_price' => $item['unit_price'],
-                    'total_amount' => $item['total_amount'],
+            if ($isSeller) {
+                // Seller editing their order item
+                $orderItem = OrderSellerProduct::findOrFail($this->orderId);
+                $orderItem->update([
+                    'quantity' => $this->orderItems[0]['quantity'],
+                    'unit_price' => $this->orderItems[0]['unit_price'],
+                    'total_amount' => $this->orderItems[0]['total_amount'],
                     'status' => $this->overall_status,
                     'notes' => $this->notes,
+                    'variant_combination_id' => $this->orderItems[0]['variant_combination_id'] ?? null,
                 ]);
-            }
+                
+                // Update order total
+                $order = $orderItem->order;
+                $newTotal = $order->orderSellerProducts()->sum('total_amount');
+                $order->update(['total_order_amount' => $newTotal]);
+                
+                session()->flash('message', 'Order item updated successfully!');
+            } else {
+                // Admin editing entire order
+                $order = orders::findOrFail($this->orderId);
+                
+                // Update order basic info
+                $order->update([
+                    'user_id' => $this->user_id,
+                    'overall_status' => $this->overall_status,
+                    'total_order_amount' => collect($this->orderItems)->sum('total_amount'),
+                    'status' => $this->overall_status,
+                ]);
 
-            session()->flash('message', 'Order updated successfully!');
+                // Remove existing order items
+                $order->orderSellerProducts()->delete();
+
+                // Add new order items
+                foreach ($this->orderItems as $item) {
+                    OrderSellerProduct::create([
+                        'order_id' => $order->id,
+                        'seller_id' => $item['seller_id'],
+                        'product_id' => $item['product_id'],
+                        'quantity' => $item['quantity'],
+                        'unit_price' => $item['unit_price'],
+                        'total_amount' => $item['total_amount'],
+                        'status' => $this->overall_status,
+                        'notes' => $this->notes,
+                        'variant_combination_id' => $item['variant_combination_id'] ?? null,
+                    ]);
+                }
+
+                session()->flash('message', 'Order updated successfully!');
+            }
         } else {
             // Create new order
             $order = orders::create([
@@ -281,17 +452,18 @@ new class extends Component
             foreach ($this->orderItems as $item) {
                 OrderSellerProduct::create([
                     'order_id' => $order->id,
-                    'seller_id' => $this->seller_id,
+                    'seller_id' => $isSeller ? $currentSeller->id : $item['seller_id'],
                     'product_id' => $item['product_id'],
                     'quantity' => $item['quantity'],
                     'unit_price' => $item['unit_price'],
                     'total_amount' => $item['total_amount'],
                     'status' => $this->overall_status,
                     'notes' => $this->notes,
+                    'variant_combination_id' => $item['variant_combination_id'] ?? null,
                 ]);
             }
 
-            session()->flash('message', 'Order created successfully!');
+            session()->flash('message', $isSeller ? 'Order created successfully for customer!' : 'Order created successfully!');
         }
 
         $this->closeModal();
@@ -299,25 +471,36 @@ new class extends Component
 
     public function edit($id)
     {
-        $order = orders::with('orderSellerProducts')->findOrFail($id);
+        $order = orders::with('orderSellerProducts.product')->findOrFail($id);
         
         $this->orderId = $order->id;
         $this->user_id = $order->user_id;
         $this->overall_status = $order->overall_status;
         $this->notes = $order->orderSellerProducts->first()->notes ?? '';
         
-        // Get seller ID from first order item
-        $this->seller_id = $order->orderSellerProducts->first()->seller_id ?? '';
+        // Load selected products - convert to strings to match checkbox values
+        $this->selectedProducts = $order->orderSellerProducts->pluck('product_id')->map(function($id) {
+            return (string) $id;
+        })->toArray();
         
-        // Load order items
+        // Load order items with seller information
         $this->orderItems = $order->orderSellerProducts->map(function($item) {
             return [
                 'product_id' => $item->product_id,
                 'quantity' => $item->quantity,
                 'unit_price' => $item->unit_price,
                 'total_amount' => $item->total_amount,
+                'seller_id' => $item->seller_id,
+                'variant_combination_id' => $item->variant_combination_id,
             ];
         })->toArray();
+        
+        // Debug: Log the values to see what's happening
+        \Log::info('Edit Order Debug', [
+            'order_id' => $this->orderId,
+            'selectedProducts' => $this->selectedProducts,
+            'orderItems' => $this->orderItems
+        ]);
         
         $this->editMode = true;
         $this->showModal = true;
@@ -340,22 +523,37 @@ new class extends Component
 
     public function updateStatus($id = null, $newStatus = null)
     {
-        if(!$isSeller){
-            $item = $this->orderToToggle ?? orders::findOrFail($id);
-        } else {
-            $item = $this->orderToToggle ?? OrderSellerProduct::findOrFail($id);    
-        }
-        
+        $item = $this->orderToToggle ?? null;
         $status = $this->newStatusValue ?? $newStatus;
         
-        // Update order status
-        $item->update([
-            'overall_status' => $status,
-            'status' => $status
-        ]);
-        
-        // Update all order items status
-        $item->orderSellerProducts()->update(['status' => $status]);
+        if ($item instanceof OrderSellerProduct) {
+            // For seller updating individual order item - only update the OrderSellerProduct
+            $item->update(['status' => $status]);
+            
+            // Check if we need to update the main order status based on all items
+            $order = $item->order;
+            $allItemsStatus = $order->orderSellerProducts()->pluck('status')->unique();
+            
+            if ($allItemsStatus->count() === 1) {
+                // All items have the same status, update order overall_status to match
+                $order->update(['overall_status' => $allItemsStatus->first()]);
+            } else {
+                // Mixed statuses, set order to processing
+                $order->update(['overall_status' => 'processing']);
+            }
+        } else {
+            // For admin updating entire order
+            $order = $item ?? orders::findOrFail($id);
+            
+            // Update order status
+            $order->update([
+                'overall_status' => $status,
+                'status' => $status
+            ]);
+            
+            // Update all order items status
+            $order->orderSellerProducts()->update(['status' => $status]);
+        }
         
         session()->flash('message', 'Order status updated successfully!');
         
@@ -370,6 +568,19 @@ new class extends Component
     public function updatingStatusFilter()
     {
         $this->resetPage();
+    }
+
+    public function validateOrderItems()
+    {
+        foreach ($this->orderItems as $index => $item) {
+            $product = products::with('activeVariantCombinations')->find($item['product_id']);
+            
+            // Check if variant is required but not selected
+            if ($product && $product->has_variants && $product->activeVariantCombinations->count() > 0) {
+                // If product has variants, it's recommended but not required to select one
+                // The base product price will be used if no variant is selected
+            }
+        }
     }
 }; ?>
 
@@ -465,7 +676,7 @@ new class extends Component
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                         </svg>
-                        Add Order
+                        {{ $isSeller ? 'Create Order' : 'Add Order' }}
                     </button>
                 </div>
             </div>
@@ -494,6 +705,7 @@ new class extends Component
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
                             @else
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Order ID</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Product</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Customer</th>
@@ -591,6 +803,26 @@ new class extends Component
                         @else
                              @forelse($orderCount as $order)
                                 <tr class="hover:bg-gray-50 dark:hover:bg-zinc-800">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <div class="flex items-center gap-2">
+                                            <button 
+                                                wire:click="editSellerOrder({{ $order->id }})"
+                                                class="text-blue-600 hover:text-blue-900"
+                                            >
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                </svg>
+                                            </button>
+                                            <button 
+                                                wire:click="confirmDeleteSellerOrder({{ $order->id }})"
+                                                class="text-red-600 hover:text-red-900"
+                                            >
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                                         #{{ $order->id }}
                                     </td>
@@ -606,7 +838,7 @@ new class extends Component
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="relative inline-block">
                                             <select 
-                                                onchange="if(this.value !== '{{ $order->status }}') { @this.call('confirmStatusChange', {{ $order->id }}, this.value); } else { this.value = '{{ $order->status }}'; }"
+                                                onchange="if(this.value !== '{{ $order->status }}') { @this.call('confirmStatus', {{ $order->id }}, this.value); } else { this.value = '{{ $order->status }}'; }"
                                                 class="appearance-none bg-transparent border-0 text-xs font-medium rounded-full px-3 py-1 pr-8
                                                     {{ $order->status === 'pending' ? 'bg-yellow-100 text-yellow-800' : '' }}
                                                     {{ $order->status === 'confirmed' ? 'bg-blue-100 text-blue-800' : '' }}
@@ -634,7 +866,7 @@ new class extends Component
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="8" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                                    <td colspan="7" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
                                         No orders found.
                                     </td>
                                 </tr>
@@ -674,111 +906,223 @@ new class extends Component
                     </div>
 
                     <form wire:submit="save" class="space-y-4">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <!-- Product -->
-                            <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Product</label>
-                                <select 
-                                    wire:model="product_id"
-                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-                                >
-                                    <option value="">Select a product</option>
-                                    @foreach($products as $product)
-                                        <option value="{{ $product->id }}">{{ $product->name }} - ₹{{ $product->price }}</option>
-                                    @endforeach
-                                </select>
-                                @error('product_id') <span class="text-red-500 text-sm">{{ $errors->first('product_id') }}</span> @enderror
-                            </div>
-
-                            <!-- Customer -->
-                            <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Customer</label>
-                                <select 
-                                    wire:model="user_id"
-                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-                                >
-                                    <option value="">Select a customer</option>
-                                    @foreach($users as $user)
-                                        <option value="{{ $user->id }}">{{ $user->name }} ({{ $user->email }})</option>
-                                    @endforeach
-                                </select>
-                                @error('user_id') <span class="text-red-500 text-sm">{{ $errors->first('user_id') }}</span> @enderror
-                            </div>
-
-                            <!-- Quantity -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Quantity</label>
-                                <input 
-                                    type="number" 
-                                    wire:model.live="quantity"
-                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-                                    placeholder="1"
-                                    min="1"
-                                >
-                                @error('quantity') <span class="text-red-500 text-sm">{{ $errors->first('quantity') }}</span> @enderror
-                            </div>
-
-                            <!-- Unit Price -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Unit Price (₹)</label>
-                                <input 
-                                    type="number" 
-                                    step="0.01"
-                                    wire:model.live="unit_price"
-                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-                                    placeholder="0.00"
-                                >
-                                @error('unit_price') <span class="text-red-500 text-sm">{{ $errors->first('unit_price') }}</span> @enderror
-                            </div>
-
-                            <!-- Total Amount -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Total Amount (₹)</label>
-                                <input 
-                                    type="number" 
-                                    step="0.01"
-                                    wire:model="total_amount"
-                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 dark:bg-zinc-800 text-gray-900 dark:text-white"
-                                    placeholder="0.00"
-                                    readonly
-                                >
-                                @error('total_amount') <span class="text-red-500 text-sm">{{ $errors->first('total_amount') }}</span> @enderror
-                            </div>
-
-                            <!-- Status -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Status</label>
-                                <select 
-                                    wire:model="status"
-                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-                                >
-                                    <option value="pending">Pending</option>
-                                    <option value="confirmed">Confirmed</option>
-                                    <option value="shipped">Shipped</option>
-                                    <option value="delivered">Delivered</option>
-                                    <option value="cancelled">Cancelled</option>
-                                </select>
-                                @error('status') <span class="text-red-500 text-sm">{{ $errors->first('status') }}</span> @enderror
-                            </div>
-
-                            <!-- Notes -->
-                            <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Notes</label>
-                                <textarea 
-                                    wire:model="notes"
-                                    rows="3"
-                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-                                    placeholder="Order notes (optional)"
-                                ></textarea>
-                                @error('notes') <span class="text-red-500 text-sm">{{ $errors->first('notes') }}</span> @enderror
-                            </div>
+                        <!-- Customer -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Customer</label>
+                            <select 
+                                wire:model="user_id"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
+                            >
+                                <option value="">Select a customer</option>
+                                @foreach($users as $user)
+                                    <option value="{{ $user->id }}">{{ $user->name }} ({{ $user->email }})</option>
+                                @endforeach
+                            </select>
+                            @error('user_id') <span class="text-red-500 text-sm">{{ $errors->first('user_id') }}</span> @enderror
                         </div>
+
+                        <!-- Products Multi-Select -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Products</label>
+                            
+                            <!-- Debug info -->
+                            @if($editMode)
+                                <div class="text-xs text-gray-500 mb-2">
+                                    Debug - Selected Products: {{ json_encode($selectedProducts) }}
+                                </div>
+                            @endif
+                            
+                            <!-- Debug info for seller products -->
+                            @if($isSeller)
+                                <div class="text-xs text-gray-500 mb-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
+                                    <strong>Debug - Seller Products:</strong><br>
+                                    Total Products Available: {{ count($products) }}<br>
+                                    Seller ID: {{ $currentSeller->id ?? 'N/A' }}<br>
+                                    @if(count($products) > 0)
+                                        Product IDs: {{ $products->pluck('id')->implode(', ') }}<br>
+                                        Product Names: {{ $products->pluck('name')->implode(', ') }}<br>
+                                        Product Statuses: {{ $products->pluck('status')->implode(', ') }}
+                                    @else
+                                        <span class="text-red-600">No products found for this seller!</span>
+                                    @endif
+                                </div>
+                            @endif
+                            
+                            <div class="border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-zinc-800 max-h-48 overflow-y-auto">
+                                @foreach($products as $product)
+                                    @php
+                                        $isChecked = in_array((string)$product->id, $selectedProducts);
+                                    @endphp
+                                    <label class="flex items-center space-x-3 p-2 hover:bg-gray-50 dark:hover:bg-zinc-700 rounded cursor-pointer">
+                                        <input 
+                                            type="checkbox" 
+                                            wire:model.live="selectedProducts" 
+                                            value="{{ $product->id }}"
+                                            {{ $isChecked ? 'checked' : '' }}
+                                            class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                                        >
+                                        <div class="flex-1">
+                                            <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $product->name }}</div>
+                                            <div class="text-xs text-gray-500 dark:text-gray-400">
+                                                ₹{{ number_format($product->regular_user_final_price ?? $product->regular_user_price ?? 0, 2) }}
+                                                | Seller: {{ $product->seller->company_name ?? 'N/A' }}
+                                                @if($product->has_variants && $product->activeVariantCombinations->count() > 0)
+                                                    | <span class="text-blue-600">Has {{ $product->activeVariantCombinations->count() }} variants</span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </label>
+                                @endforeach
+                            </div>
+                            @error('selectedProducts') <span class="text-red-500 text-sm">{{ $errors->first('selectedProducts') }}</span> @enderror
+                        </div>
+
+                        <!-- Order Items Details -->
+                        @if(count($orderItems) > 0)
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Order Items</label>
+                                <div class="space-y-3">
+                                    @foreach($orderItems as $index => $item)
+                                        @php
+                                            $product = $products->firstWhere('id', $item['product_id']);
+                                        @endphp
+                                        <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-gray-50 dark:bg-zinc-800">
+                                            <div class="flex items-center justify-between mb-3">
+                                                <div>
+                                                    <h4 class="font-medium text-gray-900 dark:text-white">{{ $product->name ?? 'Product not found' }}</h4>
+                                                    <!-- Debug info for product lookup -->
+                                                    <div class="text-xs text-gray-500">
+                                                        Looking for Product ID: {{ $item['product_id'] }} | Found: {{ $product ? 'Yes' : 'No' }}
+                                                        @if($product)
+                                                            | Product Name: {{ $product->name }}
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                                <button 
+                                                    type="button"
+                                                    wire:click="removeOrderItem({{ $index }})"
+                                                    class="text-red-600 hover:text-red-800"
+                                                >
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                            <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                                <!-- Variant Selection (only if product has variants) -->
+                                @php
+                                    $hasVariants = $product && $product->has_variants && $product->activeVariantCombinations->count() > 0;
+                                @endphp
+                                @if($hasVariants)
+                                    <div class="md:col-span-4 mb-2">
+                                        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Product Variant</label>
+                                        <select 
+                                            wire:model.live="orderItems.{{ $index }}.variant_combination_id"
+                                            class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
+                                        >
+                                            <option value="">Select variant (optional)</option>
+                                            @foreach($product->activeVariantCombinations as $variant)
+                                                <option value="{{ $variant->id }}">
+                                                    {{ $variant->getFormattedVariantText() }}
+                                                    - ₹{{ number_format($variant->regular_user_final_price ?? $variant->regular_user_price ?? 0, 2) }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        @if($hasVariants)
+                                            <p class="text-xs text-blue-600 mt-1">This product has variants available</p>
+                                        @endif
+                                        @error("orderItems.{$index}.variant_combination_id") <span class="text-red-500 text-xs">{{ $errors->first("orderItems.{$index}.variant_combination_id") }}</span> @enderror
+                                    </div>
+                                @endif
+
+                                <!-- Quantity -->
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Quantity</label>
+                                    <input 
+                                        type="number" 
+                                        wire:model.live="orderItems.{{ $index }}.quantity"
+                                        class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
+                                        min="1"
+                                    >
+                                    @error("orderItems.{$index}.quantity") <span class="text-red-500 text-xs">{{ $errors->first("orderItems.{$index}.quantity") }}</span> @enderror
+                                </div>
+
+                                <!-- Unit Price -->
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Unit Price (₹)</label>
+                                    <input 
+                                        type="number" 
+                                        step="0.01"
+                                        wire:model.live="orderItems.{{ $index }}.unit_price"
+                                        class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
+                                    >
+                                    @error("orderItems.{$index}.unit_price") <span class="text-red-500 text-xs">{{ $errors->first("orderItems.{$index}.unit_price") }}</span> @enderror
+                                </div>
+
+                                <!-- Total Amount -->
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Total Amount (₹)</label>
+                                    <input 
+                                        type="number" 
+                                        step="0.01"
+                                        wire:model="orderItems.{{ $index }}.total_amount"
+                                        class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-100 dark:bg-zinc-600 text-gray-900 dark:text-white"
+                                        readonly
+                                    >
+                                </div>
+                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+
+                        <!-- Overall Status -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Overall Status</label>
+                            <select 
+                                wire:model="overall_status"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
+                            >
+                                <option value="pending">Pending</option>
+                                <option value="confirmed">Confirmed</option>
+                                <option value="shipped">Shipped</option>
+                                <option value="delivered">Delivered</option>
+                                <option value="cancelled">Cancelled</option>
+                            </select>
+                            @error('overall_status') <span class="text-red-500 text-sm">{{ $errors->first('overall_status') }}</span> @enderror
+                        </div>
+
+                        <!-- Notes -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Notes</label>
+                            <textarea 
+                                wire:model="notes"
+                                rows="3"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
+                                placeholder="Order notes (optional)"
+                            ></textarea>
+                            @error('notes') <span class="text-red-500 text-sm">{{ $errors->first('notes') }}</span> @enderror
+                        </div>
+
+                        <!-- Order Total -->
+                        @if(count($orderItems) > 0)
+                            <div class="border-t border-gray-200 dark:border-gray-600 pt-4">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-lg font-medium text-gray-900 dark:text-white">Total Order Amount:</span>
+                                    <span class="text-xl font-bold text-green-600">
+                                        ₹{{ number_format(collect($orderItems)->sum('total_amount'), 2) }}
+                                    </span>
+                                </div>
+                            </div>
+                        @endif
 
                         <!-- Buttons -->
                         <div class="flex gap-3 pt-4">
                             <button 
                                 type="submit"
                                 class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium"
+                                @if(count($orderItems) === 0) disabled @endif
                             >
                                 {{ $editMode ? 'Update Order' : 'Create Order' }}
                             </button>
@@ -807,24 +1151,42 @@ new class extends Component
                         </svg>
                     </div>
                     
-                    <h3 class="text-lg font-bold text-gray-900 dark:text-white text-center mb-2">Delete Order</h3>
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white text-center mb-2">
+                        @if($orderToDelete instanceof \App\Models\OrderSellerProduct)
+                            Delete Order Item
+                        @else
+                            Delete Order
+                        @endif
+                    </h3>
                     <p class="text-gray-600 dark:text-gray-300 text-center mb-6">
-                        Are you sure you want to delete order "<strong>#{{ $orderToDelete->id }}</strong>"? This action cannot be undone and will permanently remove this order and all its items from the system.
+                        @if($orderToDelete instanceof \App\Models\OrderSellerProduct)
+                            Are you sure you want to delete this order item? This action cannot be undone and will permanently remove this item from the order.
+                        @else
+                            Are you sure you want to delete this order? This action cannot be undone and will permanently remove this order and all its items from the system.
+                        @endif
                     </p>
                     
                     <div class="bg-gray-50 dark:bg-zinc-800 rounded-lg p-3 mb-4">
                         <div class="text-sm">
                             <div class="flex justify-between">
-                                <span class="text-gray-600 dark:text-gray-400">Customer:</span>
-                                <span class="font-medium text-gray-900 dark:text-white">{{ $orderToDelete->user->name ?? 'N/A' }}</span>
+                                <span class="text-gray-600 dark:text-gray-400">Item:</span>
+                                <span class="font-medium text-gray-900 dark:text-white">
+                                    @if($orderToDelete instanceof \App\Models\OrderSellerProduct)
+                                        Order Item
+                                    @else
+                                        Full Order
+                                    @endif
+                                </span>
                             </div>
                             <div class="flex justify-between">
-                                <span class="text-gray-600 dark:text-gray-400">Items Count:</span>
-                                <span class="font-medium text-gray-900 dark:text-white">{{ $orderToDelete->orderSellerProducts->count() }} items</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-600 dark:text-gray-400">Total:</span>
-                                <span class="font-medium text-gray-900 dark:text-white">₹{{ number_format($orderToDelete->total_order_amount, 2) }}</span>
+                                <span class="text-gray-600 dark:text-gray-400">Action:</span>
+                                <span class="font-medium text-red-600">
+                                    @if($orderToDelete instanceof \App\Models\OrderSellerProduct)
+                                        Delete Item
+                                    @else
+                                        Delete Order
+                                    @endif
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -837,10 +1199,14 @@ new class extends Component
                             Cancel
                         </button>
                         <button 
-                            wire:click="delete"
+                            wire:click="{{ $orderToDelete instanceof \App\Models\OrderSellerProduct ? 'deleteSellerOrder' : 'delete' }}"
                             class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700"
                         >
-                            Delete Order
+                            @if($orderToDelete instanceof \App\Models\OrderSellerProduct)
+                                Delete Item
+                            @else
+                                Delete Order
+                            @endif
                         </button>
                     </div>
                 </div>
@@ -862,7 +1228,7 @@ new class extends Component
                                 rounded-full mb-4">
                         @if($newStatusValue === 'pending')
                             <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0114 0z" />
                             </svg>
                         @elseif($newStatusValue === 'confirmed')
                             <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -887,23 +1253,28 @@ new class extends Component
                         Change Order Status
                     </h3>
                     <p class="text-gray-600 dark:text-gray-300 text-center mb-4">
-                        Are you sure you want to change the status of order "<strong>#{{ $orderToToggle->id }}</strong>" 
-                        from "<strong>{{ ucfirst($orderToToggle->overall_status) }}</strong>" to "<strong>{{ ucfirst($newStatusValue) }}</strong>"?
+                        @if($orderToToggle instanceof \App\Models\OrderSellerProduct)
+                            Are you sure you want to change the status of this order item to "<strong>{{ ucfirst($newStatusValue) }}</strong>"?
+                        @else
+                            Are you sure you want to change the status of this order to "<strong>{{ ucfirst($newStatusValue) }}</strong>"?
+                        @endif
                     </p>
                     
                     <div class="bg-gray-50 dark:bg-zinc-800 rounded-lg p-3 mb-4">
                         <div class="text-sm">
                             <div class="flex justify-between">
-                                <span class="text-gray-600 dark:text-gray-400">Customer:</span>
-                                <span class="font-medium text-gray-900 dark:text-white">{{ $orderToToggle->user->name ?? 'N/A' }}</span>
+                                <span class="text-gray-600 dark:text-gray-400">Type:</span>
+                                <span class="font-medium text-gray-900 dark:text-white">
+                                    @if($orderToToggle instanceof \App\Models\OrderSellerProduct)
+                                        Order Item
+                                    @else
+                                        Full Order
+                                    @endif
+                                </span>
                             </div>
                             <div class="flex justify-between">
-                                <span class="text-gray-600 dark:text-gray-400">Items Count:</span>
-                                <span class="font-medium text-gray-900 dark:text-white">{{ $orderToToggle->orderSellerProducts->count() }} items</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-600 dark:text-gray-400">Total:</span>
-                                <span class="font-medium text-gray-900 dark:text-white">₹{{ number_format($orderToToggle->total_order_amount, 2) }}</span>
+                                <span class="text-gray-600 dark:text-gray-400">New Status:</span>
+                                <span class="font-medium text-blue-600">{{ ucfirst($newStatusValue) }}</span>
                             </div>
                         </div>
                     </div>

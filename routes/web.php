@@ -23,8 +23,6 @@ Route::get('/our-blogs', [DashboardController::class, 'blogs'])->name('user.blog
 Route::get('/our-blogs/{id}', [DashboardController::class, 'blogDetails'])->name('blog.details');
 Route::post('/submit-commet/{id}', [DashboardController::class, 'blogComment'])->name('blog.comment');
 
-// Public Blog Routes
-Volt::route('/blog', 'blogs.index')->name('blog.index');
 
 // Route::get('/', function () {
 //     return view('dashboard');
@@ -45,14 +43,20 @@ Route::middleware(['auth'])->group(function () {
     // Management Pages
     Volt::route('sellers', 'sellers.manage')->name('sellers.manage');
     Volt::route('sellers/requests', 'sellers.requests')->name('sellers.requests');
-    Volt::route('products', 'products.manage')->name('products.manage');
+    Volt::route('products', 'products.manage')->middleware('seller.approved')->name('products.manage');
      Volt::route('products/requests', 'products.requests')->name('products.requests');
-    Volt::route('orders', 'orders.manage')->name('orders.manage');
+    Volt::route('orders', 'orders.manage')->middleware('seller.approved')->name('orders.manage');
     Volt::route('users', 'users.manage')->name('users.manage');
     Volt::route('categories', 'categories.manage')->name('categories.manage');
     Volt::route('banners', 'banners.manage')->name('banners.manage');
     Volt::route('blogs', 'blogs.manage')->name('blogs.manage');
     Route::get('coupons', \App\Livewire\Coupons\ManageCoupons::class)->name('coupons.manage');
+    Route::get('commission', \App\Livewire\Settings\GlobalCommissionSettings::class)->name('settings.commission');
+    Volt::route('payouts', 'payouts.manage')->name('payouts.sellers');
+    Volt::route('transactions', 'transactions.manage')->name('transactions.manage');
+    
+    // Policy Management Routes
+    Volt::route('policies', 'policies.manage')->name('policies.manage');
 
     Route::get('/user-account', [DashboardController::class, 'userAccount'])->name('user.account');
     Route::post('/update-user-details', [DashboardController::class, 'updateUserDetails'])->name('update.user.details');
