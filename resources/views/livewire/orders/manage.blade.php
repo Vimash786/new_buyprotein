@@ -249,7 +249,7 @@ new class extends Component
                 ? products::with(['seller', 'activeVariantCombinations'])->where('seller_id', $seller->id)->get()
                 : products::with(['seller', 'activeVariantCombinations'])->where('status', 'active')->get(),
             'sellers' => \App\Models\Sellers::all(),
-            'users' => User::all(),
+            'users' => User::whereNotIn('role', ['Seller', 'Super'])->get(),
             'totalOrders' => $totalOrders,
             'pendingOrders' => $pendingOrders,
             'confirmedOrders' => $confirmedOrders,
