@@ -17,6 +17,8 @@ return new class extends Migration
             $table->enum('assignable_type', ['product', 'user', 'seller', 'user_type']);
             $table->unsignedBigInteger('assignable_id')->nullable();
             $table->string('user_type')->nullable(); // When assignable_type is 'user_type'
+            $table->foreignId('assigned_by')->nullable()->constrained('users')->onDelete('set null');
+            $table->timestamp('assigned_at')->nullable();
             $table->timestamps();
             
             $table->index(['assignable_type', 'assignable_id']);

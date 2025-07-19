@@ -241,31 +241,36 @@ class ManageCoupons extends Component
         
         foreach ($this->selectedItems as $itemId) {
             $modelClass = null;
+            $assignableType = null;
             
             switch ($this->assignmentType) {
                 case 'users':
                     $modelClass = User::class;
+                    $assignableType = 'user';
                     break;
                 case 'products':
                     $modelClass = products::class;
+                    $assignableType = 'product';
                     break;
                 case 'sellers':
                     $modelClass = Sellers::class;
+                    $assignableType = 'seller';
                     break;
             }
 
-            if ($modelClass) {
+            if ($modelClass && $assignableType) {
                 // Check if assignment already exists
                 $existingAssignment = CouponAssignment::where('coupon_id', $this->selectedCoupon->id)
-                    ->where('assignable_type', $this->assignmentType)
+                    ->where('assignable_type', $assignableType)
                     ->where('assignable_id', $itemId)
                     ->first();
 
                 if (!$existingAssignment) {
                     CouponAssignment::create([
                         'coupon_id' => $this->selectedCoupon->id,
-                        'assignable_type' => $this->assignmentType,
-                        'assignable_id' => $itemId
+                        'assignable_type' => $assignableType,
+                        'assignable_id' => $itemId,
+                        'assigned_at' => now()
                     ]);
                     $assignedCount++;
                 }
@@ -274,6 +279,18 @@ class ManageCoupons extends Component
 
         session()->flash('message', "Coupon assigned to {$assignedCount} items successfully!");
         $this->closeAssignModal();
+    }
+
+    public function removeAssignment($assignmentId)
+    {
+        $assignment = CouponAssignment::find($assignmentId);
+        
+        if ($assignment) {
+            $assignment->delete();
+            session()->flash('message', 'Assignment removed successfully!');
+        } else {
+            session()->flash('error', 'Assignment not found!');
+        }
     }
 
     public function openReportModal()
