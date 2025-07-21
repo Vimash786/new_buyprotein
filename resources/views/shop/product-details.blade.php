@@ -7,11 +7,27 @@
         </div>
     </div>
 
-    @php
+    {{-- @php
         $imagesArray = [$product->thumbnail_image];
 
         foreach ($product->images as $image) {
             $imagesArray[] = $image->image_path;
+        }
+        
+    @endphp --}}
+    @php
+        $defaultImages = [$product->thumbnail_image];
+        foreach ($product->images as $image) {
+            if (!$image->variant_combination_id) {
+                $defaultImages[] = $image->image_path;
+            }
+        }
+
+        $variantImages = [];
+        foreach ($product->images as $image) {
+            if ($image->variant_combination_id) {
+                $variantImages[$image->variant_combination_id][] = $image->image_path;
+            }
         }
         $allData = collect();
     @endphp
@@ -41,43 +57,118 @@
                                             ];
                                         @endphp
 
-                                        <div class="show-product-area-details">
-                                            <div class="product-thumb-filter-group left">
-                                                @foreach ($imagesArray as $index => $image)
+                                        {{-- <div class="show-product-area-details">
+                                            <div id="default-images" class="product-thumb-filter-group left">
+                                                @foreach ($defaultImages as $index => $img)
                                                     <div class="thumb-filter filter-btn {{ $index === 0 ? 'active' : '' }}"
                                                         data-show=".{{ $classNames[$index] }}">
-                                                        <img src="{{ asset('storage/' . $image) }}"
-                                                            alt="product-thumb-filter">
+                                                        <img src="{{ asset('storage/' . $img) }}" class="product-image" />
                                                     </div>
                                                 @endforeach
                                             </div>
+                                            <div id="variant-images" class="product-thumb-filter-group left"
+                                                style="display: none;">
+                                                @foreach ($variantImages as $combinationId => $images)
+                                                    <div class="variant-image-group thumb-filter filter-btn {{ $index === 0 ? 'active' : '' }}"
+                                                        data-combination-id="{{ $combinationId }}"
+                                                        data-show=".{{ $classNames[$index] }}" style="display: none;">
+                                                        @foreach ($images as $img)
+                                                            <img src="{{ asset('storage/' . $img) }}"
+                                                                class="product-image" />
+                                                        @endforeach
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                            
                                             <div class="product-thumb-area">
                                                 <div class="cursor"></div>
-                                                {{-- @foreach ($imagesArray as $index => $image)
+                                                
+                                                @foreach ($defaultImages as $index => $image)
+                                                    @php $classNames["default-$index"] = "default-image-$index"; @endphp
                                                     <div
-                                                        class="thumb-wrapper {{ $classNames[$index] }} filterd-items {{ $index === 0 ? '' : 'hide' }}">
-                                                        <div class="product-thumb zoom" onmousemove="zoom(event)"
-                                                            style="background-image: url('{{ asset('storage/' . $image) }}')">
-                                                            <img src="{{ asset('storage/' . $image) }}" alt="product-thumb">
-                                                        </div>
-                                                    </div>
-                                                @endforeach --}}
-                                                @foreach ($imagesArray as $index => $image)
-                                                    <div
-                                                        class="thumb-wrapper {{ $classNames[$index] }} filterd-items {{ $index === 0 ? '' : 'hide' }}">
+                                                        class="thumb-wrapper {{ $classNames["default-$index"] }} filterd-items {{ $index === 0 ? '' : 'hide' }}">
                                                         <div class="product-thumb zoom" onmousemove="zoom(event)"
                                                             onmouseleave="resetZoom(event)"
-                                                            style="
-                background-image: url('{{ asset('storage/' . $image) }}');
-                background-size: 200%; /* <- This is important */
-                background-repeat: no-repeat;
-                background-position: center;
-            ">
-                                                            <img src="{{ asset('storage/' . $image) }}" alt="product-thumb">
+                                                            style="background-image: url('{{ asset('storage/' . $image) }}'); background-size: 200%; background-repeat: no-repeat; background-position: center;">
+                                                            <img src="{{ asset('storage/' . $image) }}"
+                                                                alt="product-thumb">
+                                                        </div>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        </div> --}}
+
+                                        <div class="show-product-area-details">
+                                            {{-- Default Thumbnail Images --}}
+                                            <div id="default-images" class="product-thumb-filter-group left">
+                                                @foreach ($defaultImages as $index => $img)
+                                                    @php $classNames["default-$index"] = "default-image-$index"; @endphp
+                                                    <div class="thumb-filter filter-btn {{ $index === 0 ? 'active' : '' }}"
+                                                        data-show=".{{ $classNames["default-$index"] }}">
+                                                        <img src="{{ asset('storage/' . $img) }}" class="product-image" />
+                                                    </div>
+                                                @endforeach
+                                            </div>
+
+                                            {{-- Variant Thumbnail Images --}}
+                                            <div id="variant-images" class="product-thumb-filter-group left"
+                                                style="display: none;">
+                                                @foreach ($variantImages as $combinationId => $images)
+                                                    @foreach ($images as $index => $img)
+                                                        @php
+                                                            $key = "variant-{$combinationId}-{$index}";
+                                                            $classNames[
+                                                                $key
+                                                            ] = "variant-image-{$combinationId}-{$index}";
+                                                        @endphp
+                                                        <div class="thumb-filter filter-btn {{ $index === 0 ? 'active' : '' }}"
+                                                            data-combination-id="{{ $combinationId }}"
+                                                            data-show=".{{ $classNames[$key] }}" style="display: none;">
+                                                            <img src="{{ asset('storage/' . $img) }}"
+                                                                class="product-image" />
+                                                        </div>
+                                                    @endforeach
+                                                @endforeach
+                                            </div>
+
+                                            {{-- Image Display Area --}}
+
+                                            {{-- Main Image Preview --}}
+                                            <div class="product-thumb-area">
+                                                <div class="cursor"></div>
+
+                                                @foreach ($defaultImages as $index => $img)
+                                                    @php
+                                                        $key = "default-{$index}";
+                                                        $wrapperClass = $classNames[$key];
+                                                    @endphp
+                                                    <div
+                                                        class="thumb-wrapper {{ $wrapperClass }} filterd-items {{ $index === 0 ? '' : 'hide' }}">
+                                                        <div class="product-thumb zoom" onmousemove="zoom(event)"
+                                                            onmouseleave="resetZoom(event)"
+                                                            style="background-image: url('{{ asset('storage/' . $img) }}'); background-size: 200%; background-repeat: no-repeat; background-position: center;">
+                                                            <img src="{{ asset('storage/' . $img) }}" alt="product-thumb">
                                                         </div>
                                                     </div>
                                                 @endforeach
 
+                                                @foreach ($variantImages as $combinationId => $images)
+                                                    @foreach ($images as $index => $img)
+                                                        @php
+                                                            $key = "variant-{$combinationId}-{$index}";
+                                                            $wrapperClass = $classNames[$key];
+                                                        @endphp
+                                                        <div class="thumb-wrapper {{ $wrapperClass }} filterd-items hide"
+                                                            data-combination-id="{{ $combinationId }}">
+                                                            <div class="product-thumb zoom" onmousemove="zoom(event)"
+                                                                onmouseleave="resetZoom(event)"
+                                                                style="background-image: url('{{ asset('storage/' . $img) }}'); background-size: 200%; background-repeat: no-repeat; background-position: center;">
+                                                                <img src="{{ asset('storage/' . $img) }}"
+                                                                    alt="product-thumb">
+                                                            </div>
+                                                        </div>
+                                                    @endforeach
+                                                @endforeach
                                             </div>
                                         </div>
 
@@ -244,7 +335,7 @@
                                             <div class="right">
                                                 <h4 class="title">{{ $product->name }}</h4>
                                                 <p class="mb--25">
-                                                    {{ $product->description }}
+                                                    {!! $product->description !!}
                                                 </p>
                                             </div>
                                         </div>
@@ -863,6 +954,33 @@
         const totalVariants = {{ $product->variants->count() }};
         const selectedOptions = {};
 
+        function updateImageBasedOnSelection(combinationId) {
+            const defaultImages = document.getElementById('default-images');
+            const variantImages = document.getElementById('variant-images');
+
+            document.querySelectorAll('#variant-images .thumb-filter').forEach(el => el.style.display = 'none');
+
+            if (combinationId) {
+                const visibleThumbs = Array.from(document.querySelectorAll(
+                    `#variant-images .thumb-filter[data-combination-id="${combinationId}"]`));
+                if (visibleThumbs.length > 0) {
+                    defaultImages.style.display = 'none';
+                    variantImages.style.display = 'block';
+
+                    visibleThumbs.forEach((thumb, i) => {
+                        thumb.style.display = 'inline-block';
+                        if (i === 0) thumb.click(); // auto-select
+                    });
+                    return;
+                }
+            }
+
+            // Fallback
+            variantImages.style.display = 'none';
+            defaultImages.style.display = 'block';
+            const firstDefault = document.querySelector('#default-images .thumb-filter');
+            if (firstDefault) firstDefault.click();
+        }
 
         function updatePriceBasedOnSelection() {
             if (!Array.isArray(variantCombinations) || variantCombinations.length === 0) {
@@ -880,8 +998,10 @@
             const priceElement = document.getElementById('product-price');
             if (matchingCombination) {
                 priceElement.textContent = "₹" + matchingCombination.regular_user_price;
+                updateImageBasedOnSelection(matchingCombination.id);
             } else {
                 priceElement.textContent = "₹{{ $product->regular_user_price }}";
+                updateImageBasedOnSelection(null);
             }
         }
 

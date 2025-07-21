@@ -206,8 +206,23 @@
                                                             <i class="fa-solid fa-bookmark"></i>
                                                         </div>
                                                     @endif
-                                                    <img src="{{ asset('storage/' . $everyDayProduct->thumbnail_image) }}"
-                                                        alt="product">
+                                                    @php
+                                                        $variantThumbnail = $everyDayProduct->images->first(function (
+                                                            $img,
+                                                        ) {
+                                                            return $img->image_type === 'variant_thumbnail';
+                                                        });
+                                                    @endphp
+
+                                                    @if ($everyDayProduct->variants->count() > 0)
+                                                        @if ($variantThumbnail)
+                                                            <img src="{{ asset('storage/' . $variantThumbnail->image_path) }}"
+                                                                alt="product">
+                                                        @endif
+                                                    @else
+                                                        <img src="{{ asset('storage/' . $everyDayProduct->thumbnail_image) }}"
+                                                            alt="product">
+                                                    @endif
                                                     {{-- <img src="assets/images/grocery/01.jpg" alt="grocery"> --}}
                                                 </a>
                                             </div>
@@ -296,8 +311,24 @@
                                                         <i class="fa-solid fa-bookmark"></i>
                                                     </div>
                                                 @endif
-                                                <img src="{{ asset('storage/' . $populerProduct->thumbnail_image) }}"
-                                                    alt="product">
+                                                @php
+                                                    $variantThumbnail = $populerProduct->images->first(function ($img) {
+                                                        return $img->image_type === 'variant_thumbnail';
+                                                    });
+                                                @endphp
+
+                                                @if ($populerProduct->variants->count() > 0)
+                                                    @if ($variantThumbnail)
+                                                        <img src="{{ asset('storage/' . $variantThumbnail->image_path) }}"
+                                                            alt="product">
+                                                    @endif
+                                                @else
+                                                    <img src="{{ asset('storage/' . $populerProduct->thumbnail_image) }}"
+                                                        alt="product">
+                                                @endif
+
+                                                {{-- <img src="{{ asset('storage/' . $populerProduct->thumbnail_image) }}"
+                                                    alt="product"> --}}
                                             </a>
                                             <div class="body-content">
 
@@ -387,8 +418,23 @@
                                                             <i class="fa-solid fa-bookmark"></i>
                                                         </div>
                                                     @endif
-                                                    <img src="{{ asset('storage/' . $lat_pro->thumbnail_image) }}"
-                                                        alt="product">
+                                                    @php
+                                                        $variantThumbnail = $lat_pro->images->first(function ($img) {
+                                                            return $img->image_type === 'variant_thumbnail';
+                                                        });
+                                                    @endphp
+
+                                                    @if ($lat_pro->variants->count() > 0)
+                                                        @if ($variantThumbnail)
+                                                            <img src="{{ asset('storage/' . $variantThumbnail->image_path) }}"
+                                                                alt="product">
+                                                        @endif
+                                                    @else
+                                                        <img src="{{ asset('storage/' . $lat_pro->thumbnail_image) }}"
+                                                            alt="product">
+                                                    @endif
+                                                    {{-- <img src="{{ asset('storage/' . $lat_pro->thumbnail_image) }}"
+                                                        alt="product"> --}}
                                                 </a>
                                             </div>
                                             <!-- iamge and sction area start -->
@@ -456,10 +502,12 @@
             <div class="row g-4">
                 @foreach ($sellers as $seller)
                     <div class="col-lg-3 col-md-6 col-sm-12 col-12">
-                        <div class="single-feature-card bg_image one" style="background-image: url('{{ asset('storage/' . $seller->brand_logo) }}');">
+                        <div class="single-feature-card bg_image one"
+                            style="background-image: url('{{ asset('storage/' . $seller->brand_logo) }}');">
                             <div class="content-area">
                                 <h3 class="title">{{ $seller->brand }}</h3>
-                                <a href="{{ route('shop', ['type' => 'brand', 'id' => Crypt::encrypt($seller->id)]) }}" class="shop-now-goshop-btn">
+                                <a href="{{ route('shop', ['type' => 'brand', 'id' => Crypt::encrypt($seller->id)]) }}"
+                                    class="shop-now-goshop-btn">
                                     <span class="text">Shop Now</span>
                                     <div class="plus-icon">
                                         <i class="fa-sharp fa-regular fa-plus"></i>
@@ -510,7 +558,22 @@
                                                     <i class="fa-solid fa-bookmark"></i>
                                                 </div>
                                             @endif
-                                            <img src="{{ asset('storage/' . $offer->thumbnail_image) }}" alt="product">
+                                            @php
+                                                $variantThumbnail = $offer->images->first(function ($img) {
+                                                    return $img->image_type === 'variant_thumbnail';
+                                                });
+                                            @endphp
+
+                                            @if ($offer->variants->count() > 0)
+                                                @if ($variantThumbnail)
+                                                    <img src="{{ asset('storage/' . $variantThumbnail->image_path) }}"
+                                                        alt="product">
+                                                @endif
+                                            @else
+                                                <img src="{{ asset('storage/' . $offer->thumbnail_image) }}"
+                                                    alt="product">
+                                            @endif
+                                            {{-- <img src="{{ asset('storage/' . $offer->thumbnail_image) }}" alt="product"> --}}
                                         </a>
                                         <div class="body-content">
 

@@ -88,8 +88,25 @@
                                                                 <i class="fa-solid fa-bookmark"></i>
                                                             </div>
                                                         @endif
-                                                        <img src="{{ asset('storage/' . $product->thumbnail_image) }}"
-                                                            alt="product">
+                                                        @php
+                                                            $variantThumbnail = $product->images->first(
+                                                                function ($img) {
+                                                                    return $img->image_type === 'variant_thumbnail';
+                                                                },
+                                                            );
+                                                        @endphp
+
+                                                        @if ($product->variants->count() > 0)
+                                                            @if ($variantThumbnail)
+                                                                <img src="{{ asset('storage/' . $variantThumbnail->image_path) }}"
+                                                                    alt="product">
+                                                            @endif
+                                                        @else
+                                                            <img src="{{ asset('storage/' . $product->thumbnail_image) }}"
+                                                                alt="product">
+                                                        @endif
+                                                        {{-- <img src="{{ asset('storage/' . $product->thumbnail_image) }}"
+                                                            alt="product"> --}}
                                                     </a>
                                                 </div>
 

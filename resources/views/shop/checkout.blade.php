@@ -419,10 +419,24 @@
                         }),
                         success: function(data) {
                             if (data.success) {
-                                alert("Payment successful!");
-                                window.location.href = "/thank-you";
+                                Swal.fire({
+                                    title: 'Payment Successful!',
+                                    text: 'Thank you for your purchase.',
+                                    icon: 'success',
+                                    confirmButtonText: 'Keep Shopping'
+                                }).then((result) => {
+                                    if (result.isConfirmed) {
+                                        window.location.href =
+                                            "{{ route('home') }}";
+                                    }
+                                });
                             } else {
-                                alert("Payment failed.");
+                                Swal.fire({
+                                    title: 'Payment Failed',
+                                    text: 'Something went wrong. Please try again.',
+                                    icon: 'error',
+                                    confirmButtonText: 'OK'
+                                });
                             }
                         },
                         error: function() {
