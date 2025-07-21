@@ -112,16 +112,19 @@
 
                                             {{-- Variant Thumbnail Images --}}
                                             <div id="variant-images" class="product-thumb-filter-group left"
-                                                style="display: none;">
+                                                >
                                                 @foreach ($variantImages as $combinationId => $images)
                                                     @foreach ($images as $index => $img)
+                                                        @if ($index === 0)
+                                                            @continue
+                                                        @endif
                                                         @php
                                                             $key = "variant-{$combinationId}-{$index}";
                                                             $classNames[
                                                                 $key
                                                             ] = "variant-image-{$combinationId}-{$index}";
                                                         @endphp
-                                                        <div class="thumb-filter filter-btn {{ $index === 0 ? 'active' : '' }}"
+                                                        <div class="thumb-filter filter-btn {{ $index === 1 ? 'active' : '' }}"
                                                             data-combination-id="{{ $combinationId }}"
                                                             data-show=".{{ $classNames[$key] }}" style="display: none;">
                                                             <img src="{{ asset('storage/' . $img) }}"
@@ -154,6 +157,9 @@
 
                                                 @foreach ($variantImages as $combinationId => $images)
                                                     @foreach ($images as $index => $img)
+                                                        @if ($index === 0)
+                                                            @continue
+                                                        @endif
                                                         @php
                                                             $key = "variant-{$combinationId}-{$index}";
                                                             $wrapperClass = $classNames[$key];
@@ -329,8 +335,20 @@
                                     <div class="single-tab-content-shop-details">
                                         <div class="details-row-2">
                                             <div class="left-area">
-                                                <img src="{{ asset('storage/' . $product->thumbnail_image) }}"
-                                                    alt="shop">
+                                                @if (!empty($variantImages))
+                                                    @foreach ($variantImages as $combinationId => $images)
+                                                        @if (isset($images[1]))
+                                                            <img src="{{ asset('storage/' . $images[1]) }}" 
+                                                                alt="variant-image" 
+                                                                class="variant-display-image" 
+                                                                data-combination-id="{{ $combinationId }}"
+                                                                style="border-radius: 5px; {{ $loop->first ? 'display: block;' : 'display: none;' }}">
+                                                        @endif
+                                                    @endforeach
+                                                @else
+                                                    <img src="{{ asset('storage/' . $product->thumbnail_image) }}"
+                                                        alt="shop">
+                                                @endif
                                             </div>
                                             <div class="right">
                                                 <h4 class="title">{{ $product->name }}</h4>
@@ -965,7 +983,6 @@
                     `#variant-images .thumb-filter[data-combination-id="${combinationId}"]`));
                 if (visibleThumbs.length > 0) {
                     defaultImages.style.display = 'none';
-                    variantImages.style.display = 'block';
 
                     visibleThumbs.forEach((thumb, i) => {
                         thumb.style.display = 'inline-block';
@@ -977,7 +994,6 @@
 
             // Fallback
             variantImages.style.display = 'none';
-            defaultImages.style.display = 'block';
             const firstDefault = document.querySelector('#default-images .thumb-filter');
             if (firstDefault) firstDefault.click();
         }
@@ -1204,6 +1220,41 @@
                         s.classList.add('fa-regular');
                     }
                 });
+            });
+        });
+
+        // Handle variant selection to show corresponding images
+        const variantRadios = document.querySelectorAll('input[type="radio"][name^="variant_"]');
+        const variantImages = document.querySelectorAll('.variant-display-image');
+        
+        variantRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.checked) {
+                    // Get all selected variant option IDs
+                    const selectedOptions = [];
+                    const allVariantRadios = document.querySelectorAll('input[type="radio"][name^="variant_"]:checked');
+                    
+                    allVariantRadios.forEach(selectedRadio => {
+                        selectedOptions.push(selectedRadio.value);
+                    });
+                    
+                    // Hide all variant images first
+                    variantImages.forEach(img => {
+                        img.style.display = 'none';
+                    });
+                    
+                    // Find and show the matching combination image
+                    // This is a simplified approach - you might need to adjust based on your combination logic
+                    const combinationId = this.closest('.shop-sidevbar').getAttribute('data-combination-id') || '1';
+                    const matchingImage = document.querySelector(`.variant-display-image[data-combination-id="${combinationId}"]`);
+                    
+                    if (matchingImage) {
+                        matchingImage.style.display = 'block';
+                    } else if (variantImages.length > 0) {
+                        // Fallback to show first variant image if no exact match
+                        variantImages[0].style.display = 'block';
+                    }
+                }
             });
         });
     });
