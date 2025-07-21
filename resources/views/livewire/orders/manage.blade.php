@@ -16,11 +16,13 @@ new class extends Component
     public $showModal = false;
     public $showDeleteModal = false;
     public $showStatusModal = false;
+    public $showViewModal = false;
     public $editMode = false;
     public $orderId = null;
     public $orderToDelete = null;
     public $orderToToggle = null;
     public $newStatusValue = null;
+    public $viewOrder = null;
     
     // Form fields
     public $user_id = '';
@@ -161,13 +163,24 @@ new class extends Component
         $isSeller = $seller !== null;
 
         // Work with orders but show seller-specific orders
-        $query = orders::with(['orderSellerProducts.product', 'orderSellerProducts.seller', 'user']);
+        $query = orders::with([
+            'orderSellerProducts.product.images', 
+            'orderSellerProducts.seller', 
+            'orderSellerProducts.variantCombination',
+            'user',
+            'billingDetail.shippingAddress'
+        ]);
 
         // If user is a seller, only show orders that contain their products
         if ($isSeller) {
             $seller_query = OrderSellerProduct::whereIn('product_id', 
                     products::where('seller_id', $seller->id)->pluck('id')
-                )->with(['product', 'order.user'])->latest()->paginate(10);
+                )->with([
+                    'product.images', 
+                    'order.user', 
+                    'order.billingDetail.shippingAddress',
+                    'variantCombination'
+                ])->latest()->paginate(10);
         }
 
         if ($this->search) {
@@ -273,6 +286,25 @@ new class extends Component
     {
         $this->showModal = false;
         $this->resetForm();
+    }
+
+    public function openViewModal($id)
+    {
+        $this->viewOrder = orders::with([
+            'user',
+            'orderSellerProducts.product.images',
+            'orderSellerProducts.seller',
+            'orderSellerProducts.variantCombination',
+            'billingDetail.shippingAddress'
+        ])->findOrFail($id);
+        
+        $this->showViewModal = true;
+    }
+
+    public function closeViewModal()
+    {
+        $this->showViewModal = false;
+        $this->viewOrder = null;
     }
 
     public function confirmDelete($id)
@@ -722,8 +754,19 @@ new class extends Component
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                         <div class="flex items-center gap-2">
                                             <button 
+                                                wire:click="openViewModal({{ $order->id }})"
+                                                class="text-green-600 hover:text-green-900"
+                                                title="View Order Details"
+                                            >
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                </svg>
+                                            </button>
+                                            <button 
                                                 wire:click="edit({{ $order->id }})"
                                                 class="text-blue-600 hover:text-blue-900"
+                                                title="Edit Order"
                                             >
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -732,6 +775,7 @@ new class extends Component
                                             <button 
                                                 wire:click="confirmDelete({{ $order->id }})"
                                                 class="text-red-600 hover:text-red-900"
+                                                title="Delete Order"
                                             >
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -806,8 +850,19 @@ new class extends Component
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                         <div class="flex items-center gap-2">
                                             <button 
+                                                wire:click="openViewModal({{ $order->order->id }})"
+                                                class="text-green-600 hover:text-green-900"
+                                                title="View Order Details"
+                                            >
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                </svg>
+                                            </button>
+                                            <button 
                                                 wire:click="editSellerOrder({{ $order->id }})"
                                                 class="text-blue-600 hover:text-blue-900"
+                                                title="Edit Order Item"
                                             >
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -815,6 +870,15 @@ new class extends Component
                                             </button>
                                             <button 
                                                 wire:click="confirmDeleteSellerOrder({{ $order->id }})"
+                                                class="text-red-600 hover:text-red-900"
+                                                title="Delete Order Item"
+                                            >
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </td>
                                                 class="text-red-600 hover:text-red-900"
                                             >
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1310,6 +1374,294 @@ new class extends Component
                                    rounded-lg"
                         >
                             Change to {{ ucfirst($newStatusValue) }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- Order Details Modal -->
+    @if($showViewModal && $viewOrder)
+        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div class="bg-white dark:bg-zinc-900 rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+                <div class="p-6">
+                    <!-- Modal Header -->
+                    <div class="flex items-center justify-between mb-6 border-b border-gray-200 dark:border-gray-700 pb-4">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
+                                Order Details: #{{ $viewOrder->order_number }}
+                            </h2>
+                            <p class="text-sm text-gray-600 dark:text-gray-300">
+                                Created on {{ $viewOrder->created_at->format('M d, Y \a\t g:i A') }}
+                            </p>
+                        </div>
+                        <button wire:click="closeViewModal" class="text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-gray-100">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Left Column: Order Information -->
+                        <div class="lg:col-span-2 space-y-6">
+                            <!-- Order Summary -->
+                            <div class="bg-gray-50 dark:bg-zinc-800 rounded-lg p-4">
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Order Summary</h3>
+                                <div class="grid grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                        <span class="text-gray-600 dark:text-gray-400">Order Status:</span>
+                                        <span class="ml-2 inline-flex px-2 py-1 text-xs font-medium rounded-full
+                                            {{ $viewOrder->overall_status === 'pending' ? 'bg-yellow-100 text-yellow-800' : '' }}
+                                            {{ $viewOrder->overall_status === 'confirmed' ? 'bg-blue-100 text-blue-800' : '' }}
+                                            {{ $viewOrder->overall_status === 'shipped' ? 'bg-purple-100 text-purple-800' : '' }}
+                                            {{ $viewOrder->overall_status === 'delivered' ? 'bg-green-100 text-green-800' : '' }}
+                                            {{ $viewOrder->overall_status === 'cancelled' ? 'bg-red-100 text-red-800' : '' }}">
+                                            {{ ucfirst($viewOrder->overall_status) }}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-600 dark:text-gray-400">Total Amount:</span>
+                                        <span class="ml-2 font-semibold text-green-600">₹{{ number_format($viewOrder->total_order_amount, 2) }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-600 dark:text-gray-400">Total Items:</span>
+                                        <span class="ml-2">{{ $viewOrder->orderSellerProducts->count() }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-600 dark:text-gray-400">Payment Status:</span>
+                                        @if($viewOrder->billingDetail)
+                                            <span class="ml-2 inline-flex px-2 py-1 text-xs font-medium rounded-full
+                                                {{ $viewOrder->billingDetail->payment_status === 'pending' ? 'bg-yellow-100 text-yellow-800' : '' }}
+                                                {{ $viewOrder->billingDetail->payment_status === 'completed' || $viewOrder->billingDetail->payment_status === 'complete' ? 'bg-green-100 text-green-800' : '' }}
+                                                {{ $viewOrder->billingDetail->payment_status === 'failed' ? 'bg-red-100 text-red-800' : '' }}">
+                                                {{ ucfirst($viewOrder->billingDetail->payment_status) }}
+                                            </span>
+                                        @else
+                                            <span class="ml-2 text-gray-500">N/A</span>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Customer Information -->
+                            <div class="bg-gray-50 dark:bg-zinc-800 rounded-lg p-4">
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Customer Information</h3>
+                                @if($viewOrder->user)
+                                    <div class="space-y-2 text-sm">
+                                        <div>
+                                            <span class="text-gray-600 dark:text-gray-400">Name:</span>
+                                            <span class="ml-2 font-medium">{{ $viewOrder->user->name }}</span>
+                                        </div>
+                                        <div>
+                                            <span class="text-gray-600 dark:text-gray-400">Email:</span>
+                                            <span class="ml-2">{{ $viewOrder->user->email }}</span>
+                                        </div>
+                                        @if($viewOrder->billingDetail)
+                                            <div>
+                                                <span class="text-gray-600 dark:text-gray-400">Phone:</span>
+                                                <span class="ml-2">{{ $viewOrder->billingDetail->billing_phone }}</span>
+                                            </div>
+                                        @endif
+                                    </div>
+                                @else
+                                    <p class="text-gray-500">Customer information not available</p>
+                                @endif
+                            </div>
+
+                            <!-- Order Items -->
+                            <div class="bg-gray-50 dark:bg-zinc-800 rounded-lg p-4">
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Order Items</h3>
+                                <div class="space-y-4">
+                                    @foreach($viewOrder->orderSellerProducts as $item)
+                                        <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-white dark:bg-zinc-900">
+                                            <div class="flex items-start space-x-4">
+                                                <!-- Product Image -->
+                                                <div class="flex-shrink-0">
+                                                    @if($item->product && $item->product->images->count() > 0)
+                                                        <img src="{{ asset('storage/products/' . $item->product->images->first()->image_path) }}" 
+                                                             alt="{{ $item->product->name }}" 
+                                                             class="w-16 h-16 object-cover rounded-lg">
+                                                    @else
+                                                        <div class="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+                                                            <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                            </svg>
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                                
+                                                <!-- Product Details -->
+                                                <div class="flex-1 min-w-0">
+                                                    <div class="flex justify-between items-start">
+                                                        <div>
+                                                            <h4 class="text-sm font-medium text-gray-900 dark:text-white">
+                                                                {{ $item->product->name ?? 'Product not found' }}
+                                                            </h4>
+                                                            @if($item->variantCombination)
+                                                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                                                    Variant: {{ $item->variantCombination->getFormattedVariantText() }}
+                                                                </p>
+                                                            @endif
+                                                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                                                Seller: {{ $item->seller->company_name ?? 'N/A' }}
+                                                            </p>
+                                                            @if($item->notes)
+                                                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                                                    Notes: {{ $item->notes }}
+                                                                </p>
+                                                            @endif
+                                                        </div>
+                                                        <div class="text-right">
+                                                            <p class="text-sm font-medium text-gray-900 dark:text-white">
+                                                                ₹{{ number_format($item->total_amount, 2) }}
+                                                            </p>
+                                                            <p class="text-xs text-gray-500 dark:text-gray-400">
+                                                                {{ $item->quantity }} × ₹{{ number_format($item->unit_price, 2) }}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <!-- Item Status -->
+                                                    <div class="mt-2">
+                                                        <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full
+                                                            {{ $item->status === 'pending' ? 'bg-yellow-100 text-yellow-800' : '' }}
+                                                            {{ $item->status === 'confirmed' ? 'bg-blue-100 text-blue-800' : '' }}
+                                                            {{ $item->status === 'shipped' ? 'bg-purple-100 text-purple-800' : '' }}
+                                                            {{ $item->status === 'delivered' ? 'bg-green-100 text-green-800' : '' }}
+                                                            {{ $item->status === 'cancelled' ? 'bg-red-100 text-red-800' : '' }}">
+                                                            {{ ucfirst($item->status) }}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Column: Billing & Shipping -->
+                        <div class="space-y-6">
+                            <!-- Billing Information -->
+                            @if($viewOrder->billingDetail)
+                                <div class="bg-gray-50 dark:bg-zinc-800 rounded-lg p-4">
+                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Billing Information</h3>
+                                    <div class="space-y-2 text-sm">
+                                        <div>
+                                            <span class="text-gray-600 dark:text-gray-400">Phone:</span>
+                                            <span class="ml-2">{{ $viewOrder->billingDetail->billing_phone }}</span>
+                                        </div>
+                                        <div>
+                                            <span class="text-gray-600 dark:text-gray-400">Address:</span>
+                                            <div class="ml-2 mt-1">
+                                                {{ $viewOrder->billingDetail->billing_address }}<br>
+                                                {{ $viewOrder->billingDetail->billing_city }}, {{ $viewOrder->billingDetail->billing_state }}<br>
+                                                {{ $viewOrder->billingDetail->billing_postal_code }}<br>
+                                                {{ $viewOrder->billingDetail->billing_country }}
+                                            </div>
+                                        </div>
+                                        @if($viewOrder->billingDetail->gst_number)
+                                            <div>
+                                                <span class="text-gray-600 dark:text-gray-400">GST Number:</span>
+                                                <span class="ml-2 font-mono">{{ $viewOrder->billingDetail->gst_number }}</span>
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+
+                                <!-- Shipping Information -->
+                                @if($viewOrder->billingDetail->shippingAddress)
+                                    <div class="bg-gray-50 dark:bg-zinc-800 rounded-lg p-4">
+                                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Shipping Information</h3>
+                                        <div class="space-y-2 text-sm">
+                                            @if($viewOrder->billingDetail->shippingAddress->recipient_name)
+                                                <div>
+                                                    <span class="text-gray-600 dark:text-gray-400">Recipient:</span>
+                                                    <span class="ml-2">{{ $viewOrder->billingDetail->shippingAddress->recipient_name }}</span>
+                                                </div>
+                                            @endif
+                                            @if($viewOrder->billingDetail->shippingAddress->recipient_phone)
+                                                <div>
+                                                    <span class="text-gray-600 dark:text-gray-400">Phone:</span>
+                                                    <span class="ml-2">{{ $viewOrder->billingDetail->shippingAddress->recipient_phone }}</span>
+                                                </div>
+                                            @endif
+                                            <div>
+                                                <span class="text-gray-600 dark:text-gray-400">Address:</span>
+                                                <div class="ml-2 mt-1">
+                                                    {{ $viewOrder->billingDetail->shippingAddress->address_line_1 }}<br>
+                                                    @if($viewOrder->billingDetail->shippingAddress->address_line_2)
+                                                        {{ $viewOrder->billingDetail->shippingAddress->address_line_2 }}<br>
+                                                    @endif
+                                                    {{ $viewOrder->billingDetail->shippingAddress->city }}, {{ $viewOrder->billingDetail->shippingAddress->state }}<br>
+                                                    {{ $viewOrder->billingDetail->shippingAddress->postal_code }}<br>
+                                                    {{ $viewOrder->billingDetail->shippingAddress->country }}
+                                                </div>
+                                            </div>
+                                            @if($viewOrder->billingDetail->shippingAddress->landmark)
+                                                <div>
+                                                    <span class="text-gray-600 dark:text-gray-400">Landmark:</span>
+                                                    <span class="ml-2">{{ $viewOrder->billingDetail->shippingAddress->landmark }}</span>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                @endif
+
+                                <!-- Payment Details -->
+                                <div class="bg-gray-50 dark:bg-zinc-800 rounded-lg p-4">
+                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Payment Details</h3>
+                                    <div class="space-y-2 text-sm">
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600 dark:text-gray-400">Subtotal:</span>
+                                            <span>₹{{ number_format($viewOrder->billingDetail->subtotal, 2) }}</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600 dark:text-gray-400">Tax Amount:</span>
+                                            <span>₹{{ number_format($viewOrder->billingDetail->tax_amount, 2) }}</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600 dark:text-gray-400">Shipping Charge:</span>
+                                            <span>₹{{ number_format($viewOrder->billingDetail->shipping_charge, 2) }}</span>
+                                        </div>
+                                        @if($viewOrder->billingDetail->discount_amount > 0)
+                                            <div class="flex justify-between text-green-600">
+                                                <span>Discount:</span>
+                                                <span>-₹{{ number_format($viewOrder->billingDetail->discount_amount, 2) }}</span>
+                                            </div>
+                                        @endif
+                                        <div class="border-t border-gray-200 dark:border-gray-600 pt-2 mt-2">
+                                            <div class="flex justify-between font-semibold text-lg">
+                                                <span class="text-gray-900 dark:text-white">Total:</span>
+                                                <span class="text-green-600">₹{{ number_format($viewOrder->billingDetail->total_amount, 2) }}</span>
+                                            </div>
+                                        </div>
+                                        @if($viewOrder->billingDetail->payment_method)
+                                            <div class="flex justify-between pt-2">
+                                                <span class="text-gray-600 dark:text-gray-400">Payment Method:</span>
+                                                <span class="capitalize">{{ str_replace('_', ' ', $viewOrder->billingDetail->payment_method) }}</span>
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+                            @else
+                                <div class="bg-gray-50 dark:bg-zinc-800 rounded-lg p-4">
+                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Billing Information</h3>
+                                    <p class="text-gray-500 dark:text-gray-400">No billing information available</p>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+
+                    <!-- Modal Footer -->
+                    <div class="flex justify-end pt-6 border-t border-gray-200 dark:border-gray-700 mt-6">
+                        <button 
+                            wire:click="closeViewModal"
+                            class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-zinc-700 rounded-lg hover:bg-gray-300 dark:hover:bg-zinc-600"
+                        >
+                            Close
                         </button>
                     </div>
                 </div>
