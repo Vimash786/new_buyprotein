@@ -30357,57 +30357,41 @@ header.header-three .sub-dropdown .submenu.third-lvl.base {
 
 /* HTML: <div class="loader"></div> */
 .loader-wrapper {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: white; /* optional: if you want a background */
-  z-index: 9999;      /* optional: to make sure it's on top */
-}
-
-.loader {
-  display: inline-flex;
-  border: 10px solid #009ec9;
-  border-radius: 5px;
-}
-
-.loader::before,
-.loader::after {
-  content: "0 1 2 3 4 5 6 7 8 9 0";
-  font-size: 30px;
-  font-family: monospace;
-  font-weight: bold;
-  line-height: 1em;
-  height: 1em;
-  width: 1.2ch;
-  text-align: center;
-  outline: 1px solid #009ec9;
-  color: #009ec9;
-  text-shadow: 0 0 0 #009ec9;
-  overflow: hidden; 
-  animation: l4 2s infinite linear;
-}
-
-.loader::before {
-  animation-duration: 4s;
-}
-
-@keyframes l4 {
-  100% {
-    text-shadow: 0 var(--t, -10em) 0 #009ec9;
-  }
-}
-
-.loader-wrapper {
-  transition: opacity 0.5s ease;
-  opacity: 1;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: white;
+    z-index: 9999;
+    transition: opacity 0.5s ease;
+    opacity: 1;
 }
 
 .loader-wrapper.hidden {
-  opacity: 0;
-  pointer-events: none;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.loader {
+    width: 50px;
+    padding: 8px;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: #009ec9;
+    --_m: conic-gradient(#0000 10%, #000), linear-gradient(#000 0 0) content-box;
+    -webkit-mask: var(--_m);
+    mask: var(--_m);
+    -webkit-mask-composite: source-out;
+    mask-composite: subtract;
+    animation: l3 1s infinite linear;
+}
+
+@keyframes l3 {
+    to {
+        transform: rotate(1turn);
+    }
 }

@@ -10,6 +10,7 @@ use App\Models\Cart;
 use App\Models\Category;
 use App\Models\Contact;
 use App\Models\orders;
+use App\Models\Policy;
 use App\Models\products;
 use App\Models\ProductVariantCombination;
 use App\Models\ProductVariantOption;
@@ -367,23 +368,30 @@ class DashboardController extends Controller
 
     public function termCondition()
     {
+        $terms = Policy::where('type', 'terms-conditions')->first();
 
-        return view('informativePages.terms-condition');
+        return view('informativePages.terms-condition', compact('terms'));
     }
 
     public function shippingPolicy()
     {
-        return view('informativePages.shopping-policy');
+        $shipping_policy = Policy::where('type', 'shipping-policy')->first();
+
+        return view('informativePages.shopping-policy', compact('shipping_policy'));
     }
 
     public function privacyPolicy()
     {
-        return view('informativePages.privacy-policy');
+        $privacy_policy = Policy::where('type', 'privacy-policy')->first();
+        
+        return view('informativePages.privacy-policy', compact('privacy_policy'));
     }
 
     public function returnPolicy()
     {
-        return view('informativePages.return-policy');
+        $return_policy = Policy::where('type', 'return-policy')->first();
+
+        return view('informativePages.return-policy', compact('return_policy'));
     }
 
     public function contact()
