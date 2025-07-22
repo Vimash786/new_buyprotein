@@ -96,7 +96,7 @@ class Coupon extends Model
      */
     public function userAssignments()
     {
-        return $this->hasMany(CouponAssignment::class)->where('assignable_type', User::class);
+        return $this->hasMany(CouponAssignment::class)->where('assignable_type', 'user');
     }
 
     /**
@@ -104,7 +104,7 @@ class Coupon extends Model
      */
     public function productAssignments()
     {
-        return $this->hasMany(CouponAssignment::class)->where('assignable_type', 'App\Models\products');
+        return $this->hasMany(CouponAssignment::class)->where('assignable_type', 'product');
     }
 
     /**
@@ -112,7 +112,7 @@ class Coupon extends Model
      */
     public function sellerAssignments()
     {
-        return $this->hasMany(CouponAssignment::class)->where('assignable_type', Sellers::class);
+        return $this->hasMany(CouponAssignment::class)->where('assignable_type', 'seller');
     }
 
     /**
@@ -233,11 +233,14 @@ class Coupon extends Model
      */
     public function assignTo($model, $assignedBy = null)
     {
+        $assignableType = $this->getAssignableType($model);
+        
         return CouponAssignment::create([
             'coupon_id' => $this->id,
-            'assignable_type' => get_class($model),
+            'assignable_type' => $assignableType,
             'assignable_id' => $model->id,
-            'assigned_by' => $assignedBy ?? auth()->id(),
+            'assigned_by' => $assignedBy,
+            'assigned_at' => now(),
         ]);
     }
 
@@ -246,9 +249,11 @@ class Coupon extends Model
      */
     public function removeAssignmentFrom($model)
     {
+        $assignableType = $this->getAssignableType($model);
+        
         return CouponAssignment::where([
             'coupon_id' => $this->id,
-            'assignable_type' => get_class($model),
+            'assignable_type' => $assignableType,
             'assignable_id' => $model->id,
         ])->delete();
     }
@@ -258,10 +263,31 @@ class Coupon extends Model
      */
     public function isAssignedTo($model)
     {
+        $assignableType = $this->getAssignableType($model);
+        
         return CouponAssignment::where([
             'coupon_id' => $this->id,
-            'assignable_type' => get_class($model),
+            'assignable_type' => $assignableType,
             'assignable_id' => $model->id,
         ])->exists();
+    }
+
+    /**
+     * Get the correct assignable type enum value for a model
+     */
+    private function getAssignableType($model)
+    {
+        $className = get_class($model);
+        
+        switch ($className) {
+            case 'App\Models\User':
+                return 'user';
+            case 'App\Models\products':
+                return 'product';
+            case 'App\Models\Sellers':
+                return 'seller';
+            default:
+                throw new \InvalidArgumentException("Unsupported model type: {$className}");
+        }
     }
 }

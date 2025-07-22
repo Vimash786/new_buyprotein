@@ -108,11 +108,11 @@
                                             @if($assignment->assignable_type === 'user_type')
                                                 {{ ucfirst($assignment->user_type) }}
                                             @elseif($assignment->assignable)
-                                                @if($assignment->assignable_type === 'users')
+                                                @if($assignment->assignable_type === 'user')
                                                     {{ $assignment->assignable->name ?? 'N/A' }}
-                                                @elseif($assignment->assignable_type === 'products')
+                                                @elseif($assignment->assignable_type === 'product')
                                                     {{ $assignment->assignable->name ?? 'N/A' }}
-                                                @elseif($assignment->assignable_type === 'sellers')
+                                                @elseif($assignment->assignable_type === 'seller')
                                                     {{ $assignment->assignable->company_name ?? $assignment->assignable->name ?? 'N/A' }}
                                                 @endif
                                             @else

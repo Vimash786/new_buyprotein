@@ -50,6 +50,7 @@ class ManageCoupons extends Component
     public $reportData = null;
     public $reportDateFrom = '';
     public $reportDateTo = '';
+    public $reportCouponId = '';
 
     public function mount()
     {
@@ -241,31 +242,36 @@ class ManageCoupons extends Component
         
         foreach ($this->selectedItems as $itemId) {
             $modelClass = null;
+            $assignableType = null;
             
             switch ($this->assignmentType) {
                 case 'users':
                     $modelClass = User::class;
+                    $assignableType = 'user';
                     break;
                 case 'products':
                     $modelClass = products::class;
+                    $assignableType = 'product';
                     break;
                 case 'sellers':
                     $modelClass = Sellers::class;
+                    $assignableType = 'seller';
                     break;
             }
 
-            if ($modelClass) {
+            if ($modelClass && $assignableType) {
                 // Check if assignment already exists
                 $existingAssignment = CouponAssignment::where('coupon_id', $this->selectedCoupon->id)
-                    ->where('assignable_type', $this->assignmentType)
+                    ->where('assignable_type', $assignableType)
                     ->where('assignable_id', $itemId)
                     ->first();
 
                 if (!$existingAssignment) {
                     CouponAssignment::create([
                         'coupon_id' => $this->selectedCoupon->id,
-                        'assignable_type' => $this->assignmentType,
-                        'assignable_id' => $itemId
+                        'assignable_type' => $assignableType,
+                        'assignable_id' => $itemId,
+                        'assigned_at' => now()
                     ]);
                     $assignedCount++;
                 }
@@ -274,6 +280,18 @@ class ManageCoupons extends Component
 
         session()->flash('message', "Coupon assigned to {$assignedCount} items successfully!");
         $this->closeAssignModal();
+    }
+
+    public function removeAssignment($assignmentId)
+    {
+        $assignment = CouponAssignment::find($assignmentId);
+        
+        if ($assignment) {
+            $assignment->delete();
+            session()->flash('message', 'Assignment removed successfully!');
+        } else {
+            session()->flash('error', 'Assignment not found!');
+        }
     }
 
     public function openReportModal()
@@ -293,23 +311,45 @@ class ManageCoupons extends Component
         $dateFrom = $this->reportDateFrom ?: now()->startOfMonth()->toDateString();
         $dateTo = $this->reportDateTo ?: now()->endOfMonth()->toDateString();
         
+        // Get coupons based on filters
+        $couponsQuery = Coupon::query();
+        
+        if ($this->reportCouponId) {
+            $couponsQuery->where('id', $this->reportCouponId);
+        }
+        
+        $coupons = $couponsQuery->withCount([
+            'assignments',
+            'usages' => function($query) use ($dateFrom, $dateTo) {
+                $query->whereBetween('created_at', [$dateFrom, $dateTo]);
+            }
+        ])->get();
+        
+        // Calculate totals
+        $totalUsage = $coupons->sum('usages_count');
+        $totalDiscount = $coupons->sum(function($coupon) {
+            return $coupon->usages->sum('discount_amount') ?? 0;
+        });
+        
         $this->reportData = [
-            'total_coupons' => Coupon::count(),
-            'active_coupons' => Coupon::where('status', 'active')->count(),
-            'expired_coupons' => Coupon::where('expires_at', '<', now())->count(),
-            'total_assignments' => CouponAssignment::count(),
-            'assignments_by_type' => CouponAssignment::selectRaw('assignable_type, count(*) as count')
-                ->groupBy('assignable_type')
-                ->pluck('count', 'assignable_type'),
-            'top_coupons' => Coupon::withCount('assignments')
-                ->orderBy('assignments_count', 'desc')
-                ->limit(10)
-                ->get(),
-            'recent_assignments' => CouponAssignment::with('coupon')
-                ->whereBetween('created_at', [$dateFrom, $dateTo])
-                ->latest()
-                ->limit(20)
-                ->get(),
+            'total_coupons' => $coupons->count(),
+            'total_usage' => $totalUsage,
+            'total_discount' => $totalDiscount,
+            'total_assignments' => $coupons->sum('assignments_count'),
+            'coupons' => $coupons->map(function($coupon) {
+                return (object)[
+                    'id' => $coupon->id,
+                    'name' => $coupon->name,
+                    'code' => $coupon->code,
+                    'type' => $coupon->type,
+                    'value' => $coupon->value,
+                    'status' => $coupon->status,
+                    'usage_limit' => $coupon->usage_limit,
+                    'used_count' => $coupon->usages_count ?? 0,
+                    'assignments_count' => $coupon->assignments_count ?? 0,
+                    'total_discount_amount' => $coupon->usages->sum('discount_amount') ?? 0,
+                ];
+            }),
             'date_range' => [
                 'from' => $dateFrom,
                 'to' => $dateTo

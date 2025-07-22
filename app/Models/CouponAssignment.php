@@ -34,9 +34,42 @@ class CouponAssignment extends Model
     /**
      * Get the assignable model (User, Product, Seller)
      */
-    public function assignable()
+    public function getAssignableAttribute()
     {
-        return $this->morphTo();
+        switch ($this->assignable_type) {
+            case 'user':
+                return $this->user;
+            case 'product':
+                return $this->product;
+            case 'seller':
+                return $this->seller;
+            default:
+                return null;
+        }
+    }
+
+    /**
+     * Get the user if assignable_type is 'user'
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'assignable_id');
+    }
+
+    /**
+     * Get the product if assignable_type is 'product'
+     */
+    public function product()
+    {
+        return $this->belongsTo(products::class, 'assignable_id');
+    }
+
+    /**
+     * Get the seller if assignable_type is 'seller'
+     */
+    public function seller()
+    {
+        return $this->belongsTo(Sellers::class, 'assignable_id');
     }
 
     /**

@@ -53,6 +53,13 @@
                     </flux:navlist.group>
                     @endif
                     
+                    <!-- Payouts for Sellers -->
+                    @if($isApprovedSeller && $user->role === 'Seller')  
+                    <flux:navlist.group expandable :heading="__('Payouts')" class="grid">
+                        <flux:navlist.item icon="banknotes" :href="route('payouts.sellers')" :current="request()->routeIs('payouts.sellers')" wire:navigate>{{ __('My Payouts') }}</flux:navlist.item>
+                    </flux:navlist.group>
+                    @endif
+                    
                     @if(auth()->user()->role === 'Super')
                     <!-- Payout & Commission -->
                     <flux:navlist.group expandable :heading="__('Payout & Commission')" class="grid">
