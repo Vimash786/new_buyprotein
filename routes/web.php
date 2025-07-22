@@ -71,6 +71,8 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/bulk-order', [DashboardController::class, 'bulkOrder'])->name('bulk.order');
     Route::post('/review-store', [DashboardController::class, 'reviewStore'])->name('review.store');
 
+    Route::post('/apply-coupon', [DashboardController::class, 'applyCoupon'])->name('apply.coupon');
+
     Route::get('/checkout', [DashboardController::class, 'checkout'])->name('user.checkout');
 
     Route::get('razorpay', [RazorpayPaymentController::class, 'index'])->name('razorpay.index');

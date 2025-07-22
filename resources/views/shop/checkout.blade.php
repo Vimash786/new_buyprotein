@@ -28,22 +28,6 @@
             <div class="row">
                 <div
                     class="col-lg-8 pr--40 pr_md--5 pr_sm--5 order-2 order-xl-1 order-lg-2 order-md-2 order-sm-2 mt_md--30 mt_sm--30">
-                    <div class="coupon-input-area-1">
-                        <div class="coupon-area">
-                            <div class="coupon-ask  cupon-wrapper-1">
-                                <button class="coupon-click">Have a coupon? Click here to enter your code</button>
-                            </div>
-                            <div class="coupon-input-area cupon1">
-                                <div class="inner">
-                                    <p class="mt--0 mb--20"> If you have a coupon code, please apply it below.</p>
-                                    <div class="form-area">
-                                        <input type="text" placeholder="Enter Coupon Code...">
-                                        <button type="submit" class="btn-primary rts-btn">Apply Coupon</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
 
                     <div class="rts-billing-details-area">
                         <h3 class="title">Billing Details</h3>
@@ -160,7 +144,7 @@
                                 $unitPrice = $item->price;
                                 $lineTotal = $unitPrice * $item->quantity;
                                 $totalPrice += $lineTotal;
-                                $shipTotal = $totalPrice + 100;
+                                $shipTotal = $totalPrice + 0;
                                 $allProduct[] = $item->id;
                             @endphp
                             <div class="single-shop-list">
@@ -188,7 +172,7 @@
                             <div class="left-area">
                                 <span>Shipping</span>
                             </div>
-                            <span class="price">Flat rate: ₹100.00</span>
+                            <span class="price" style="text-decoration: line-through;">Flat rate: ₹100.00</span>
                         </div>
                         <div class="single-shop-list">
                             <div class="left-area">
@@ -197,7 +181,7 @@
                             <span class="price" style="color: #009ec9;">₹{{ $shipTotal }}</span>
                         </div>
                         <div class="bottom-cupon-code-cart-area">
-                            <input type="text" placeholder="Cupon Code">
+                            <input type="text" placeholder="Cupon Code" id="coupon" class="coupon">
                             <button type="button" class="rts-btn btn-primary apply-coupon">Apply Coupon</button>
                         </div>
                         <div class="cottom-cart-right-area">
@@ -473,6 +457,53 @@
         toggleBillingFields();
     });
 </script>
+
+<script>
+    $(document).ready(function() {
+        $(".apply-coupon").on('click', function() {
+            const paymentAmount = {{ $shipTotal }};
+            const coupon = $("#coupon").val();
+
+            $.ajax({
+                url: "{{ route('apply.coupon') }}",
+                type: "POST",
+                headers: {
+                    "X-CSRF-TOKEN": "{{ csrf_token() }}"
+                },
+                data: {
+                    coupon: coupon,
+                    paymentAmount: paymentAmount,
+                },
+                success: function(data) {
+                    if (data.success) {
+                        Swal.fire({
+                            title: 'Payment Successful!',
+                            text: 'Thank you for your purchase.',
+                            icon: 'success',
+                            confirmButtonText: 'Keep Shopping'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                window.location.href =
+                                    "{{ route('home') }}";
+                            }
+                        });
+                    } else {
+                        Swal.fire({
+                            title: 'Payment Failed',
+                            text: 'Something went wrong. Please try again.',
+                            icon: 'error',
+                            confirmButtonText: 'OK'
+                        });
+                    }
+                },
+                error: function() {
+                    alert("Server error. Please try again.");
+                }
+            });
+        });
+    });
+</script>
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const showNewAddressBtn = document.getElementById('showNewAddressForm');

@@ -9,6 +9,7 @@ use App\Models\BlogComment;
 use App\Models\Cart;
 use App\Models\Category;
 use App\Models\Contact;
+use App\Models\Coupon;
 use App\Models\orders;
 use App\Models\Policy;
 use App\Models\products;
@@ -18,6 +19,7 @@ use App\Models\Review;
 use App\Models\Sellers;
 use App\Models\User;
 use App\Models\Wishlist;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -30,14 +32,14 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $categories = Category::limit(10)->get();
+        $categories = Category::where('is_active', 1)->limit(10)->get();
         // $productCounts = orders::select('product_id', DB::raw('count(*) as total'))->groupBy('product_id')->orderBy('product_id')->get();
         // $productIds = $productCounts->pluck('product_id');
         // $products = products::with(['subCategory', 'category'])->whereIn('id', $productIds)->get();
-        $everyDayEssentials = products::with(['subCategory', 'category', 'images', 'variants'])->where('section_category', 'everyday_essential')->limit(10)->get();
-        $populerProducts = products::with(['images', 'variants'])->where('section_category', 'popular_pick')->limit(6)->get();
-        $latestProducts = products::with(['images', 'variants'])->orderBy('created_at', 'desc')->take(12)->get();
-        $offers = products::with(['images', 'variants'])->where('section_category', 'exclusive_deal')->limit(8)->get();
+        $everyDayEssentials = products::with(['subCategory', 'category', 'images', 'variants'])->where('section_category', 'everyday_essential')->where('super_status', 'approved')->limit(10)->get();
+        $populerProducts = products::with(['images', 'variants'])->where('section_category', 'popular_pick')->where('super_status', 'approved')->limit(6)->get();
+        $latestProducts = products::with(['images', 'variants'])->orderBy('created_at', 'desc')->where('super_status', 'approved')->take(12)->get();
+        $offers = products::with(['images', 'variants'])->where('section_category', 'exclusive_deal')->where('super_status', 'approved')->limit(8)->get();
         $banners = Banner::where('status', 'active')->orderBy('created_at', 'desc')->get();
         $sellers = Sellers::where('status', 'approved')->limit(4)->get();
 
@@ -48,10 +50,10 @@ class DashboardController extends Controller
     {
         try {
             $id = $id ? Crypt::decrypt($id) : null;
-            $categories = Category::limit(10)->get();
-            $brands = Sellers::limit(10)->get();
+            $categories = Category::limit(10)->where('is_active', 1)->get();
+            $brands = Sellers::where('status', 'approved')->limit(10)->get();
 
-            $productsQuery = products::query();
+            $productsQuery = products::query()->where('super_status', 'approved');
 
             if ($type == 'category' && $id) {
                 $productsQuery->where('category_id', $id);
@@ -81,10 +83,7 @@ class DashboardController extends Controller
             $id = Crypt::decrypt($id);
 
             $product = products::with(['subCategory', 'category', 'seller', 'images', 'variants', 'variantCombinations'])->findOrFail($id);
-            $relatedProducts = products::where('category_id', $product->category_id)
-                ->where('id', '!=', $id)
-                ->limit(10)
-                ->get();
+            $relatedProducts = products::where('category_id', $product->category_id)->where('id', '!=', $id)->where('super_status', 'approved')->limit(10)->get();
             $reviews = Review::where('product_id', $id)->get();
             $totalReviews = $reviews->count();
             $averageRating = $reviews->avg('rating');
@@ -383,7 +382,7 @@ class DashboardController extends Controller
     public function privacyPolicy()
     {
         $privacy_policy = Policy::where('type', 'privacy-policy')->first();
-        
+
         return view('informativePages.privacy-policy', compact('privacy_policy'));
     }
 
@@ -495,5 +494,41 @@ class DashboardController extends Controller
         ]);
 
         return redirect()->back()->with('success', 'Review submitted successfully!');
+    }
+
+    public function applyCoupon(Request $request)
+    {
+        $couponData = Coupon::where('code', $request->coupon)->first();
+
+        if ($couponData) {
+            if ($couponData->status == 'active') {
+                if (Carbon::now()->between($couponData->starts_at, $couponData->expires_at)) {
+                    if ($couponData->used_count <= $couponData->usage_limit) {
+                        dd($couponData->usage_limit);
+                    } else {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Coupon Limit is expired.'
+                        ]);
+                    }
+                } else {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Coupon is expired.'
+                    ]);
+                }
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Coupon is expired.'
+                ]);
+            }
+        } else {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid coupon code.'
+            ]);
+        }
+        dd($request->all());
     }
 }

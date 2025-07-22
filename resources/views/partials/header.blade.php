@@ -35,14 +35,14 @@
                                 <span>Categories</span>
                                 @php
                                     use App\Models\Category;
-                                    $catData = Category::limit(10)->get();
+                                    $catData = Category::where('is_active', 1)->limit(10)->get();
                                 @endphp
                                 <ul class="category-sub-menu" id="category-active-four">
                                     @foreach ($catData as $cat)
                                         <li>
-                                            <a href="#" class="menu-item">
+                                            <a href="{{ route('shop', ['type' => 'category', 'id' => Crypt::encrypt($cat->id)]) }}" class="menu-item">
                                                 <span>{{ $cat->name }}</span>
-                                            </a>
+                                            </a>    
                                         </li>
                                     @endforeach
                                 </ul>
@@ -127,7 +127,7 @@
                                 <i class="fa-sharp fa-regular fa-cart-shopping"></i>
                                 <span class="text">My Cart</span>
                                 <span class="number">{{ isset($cartData) ? $cartData->count() : 0 }}</span>
-                                <div class="category-sub-menu card-number-show">
+                                {{-- <div class="category-sub-menu card-number-show">
                                     <h5 class="shopping-cart-number">Shopping Cart
                                         ({{ isset($cartData) ? $cartData->count() : 0 }})</h5>
                                     <div class="cart-items-scroll-vertical">
@@ -189,7 +189,7 @@
                                                 class="rts-btn btn-primary border-only">CheckOut</a>
                                         </div>
                                     </div>
-                                </div>
+                                </div> --}}
                                 <a href="{{ route('user.cart') }}" class="over_link"></a>
                             </div>
 
@@ -424,7 +424,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <a href="cart.html" class="over_link"></a>
+                                    <a href="{{ route('user.cart') }}" class="over_link"></a>
                                 </div>
                             </div>
                             <div class="actions-area">
