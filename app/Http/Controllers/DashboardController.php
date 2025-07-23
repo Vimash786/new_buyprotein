@@ -26,7 +26,6 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
@@ -39,10 +38,10 @@ class DashboardController extends Controller
         // $productCounts = orders::select('product_id', DB::raw('count(*) as total'))->groupBy('product_id')->orderBy('product_id')->get();
         // $productIds = $productCounts->pluck('product_id');
         // $products = products::with(['subCategory', 'category'])->whereIn('id', $productIds)->get();
-        $everyDayEssentials = products::with(['subCategory', 'category', 'images', 'variants'])->where('section_category', 'everyday_essential')->where('super_status', 'approved')->limit(10)->get();
-        $populerProducts = products::with(['images', 'variants'])->where('section_category', 'popular_pick')->where('super_status', 'approved')->limit(6)->get();
+        $everyDayEssentials = products::with(['subCategory', 'category', 'images', 'variants'])->where('section_category', 'LIKE', '%"everyday_essential"%')->where('super_status', 'approved')->limit(10)->get();
+        $populerProducts = products::with(['images', 'variants'])->where('section_category', 'LIKE', '%"popular_pick"%')->where('super_status', 'approved')->limit(6)->get();
         $latestProducts = products::with(['images', 'variants'])->orderBy('created_at', 'desc')->where('super_status', 'approved')->take(12)->get();
-        $offers = products::with(['images', 'variants'])->where('section_category', 'exclusive_deal')->where('super_status', 'approved')->limit(8)->get();
+        $offers = products::with(['images', 'variants'])->where('section_category', 'LIKE', '%"exclusive_deal"%')->where('super_status', 'approved')->limit(8)->get();
         $banners = Banner::where('status', 'active')->orderBy('created_at', 'desc')->get();
         $sellers = Sellers::where('status', 'approved')->limit(4)->get();
 
