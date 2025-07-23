@@ -325,6 +325,7 @@
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
     $(document).ready(function() {
@@ -410,8 +411,7 @@
                                     confirmButtonText: 'Keep Shopping'
                                 }).then((result) => {
                                     if (result.isConfirmed) {
-                                        window.location.href =
-                                            "{{ route('home') }}";
+                                        window.location.href = "/";
                                     }
                                 });
                             } else {

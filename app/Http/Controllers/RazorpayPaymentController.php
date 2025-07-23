@@ -2,15 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\SellerOrder;
+use App\Mail\WelcomeMail;
 use App\Models\BillingDetail;
 use App\Models\Cart;
 use App\Models\orders;
 use App\Models\OrderSellerProduct;
 use App\Models\products;
+use App\Models\Sellers;
 use App\Models\ShippingAddress;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 use Razorpay\Api\Api;
 
 class RazorpayPaymentController extends Controller
@@ -111,8 +116,13 @@ class RazorpayPaymentController extends Controller
                 'total_amount' => $cart->quantity * $cart->price,
             ]);
 
+            $sellerData = User::find($productData->seller_id);
+
+            Mail::to($sellerData->email)->send(new SellerOrder(Auth::user(), $sellerData));
+
             $cart->delete();
         }
+        Mail::to(Auth::user()->email)->send(new WelcomeMail(Auth::user()));
 
         $payment = $api->payment->fetch($request->razorpay_payment_id);
 
