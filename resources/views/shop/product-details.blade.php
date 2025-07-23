@@ -197,11 +197,11 @@
                                                 style="color: #DC2626; font-weight: 600;" id="product-price">
                                                 ₹{{ $product->regular_user_price }}<span
                                                     class="old-price ml--15">$69.35</span></span>
-                                            @if (Auth::user() && Auth::user()->role == 'Gym Owner/Trainer/Influencer/Dietitian')
+                                            {{-- @if (Auth::user() && Auth::user()->role == 'Gym Owner/Trainer/Influencer/Dietitian') --}}
                                                 <a class="mb-4" data-bs-toggle="modal" data-bs-target="#exampleModal">
                                                     Bulk Order
                                                 </a>
-                                            @endif
+                                            {{-- @endif --}}
                                             <div class="product-bottom-action mt-4">
                                                 <div class="cart-edits">
                                                     <div class="quantity-edit action-item">
@@ -545,7 +545,7 @@
                             <label for="quantity" class="form-label">Quantity:</label>
                             <input type="number" name="quantity" placeholder="Enter Product Quantity" value="50"
                                 min="50" required>
-                            <input type="hidden" value="{{ $product->name }}" name="productName">
+                            <input type="hidden" value="{{ $product->id }}" name="product">
                         </div>
                         @if ($product->variants && $product->variants->count() > 0)
                             <div class="rts-item p-4">
@@ -585,7 +585,7 @@
                                         @if (!empty($uniqueOptions) && $uniqueOptions->count())
                                             @foreach ($uniqueOptions as $index => $option)
                                                 <label class="variant-radio mb-2">
-                                                    <input type="radio" name="{{ $variant->id }}"
+                                                    <input type="radio" name="variant_{{ $variant->id }}"
                                                         value="{{ $option->id }}" {{ $loop->first ? 'checked' : '' }}>
                                                     {{ $option->value }}
                                                 </label>

@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\BulkOrder as MailBulkOrder;
 use App\Models\Banner;
 use App\Models\BillingDetail;
 use App\Models\Blog;
 use App\Models\BlogComment;
+use App\Models\BulkOrder;
 use App\Models\Cart;
 use App\Models\Category;
 use App\Models\Contact;
@@ -26,6 +28,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 
 class DashboardController extends Controller
@@ -351,15 +354,15 @@ class DashboardController extends Controller
 
             $cartData = Cart::with('product')->where('user_id', Auth::user()->id)->get();
             $order = orders::where('user_id', Auth::user()->id)->orderBy('created_at', 'desc')->first();
-            
+
             $billingAddress = [];
             if ($order) {
                 $orderId = $order->id;
                 $billingAddress = BillingDetail::where('order_id', $orderId)->get();
             }
-            
+
             return view('shop.checkout', compact('cartData', 'billingAddress'));
-        } catch(Exception $e) {
+        } catch (Exception $e) {
             return redirect()->back()->with('something wrong!');
         }
     }
@@ -427,6 +430,22 @@ class DashboardController extends Controller
                 $variantId = (int) str_replace('variant_', '', $key);
                 return [$variantId => (int) $value];
             });
+
+        $product = products::find($request->product);
+
+        BulkOrder::create([
+            'user_id' => Auth::user()->id,
+            'seller_id' => $product->seller_id,
+            'product_id' => $request->product,
+            'variant_option_ids' => $variantSelections,
+            'quantity' => $request->quantity
+        ]);
+
+        $seller = User::find($product->seller_id);
+
+        Mail::to($seller->email)->send(new MailBulkOrder($seller, Auth::user(), $product, $request->quantity));
+
+        return redirect()->back()->with('Bulk order is make successfully!');
     }
 
     public function reviewStore(Request $request)

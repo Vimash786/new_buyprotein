@@ -318,7 +318,7 @@
                         $subtotalElem.text('₹' + newSubtotal.toFixed(2));
 
                         Toastify({
-                            text: "Item removed from wishlist",
+                            text: "Item removed from Cart.",
                             duration: 2000,
                             gravity: "top",
                             position: "right",
