@@ -42,7 +42,8 @@ new #[Layout('components.layouts.auth')] class extends Component {
     public function removeCategory($category)
     {
         $this->product_category = array_values(array_filter($this->product_category, function($cat) use ($category) {
-            return $cat !== $category;
+            // Use loose comparison to handle string/int type differences
+            return $cat != $category;
         }));
     }
     
@@ -168,19 +169,26 @@ new #[Layout('components.layouts.auth')] class extends Component {
                 'company_name' => ['required', 'string', 'max:255'],
                 'gst_number' => ['required', 'string', 'max:50'],
                 'product_category' => ['required', 'array', 'min:1'],
-                'product_category.*' => ['string'],
+                'product_category.*' => ['numeric'],
                 'contact_no' => ['required', 'string', 'regex:/^\+91[6-9]\d{9}$/'],
                 'brand' => ['required', 'string', 'max:255'],
                 'brand_logo' => ['nullable', 'file', 'image', 'max:10240'],
                 'brand_certificate' => ['required', 'file', 'max:10240'], // 10MB max
             ]);
             
+            // Get category names from IDs
+            $categoryNames = [];
+            $categories = Category::whereIn('id', $validated['product_category'])->get();
+            foreach($categories as $category) {
+                $categoryNames[] = $category->name;
+            }
+            
             // Create seller record
             Sellers::create([
                 'user_id' => $user->id,
                 'company_name' => $validated['company_name'],
                 'gst_number' => $validated['gst_number'],
-                'product_category' => implode(', ', $validated['product_category']), // Convert array to comma-separated string
+                'product_category' => implode(', ', $categoryNames), // Convert category names to comma-separated string
                 'contact_no' => $validated['contact_no'],
                 'brand' => $validated['brand'],
                 'brand_logo' => isset($validated['brand_logo']) ? $validated['brand_logo']->store('brand_logos', 'public') : null,
