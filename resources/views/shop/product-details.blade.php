@@ -111,8 +111,7 @@
                                             </div>
 
                                             {{-- Variant Thumbnail Images --}}
-                                            <div id="variant-images" class="product-thumb-filter-group left"
-                                                >
+                                            <div id="variant-images" class="product-thumb-filter-group left">
                                                 @foreach ($variantImages as $combinationId => $images)
                                                     @foreach ($images as $index => $img)
                                                         @if ($index === 0)
@@ -198,9 +197,9 @@
                                                 ₹{{ $product->regular_user_price }}<span
                                                     class="old-price ml--15">$69.35</span></span>
                                             {{-- @if (Auth::user() && Auth::user()->role == 'Gym Owner/Trainer/Influencer/Dietitian') --}}
-                                                <a class="mb-4" data-bs-toggle="modal" data-bs-target="#exampleModal">
-                                                    Bulk Order
-                                                </a>
+                                            <a class="mb-4" data-bs-toggle="modal" data-bs-target="#exampleModal">
+                                                Bulk Order
+                                            </a>
                                             {{-- @endif --}}
                                             <div class="product-bottom-action mt-4">
                                                 <div class="cart-edits">
@@ -338,9 +337,8 @@
                                                 @if (!empty($variantImages))
                                                     @foreach ($variantImages as $combinationId => $images)
                                                         @if (isset($images[1]))
-                                                            <img src="{{ asset('storage/' . $images[1]) }}" 
-                                                                alt="variant-image" 
-                                                                class="variant-display-image" 
+                                                            <img src="{{ asset('storage/' . $images[1]) }}"
+                                                                alt="variant-image" class="variant-display-image"
                                                                 data-combination-id="{{ $combinationId }}"
                                                                 style="border-radius: 5px; {{ $loop->first ? 'display: block;' : 'display: none;' }}">
                                                         @endif
@@ -363,7 +361,7 @@
                                     aria-labelledby="profile-tab" tabindex="0">
                                     <div class="single-tab-content-shop-details">
                                         <p class="disc">
-                                            {{ $product->description }}
+                                            {!! $product->description !!}
                                         </p>
                                         <div class="table-responsive table-shop-details-pd">
                                             <table class="table">
@@ -385,8 +383,24 @@
                                                         </td>
                                                     </tr>
                                                     <tr>
+                                                        @php
+                                                            $rawCategory = $product->section_category;
+
+                                                            // Make sure we always have an array
+                                                            $categories = is_string($rawCategory)
+                                                                ? json_decode($rawCategory, true)
+                                                                : (is_array($rawCategory)
+                                                                    ? $rawCategory
+                                                                    : []);
+                                                        @endphp
                                                         <td>section category</td>
-                                                        <td>{{ str_replace('_', ' ', $product->section_category) }}</td>
+                                                        <td>
+                                                            @if (!empty($categories))
+                                                                {{ implode(', ', array_map(fn($c) => ucwords(str_replace('_', ' ', $c)), $categories)) }}
+                                                            @else
+                                                                N/A
+                                                            @endif
+                                                        </td>
                                                     </tr>
                                                 </tbody>
                                             </table>
@@ -1226,28 +1240,31 @@
         // Handle variant selection to show corresponding images
         const variantRadios = document.querySelectorAll('input[type="radio"][name^="variant_"]');
         const variantImages = document.querySelectorAll('.variant-display-image');
-        
+
         variantRadios.forEach(radio => {
             radio.addEventListener('change', function() {
                 if (this.checked) {
                     // Get all selected variant option IDs
                     const selectedOptions = [];
-                    const allVariantRadios = document.querySelectorAll('input[type="radio"][name^="variant_"]:checked');
-                    
+                    const allVariantRadios = document.querySelectorAll(
+                        'input[type="radio"][name^="variant_"]:checked');
+
                     allVariantRadios.forEach(selectedRadio => {
                         selectedOptions.push(selectedRadio.value);
                     });
-                    
+
                     // Hide all variant images first
                     variantImages.forEach(img => {
                         img.style.display = 'none';
                     });
-                    
+
                     // Find and show the matching combination image
                     // This is a simplified approach - you might need to adjust based on your combination logic
-                    const combinationId = this.closest('.shop-sidevbar').getAttribute('data-combination-id') || '1';
-                    const matchingImage = document.querySelector(`.variant-display-image[data-combination-id="${combinationId}"]`);
-                    
+                    const combinationId = this.closest('.shop-sidevbar').getAttribute(
+                        'data-combination-id') || '1';
+                    const matchingImage = document.querySelector(
+                        `.variant-display-image[data-combination-id="${combinationId}"]`);
+
                     if (matchingImage) {
                         matchingImage.style.display = 'block';
                     } else if (variantImages.length > 0) {
