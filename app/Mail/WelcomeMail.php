@@ -25,7 +25,7 @@ class WelcomeMail extends Mailable
 
     public function build()
     {
-        return $this->subject('Welcome to Our Platform!')
+        return $this->subject('Welcome to BuyProtein - Your Registration is Complete!')
             ->view('emails.welcome');
     }
 
@@ -35,7 +35,7 @@ class WelcomeMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Welcome Mail',
+            subject: 'Welcome to BuyProtein - Your Registration is Complete!',
         );
     }
 
@@ -45,7 +45,7 @@ class WelcomeMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'view.name',
+            view: 'emails.welcome',
         );
     }
 

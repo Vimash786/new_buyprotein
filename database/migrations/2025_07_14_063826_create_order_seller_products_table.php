@@ -17,6 +17,7 @@ return new class extends Migration
             $table->foreignId('seller_id')->constrained('sellers')->onDelete('cascade');
             $table->foreignId('product_id')->constrained('products')->onDelete('cascade');
             $table->integer('quantity');
+            $table->json('variant_options'); // Store array of variant option IDs
             $table->decimal('unit_price', 10, 2);
             $table->decimal('total_amount', 10, 2);
             $table->enum('status', ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'])->default('pending');
