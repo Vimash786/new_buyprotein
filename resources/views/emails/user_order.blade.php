@@ -91,11 +91,41 @@
 
         <div class="content">
             <h1>Hello {{ $user->name }},</h1>
+
             <p>Thank you for your order!</p>
-            <p>Your order has been received and is currently being processed.</p>
-            <p>We’ll notify you once it has been shipped.</p>
+            <p>Your order has been received and is currently being processed. Below are the details:</p>
+
+            <table style="width: 100%; margin-top: 20px; border-collapse: collapse; text-align: left;">
+                <thead>
+                    <tr style="background-color: #f53003; color: #fff;">
+                        <th style="padding: 10px;">Product</th>
+                        <th style="padding: 10px;">Qty</th>
+                        <th style="padding: 10px;">Price</th>
+                        <th style="padding: 10px;">Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($orderData as $item)
+                        <tr style="border-bottom: 1px solid #eee;">
+                            <td style="padding: 10px;">{{ $item->product->name }}</td>
+                            <td style="padding: 10px;">{{ $item->quantity }}</td>
+                            <td style="padding: 10px;">₹{{ number_format($item->unit_price, 2) }}</td>
+                            <td style="padding: 10px;">₹{{ number_format($item->price * $item->quantity, 2) }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="3" style="padding: 10px; text-align: right;"><strong>Total:</strong></td>
+                        <td style="padding: 10px;"><strong>₹{{ number_format($amount, 2) }}</strong></td>
+                    </tr>
+                </tfoot>
+            </table>
+
+            <p style="margin-top: 20px;">We’ll notify you once your order has been shipped.</p>
             <p>If you have any questions, feel free to contact our support team.</p>
         </div>
+
 
         <div class="footer">
             <p>This is an automated email from BuyProtein. Please do not reply to this email.</p>

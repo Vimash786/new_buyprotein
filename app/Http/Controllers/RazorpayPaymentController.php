@@ -123,7 +123,10 @@ class RazorpayPaymentController extends Controller
 
             $cart->delete();
         }
-        Mail::to(Auth::user()->email)->send(new UserOrder(Auth::user()));
+
+        $allOrderItems = OrderSellerProduct::with(['product', 'order'])->where('order_id', $orderId)->get();
+
+        Mail::to(Auth::user()->email)->send(new UserOrder(Auth::user(), $allOrderItems, $amount));
 
         $payment = $api->payment->fetch($request->razorpay_payment_id);
 

@@ -433,7 +433,7 @@ class DashboardController extends Controller
 
         $product = products::find($request->product);
 
-        BulkOrder::create([
+        bulkOrder::create([
             'user_id' => Auth::user()->id,
             'seller_id' => $product->seller_id,
             'product_id' => $request->product,

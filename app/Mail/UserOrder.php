@@ -18,10 +18,14 @@ class UserOrder extends Mailable
      */
     
     public $user;
+    public $orderData;
+    public $amount;
 
-    public function __construct($user)
+    public function __construct($user, $orderData, $amount)
     {
         $this->user = $user;
+        $this->orderData = $orderData;
+        $this->amount = $amount;
     }
 
     /**
