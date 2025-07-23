@@ -157,7 +157,6 @@ new class extends Component
         $this->validate($rules);
 
         $data = [
-            'user_id' => auth()->id(),
             'company_name' => $this->company_name,
             'gst_number' => $this->gst_number,
             'product_category' => implode(',', array_filter($this->product_category)), // Convert array to comma-separated string
@@ -166,6 +165,11 @@ new class extends Component
             'brand' => $this->brand,
             'status' => $this->status,
         ];
+
+        // Only set user_id when creating a new seller, not when editing
+        if (!$this->editMode) {
+            $data['user_id'] = auth()->id();
+        }
 
         // Handle brand logo upload
         if ($this->brand_logo_file) {
