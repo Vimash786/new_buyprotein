@@ -69,7 +69,7 @@ class ProductsFactory extends Factory
             'stock_quantity' => $this->faker->numberBetween(10, 500),
             'category_id' => $this->faker->numberBetween(1, 9), // 9 main categories will be created by CategorySeeder
             'sub_category_id' => $this->faker->optional(0.7)->numberBetween(1, 45), // About 45 total subcategories
-            'section_category' => $this->faker->randomElement(['everyday_essential', 'popular_pick', 'exclusive_deal']),
+            'section_category' => [$this->faker->randomElement(['everyday_essential', 'popular_pick', 'exclusive_deal'])],
             'thumbnail_image' => $thumbnailImage,
             'status' => $this->faker->randomElement(['active', 'inactive']),
             'super_status' => $this->faker->randomElement(['approved', 'not_approved']),

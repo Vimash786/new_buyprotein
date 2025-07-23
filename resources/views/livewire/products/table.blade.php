@@ -123,11 +123,23 @@
                             @endif
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
-                                {{ $product->section_category === 'popular_pick' ? 'bg-blue-100 text-blue-800' : 
-                                   ($product->section_category === 'exclusive_deal' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800') }}">
-                                {{ $product->section_category_display }}
-                            </span>
+                            @php
+                                $categories = is_array($product->section_category) ? $product->section_category : [$product->section_category];
+                            @endphp
+                            <div class="flex flex-wrap gap-1">
+                                @foreach($categories as $category)
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
+                                        {{ $category === 'popular_pick' ? 'bg-blue-100 text-blue-800' : 
+                                           ($category === 'exclusive_deal' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800') }}">
+                                        {{ match($category) {
+                                            'everyday_essential' => 'Everyday Essential',
+                                            'popular_pick' => 'Popular Pick',
+                                            'exclusive_deal' => 'Exclusive Deal & Offers',
+                                            default => 'Everyday Essential'
+                                        } }}
+                                    </span>
+                                @endforeach
+                            </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-center">
                             @if($product->has_variants)

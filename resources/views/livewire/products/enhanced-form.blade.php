@@ -271,16 +271,24 @@
         <!-- Section Category -->
         @if(!$isSeller)
         <div class="md:col-span-2">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Section Category</label>
-            <select 
-                wire:model="section_category"
-                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-            >
-                <option value="everyday_essential">Everyday Essential</option>
-                <option value="popular_pick">Popular Pick</option>
-                <option value="exclusive_deal">Exclusive Deal & Offers</option>
-            </select>
-            @error('section_category') <span class="text-red-500 text-sm">{{ $errors->first('section_category') }}</span> @enderror
+            <x-multiselect
+                label="Section Category"
+                wire-model="section_category"
+                :options="[
+                    ['value' => 'everyday_essential', 'label' => 'Everyday Essential', 'description' => 'Products for daily nutrition needs'],
+                    ['value' => 'popular_pick', 'label' => 'Popular Pick', 'description' => 'Customer favorite and trending products'],
+                    ['value' => 'exclusive_deal', 'label' => 'Exclusive Deal & Offers', 'description' => 'Special offers and limited-time deals']
+                ]"
+                :selected="is_array($section_category) ? $section_category : [$section_category]"
+                placeholder="Choose section categories..."
+                description="Select one or more categories to feature your product in specific sections of the store."
+                remove-method="removeSectionCategory"
+                option-value="value"
+                option-label="label"
+                option-description="description"
+                required
+                :show-description="true"
+            />
         </div>
         @endif
 

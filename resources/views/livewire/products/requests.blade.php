@@ -46,7 +46,7 @@ new class extends Component
     public $category_id = '';
     public $sub_category_id = '';
     public $status = 'active';
-    public $section_category = 'everyday_essential';
+    public $section_category = ['everyday_essential'];
     public $has_variants = false;
     
     // Image upload properties
@@ -101,7 +101,8 @@ new class extends Component
         'category_id' => 'required|exists:categories,id',
         'sub_category_id' => 'nullable|exists:sub_categories,id',
         'status' => 'required|in:active,inactive',
-        'section_category' => 'required|in:everyday_essential,popular_pick,exclusive_deal',
+        'section_category' => 'required|array|min:1',
+        'section_category.*' => 'required|in:everyday_essential,popular_pick,exclusive_deal',
         'has_variants' => 'boolean',
         'thumbnail_image' => 'nullable|image|min:200|max:400', // 200KB to 400KB
         'product_images' => 'nullable|array|max:3', // Maximum 3 images
@@ -246,7 +247,7 @@ new class extends Component
         $this->category_id = '';
         $this->sub_category_id = '';
         $this->status = 'active';
-        $this->section_category = 'everyday_essential';
+        $this->section_category = ['everyday_essential'];
         $this->has_variants = false;
         $this->thumbnail_image = null;
         $this->product_images = [];
@@ -758,7 +759,7 @@ new class extends Component
         $this->category_id = $product->category_id;
         $this->sub_category_id = $product->sub_category_id;
         $this->status = $product->status;
-        $this->section_category = $product->section_category;
+        $this->section_category = is_array($product->section_category) ? $product->section_category : [$product->section_category];
         $this->has_variants = $product->has_variants;
         
         // Load existing images (product images only)
@@ -1350,6 +1351,15 @@ new class extends Component
         }
         
         return empty($optionNames) ? 'Unknown Variant' : implode(' / ', $optionNames);
+    }
+
+    public function removeSectionCategory($category)
+    {
+        $this->section_category = array_diff($this->section_category, [$category]);
+        // Ensure we always have at least one category
+        if (empty($this->section_category)) {
+            $this->section_category = ['everyday_essential'];
+        }
     }
 }; ?>
 
