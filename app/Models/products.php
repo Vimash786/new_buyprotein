@@ -57,6 +57,7 @@ class products extends Model
         'status' => 'string',
         'super_status' => 'string',
         'has_variants' => 'boolean',
+        'section_category' => 'array',
     ];
 
     /**
@@ -166,12 +167,18 @@ class products extends Model
      */
     public function getSectionCategoryDisplayAttribute()
     {
-        return match($this->section_category) {
-            'everyday_essential' => 'Everyday Essential',
-            'popular_pick' => 'Popular Pick',
-            'exclusive_deal' => 'Exclusive Deal & Offers',
-            default => 'Everyday Essential'
-        };
+        $categories = is_array($this->section_category) ? $this->section_category : [$this->section_category];
+        
+        $displayNames = array_map(function($category) {
+            return match($category) {
+                'everyday_essential' => 'Everyday Essential',
+                'popular_pick' => 'Popular Pick',
+                'exclusive_deal' => 'Exclusive Deal & Offers',
+                default => 'Everyday Essential'
+            };
+        }, $categories);
+        
+        return implode(', ', $displayNames);
     }
 
     /**

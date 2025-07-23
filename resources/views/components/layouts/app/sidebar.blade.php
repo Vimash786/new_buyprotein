@@ -50,6 +50,9 @@
                     @if($user->role === 'Super' || $isApprovedSeller)
                     <flux:navlist.group expandable :heading="__('Orders')" class="grid">
                         <flux:navlist.item icon="shopping-bag" :href="route('orders.manage')" :current="request()->routeIs('orders.manage')" wire:navigate>{{ __('All Orders') }}</flux:navlist.item>
+                        @if($isApprovedSeller && $user->role === 'Seller')
+                        <flux:navlist.item icon="shopping-cart" :href="route('bulk-orders.seller')" :current="request()->routeIs('bulk-orders.seller')" wire:navigate>{{ __('Bulk Orders') }}</flux:navlist.item>
+                        @endif
                     </flux:navlist.group>
                     @endif
                     

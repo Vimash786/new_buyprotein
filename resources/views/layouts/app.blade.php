@@ -18,7 +18,11 @@
     <link rel="stylesheet preload" href="{{ asset('assets/css/style.css') }}" as="style">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
-
+   <style>
+    .single-shopping-card-one .thumbnail-preview img {
+    height: unset;
+   }
+   </style>
     @stack('styles')
 </head>
 

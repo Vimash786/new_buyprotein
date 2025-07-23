@@ -15,6 +15,8 @@ return new class extends Migration
             $table->id();
             $table->integer('user_id');
             $table->integer('seller_id');
+            $table->integer('product_id'); // Assuming a single product per bulk order
+            $table->integer('variant_combination_id')->nullable(); // For product variants
             $table->json('variant_option_ids')->nullable();
             $table->integer('quantity')->default(1);
             $table->timestamps();

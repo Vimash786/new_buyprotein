@@ -70,7 +70,7 @@
                     <div class="col-lg-12">
                         <div class="title-area-between">
                             <h2 class="title-left mb--10">
-                                Product Categories
+                                Categories
                             </h2>
                         </div>
                     </div>
@@ -80,29 +80,32 @@
                         <div class="category-area-main-wrapper-one">
                             <div class="swiper mySwiper-category-1 swiper-data"
                                 data-swiper='{
-                                "spaceBetween":12,
-                                "slidesPerView":10,
-                                "loop": true,
+                                "spaceBetween":20,
+                                "slidesPerView":6,
+                                "loop": false,
                                 "speed": 1000,
                                 "breakpoints":{
                                 "0":{
                                     "slidesPerView":2,
-                                    "spaceBetween": 12},
+                                    "spaceBetween": 15},
                                 "320":{
                                     "slidesPerView":2,
-                                    "spaceBetween":12},
+                                    "spaceBetween":15},
                                 "480":{
                                     "slidesPerView":3,
-                                    "spaceBetween":12},
+                                    "spaceBetween":15},
                                 "640":{
                                     "slidesPerView":4,
-                                    "spaceBetween":12},
+                                    "spaceBetween":20},
                                 "840":{
-                                    "slidesPerView":4,
-                                    "spaceBetween":12},
+                                    "slidesPerView":5,
+                                    "spaceBetween":20},
                                 "1140":{
-                                    "slidesPerView":10,
-                                    "spaceBetween":12}
+                                    "slidesPerView":6,
+                                    "spaceBetween":20},
+                                "1400":{
+                                    "slidesPerView":6,
+                                    "spaceBetween":25}
                                 }
                             }'>
                                 <div class="swiper-wrapper">
@@ -110,13 +113,17 @@
                                     @foreach ($categories as $category)
                                         <div class="swiper-slide">
                                             <a href="{{ route('shop', ['type' => 'category', 'id' => Crypt::encrypt($category->id)]) }}"
-                                                class="single-category-one">
-                                                <img src="{{ asset('storage/' . $category->image) }}" alt="category">
-                                                <p>{{ $category->name }}</p>
+                                                class="single-category-card">
+                                                <div class="category-image-wrapper">
+                                                    <img src="{{ asset('storage/' . $category->image) }}" alt="{{ $category->name }}">
+                                                </div>
+                                                <div class="category-content">
+                                                    <h5 class="category-title">{{ $category->name }}</h5>
+                                                </div>
                                             </a>
                                         </div>
                                     @endforeach
-                                    <!-- single swiper start -->
+                                    <!-- single swiper end -->
                                 </div>
                             </div>
                         </div>

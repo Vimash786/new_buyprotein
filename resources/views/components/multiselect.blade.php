@@ -24,11 +24,23 @@
     @if(!empty($selected))
         <div class="flex flex-wrap gap-2 mb-3">
             @foreach($selected as $item)
+                @php
+                    // Find the label for this value
+                    $displayLabel = $item;
+                    foreach($options as $option) {
+                        $itemValue = is_object($option) ? $option->{$optionValue} : (is_array($option) ? $option[$optionValue] : $option);
+                        $itemLabel = is_object($option) ? $option->{$optionLabel} : (is_array($option) ? $option[$optionLabel] : $option);
+                        if($itemValue === $item) {
+                            $displayLabel = $itemLabel;
+                            break;
+                        }
+                    }
+                @endphp
                 <span class="inline-flex items-center gap-x-1.5 py-2 px-3 rounded-full text-sm font-medium bg-gradient-to-r text-accent-content bg-accent-foreground border-0 shadow-sm hover:shadow-md transition-all duration-200">
                     <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
                     </svg>
-                    {{ $item }}
+                    {{ $displayLabel }}
                     @if($removeMethod)
                         <button 
                             type="button" 
@@ -56,11 +68,26 @@
                 <span class="block truncate text-gray-700 dark:text-gray-200">
                     @if(empty($selected))
                         <span class="text-gray-500 dark:text-gray-400">{{ $placeholder }}</span>
-                    @elseif(count($selected) <= 2)
-                        {{ implode(', ', $selected) }}
                     @else
-                        {{ $selected[0] }}, {{ $selected[1] }} 
-                        <span class="text-blue-600 font-medium">+{{ count($selected) - 2 }} more</span>
+                        @php
+                            $displayLabels = [];
+                            foreach($selected as $selectedValue) {
+                                foreach($options as $option) {
+                                    $itemValue = is_object($option) ? $option->{$optionValue} : (is_array($option) ? $option[$optionValue] : $option);
+                                    $itemLabel = is_object($option) ? $option->{$optionLabel} : (is_array($option) ? $option[$optionLabel] : $option);
+                                    if($itemValue === $selectedValue) {
+                                        $displayLabels[] = $itemLabel;
+                                        break;
+                                    }
+                                }
+                            }
+                        @endphp
+                        @if(count($displayLabels) <= 2)
+                            {{ implode(', ', $displayLabels) }}
+                        @else
+                            {{ $displayLabels[0] }}, {{ $displayLabels[1] }} 
+                            <span class="text-blue-600 font-medium">+{{ count($displayLabels) - 2 }} more</span>
+                        @endif
                     @endif
                 </span>
                 <svg class="w-5 h-5 text-gray-400 transition-transform duration-200" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -99,13 +126,15 @@
                         <input 
                             type="checkbox" 
                             wire:model.live="{{ $wireModel }}" 
-                            value="{{ $labelText }}"
+                            value="{{ $value }}"
                             class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
                         >
                         <div class="ml-3 flex-1">
                             <div class="flex items-center justify-between">
                                 <span class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ $labelText }}</span>
-                                @if(in_array($labelText, $selected))
+                                @if(in_array($value, $selected))
+                                    <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
                                     <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
                                         <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
                                     </svg>
