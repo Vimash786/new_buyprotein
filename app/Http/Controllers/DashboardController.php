@@ -347,16 +347,21 @@ class DashboardController extends Controller
 
     public function checkout()
     {
-        $cartData = Cart::with('product')->where('user_id', Auth::user()->id)->get();
-        $order = orders::where('user_id', Auth::user()->id)->orderBy('created_at', 'desc')->first();
+        try {
 
-        $billingAddress = [];
-        if ($order) {
-            $orderId = $order->id;
-            $billingAddress = BillingDetail::where('order_id', $orderId)->get();
+            $cartData = Cart::with('product')->where('user_id', Auth::user()->id)->get();
+            $order = orders::where('user_id', Auth::user()->id)->orderBy('created_at', 'desc')->first();
+            
+            $billingAddress = [];
+            if ($order) {
+                $orderId = $order->id;
+                $billingAddress = BillingDetail::where('order_id', $orderId)->get();
+            }
+            
+            return view('shop.checkout', compact('cartData', 'billingAddress'));
+        } catch(Exception $e) {
+            return redirect()->back()->with('something wrong!');
         }
-
-        return view('shop.checkout', compact('cartData', 'billingAddress'));
     }
 
     public function aboutUs()

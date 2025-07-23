@@ -388,6 +388,14 @@
                 "description": "Order Payment",
                 "image": "https://yourdomain.com/logo.png",
                 "handler": function(response) {
+                    Swal.fire({
+                        title: 'Processing Payment...',
+                        text: 'Please wait while we complete your order.',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
                     $.ajax({
                         url: "{{ route('razorpay.payment') }}",
                         type: "POST",

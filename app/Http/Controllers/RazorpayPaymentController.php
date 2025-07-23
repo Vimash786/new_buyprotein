@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Mail\SellerOrder;
+use App\Mail\UserOrder;
 use App\Mail\WelcomeMail;
 use App\Models\BillingDetail;
 use App\Models\Cart;
@@ -122,7 +123,7 @@ class RazorpayPaymentController extends Controller
 
             $cart->delete();
         }
-        Mail::to(Auth::user()->email)->send(new WelcomeMail(Auth::user()));
+        Mail::to(Auth::user()->email)->send(new UserOrder(Auth::user()));
 
         $payment = $api->payment->fetch($request->razorpay_payment_id);
 
