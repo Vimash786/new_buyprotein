@@ -3,9 +3,12 @@
 use App\Models\User;
 use App\Models\Sellers;
 use App\Models\Category;
+use App\Mail\WelcomeMail;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules;
 use Livewire\Attributes\Layout;
@@ -150,6 +153,14 @@ new #[Layout('components.layouts.auth')] class extends Component {
                 }
                 $user->update(['business_images' => json_encode($businessImagePaths)]);
             }
+            
+            // Send welcome email for non-seller users
+            try {
+                Mail::to($user->email)->send(new WelcomeMail($user));
+            } catch (\Exception $e) {
+                // Log the error but don't fail the registration
+                Log::error('Failed to send welcome email: ' . $e->getMessage());
+            }
            
             
         } elseif ($this->role === 'Seller') {
@@ -179,6 +190,14 @@ new #[Layout('components.layouts.auth')] class extends Component {
             
             // Update user profile completion status
             $user->update(['profile_completed' => true]);
+            
+            // Send welcome email for sellers
+            try {
+                Mail::to($user->email)->send(new WelcomeMail($user));
+            } catch (\Exception $e) {
+                // Log the error but don't fail the registration
+                Log::error('Failed to send welcome email: ' . $e->getMessage());
+            }
         }
 
         $completed = $user->profile_completed;

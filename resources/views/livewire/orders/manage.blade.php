@@ -560,22 +560,62 @@ new class extends Component
         
         if ($item instanceof OrderSellerProduct) {
             // For seller updating individual order item - only update the OrderSellerProduct
+            $oldStatus = $item->status;
             $item->update(['status' => $status]);
             
-            // Check if we need to update the main order status based on all items
+            // Get the customer user for email notifications
             $order = $item->order;
+            $customer = $order->user;
+            
+            // Send email notifications for status changes
+            if ($customer && $oldStatus !== $status) {
+                if ($status === 'shipped') {
+                    // Send shipped notification
+                    try {
+                        \Mail::to($customer->email)->send(new \App\Mail\OrderShip($customer));
+                    } catch (\Exception $e) {
+                        \Log::error('Failed to send shipped email: ' . $e->getMessage());
+                    }
+                } elseif ($status === 'delivered') {
+                    // Send delivered notification
+                    try {
+                        \Mail::to($customer->email)->send(new \App\Mail\DeliveryDone($customer));
+                    } catch (\Exception $e) {
+                        \Log::error('Failed to send delivered email: ' . $e->getMessage());
+                    }
+                }
+            }
+            
+            // Check if we need to update the main order status based on all items
             $allItemsStatus = $order->orderSellerProducts()->pluck('status')->unique();
             
             if ($allItemsStatus->count() === 1) {
-                // All items have the same status, update order overall_status to match
-                $order->update(['overall_status' => $allItemsStatus->first()]);
+                // All items have the same status, map to appropriate overall_status
+                $itemStatus = $allItemsStatus->first();
+                if ($itemStatus === 'delivered') {
+                    $order->update(['overall_status' => 'completed']);
+                } elseif ($itemStatus === 'shipped') {
+                    $order->update(['overall_status' => 'partially_shipped']);
+                } elseif ($itemStatus === 'confirmed') {
+                    $order->update(['overall_status' => 'processing']);
+                } else {
+                    // For pending, cancelled, etc. - map to valid overall_status values
+                    $allowedStatuses = ['pending', 'processing', 'partially_shipped', 'completed', 'cancelled'];
+                    $mappedStatus = in_array($itemStatus, $allowedStatuses) ? $itemStatus : 'processing';
+                    $order->update(['overall_status' => $mappedStatus]);
+                }
             } else {
-                // Mixed statuses, set order to processing
-                $order->update(['overall_status' => 'processing']);
+                // Mixed statuses, set order to processing or partially_shipped
+                if ($allItemsStatus->contains('shipped') || $allItemsStatus->contains('delivered')) {
+                    $order->update(['overall_status' => 'partially_shipped']);
+                } else {
+                    $order->update(['overall_status' => 'processing']);
+                }
             }
         } else {
             // For admin updating entire order
             $order = $item ?? orders::findOrFail($id);
+            $oldStatus = $order->overall_status;
             
             // Update order status
             $order->update([
@@ -585,6 +625,26 @@ new class extends Component
             
             // Update all order items status
             $order->orderSellerProducts()->update(['status' => $status]);
+            
+            // Send email notifications for admin status changes
+            $customer = $order->user;
+            if ($customer && $oldStatus !== $status) {
+                if ($status === 'shipped') {
+                    // Send shipped notification
+                    try {
+                        \Mail::to($customer->email)->send(new \App\Mail\OrderShip($customer));
+                    } catch (\Exception $e) {
+                        \Log::error('Failed to send shipped email: ' . $e->getMessage());
+                    }
+                } elseif ($status === 'delivered') {
+                    // Send delivered notification
+                    try {
+                        \Mail::to($customer->email)->send(new \App\Mail\DeliveryDone($customer));
+                    } catch (\Exception $e) {
+                        \Log::error('Failed to send delivered email: ' . $e->getMessage());
+                    }
+                }
+            }
         }
         
         session()->flash('message', 'Order status updated successfully!');
@@ -872,14 +932,6 @@ new class extends Component
                                                 wire:click="confirmDeleteSellerOrder({{ $order->id }})"
                                                 class="text-red-600 hover:text-red-900"
                                                 title="Delete Order Item"
-                                            >
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                </svg>
-                                            </button>
-                                        </div>
-                                    </td>
-                                                class="text-red-600 hover:text-red-900"
                                             >
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />

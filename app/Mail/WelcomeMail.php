@@ -23,13 +23,19 @@ class WelcomeMail extends Mailable
         $this->user = $user;
     }
 
+    public function build()
+    {
+        return $this->subject('Welcome to BuyProtein - Your Registration is Complete!')
+            ->view('emails.welcome');
+    }
+
     /**
      * Get the message envelope.
      */
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Welcome Mail',
+            subject: 'Welcome to BuyProtein - Your Registration is Complete!',
         );
     }
 

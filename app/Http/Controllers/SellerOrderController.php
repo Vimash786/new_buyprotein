@@ -6,6 +6,10 @@ use App\Models\OrderSellerProduct;
 use App\Models\Sellers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
+use App\Mail\OrderShip;
+use App\Mail\DeliveryDone;
 
 class SellerOrderController extends Controller
 {
@@ -51,6 +55,10 @@ class SellerOrderController extends Controller
     {
         $seller = Sellers::where('user_id', Auth::id())->first();
         
+        if (!$seller) {
+            return response()->json(['error' => 'Seller profile not found'], 404);
+        }
+        
         // Ensure the order item belongs to the authenticated seller
         if ($orderSellerProduct->seller_id !== $seller->id) {
             return response()->json(['error' => 'Unauthorized'], 403);
@@ -60,10 +68,34 @@ class SellerOrderController extends Controller
             'status' => 'required|in:pending,confirmed,shipped,delivered,cancelled'
         ]);
 
+        $oldStatus = $orderSellerProduct->status;
+        $newStatus = $request->input('status');
+        $notes = $request->input('notes');
+        
         $orderSellerProduct->update([
-            'status' => $request->status,
-            'notes' => $request->notes
+            'status' => $newStatus,
+            'notes' => $notes
         ]);
+
+        // Send email notifications for status changes
+        $customer = $orderSellerProduct->order->user;
+        if ($customer && $oldStatus !== $newStatus) {
+            if ($newStatus === 'shipped') {
+                // Send shipped notification
+                try {
+                    Mail::to($customer->email)->send(new OrderShip($customer));
+                } catch (\Exception $e) {
+                    Log::error('Failed to send shipped email: ' . $e->getMessage());
+                }
+            } elseif ($newStatus === 'delivered') {
+                // Send delivered notification
+                try {
+                    Mail::to($customer->email)->send(new DeliveryDone($customer));
+                } catch (\Exception $e) {
+                    Log::error('Failed to send delivered email: ' . $e->getMessage());
+                }
+            }
+        }
 
         // Update overall order status if needed
         $this->updateOverallOrderStatus($orderSellerProduct->order);
@@ -110,8 +142,13 @@ class SellerOrderController extends Controller
                 $order->update(['overall_status' => 'completed']);
             } elseif ($newStatus === 'shipped') {
                 $order->update(['overall_status' => 'partially_shipped']);
+            } elseif ($newStatus === 'confirmed') {
+                $order->update(['overall_status' => 'processing']);
             } else {
-                $order->update(['overall_status' => $newStatus]);
+                // For pending, cancelled, etc. - map directly if they exist in ENUM
+                $allowedStatuses = ['pending', 'processing', 'partially_shipped', 'completed', 'cancelled'];
+                $mappedStatus = in_array($newStatus, $allowedStatuses) ? $newStatus : 'processing';
+                $order->update(['overall_status' => $mappedStatus]);
             }
         } else {
             // Mixed statuses

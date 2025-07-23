@@ -49,9 +49,51 @@ new class extends Component
         $this->generatePeriodEnd = now()->format('Y-m-d');
     }
     
+    /**
+     * Check if current user is a seller and get their seller record
+     */
+    private function getCurrentSeller()
+    {
+        $user = auth()->user();
+        if ($user && $user->role === 'Seller') {
+            return Sellers::where('user_id', $user->id)->first();
+        }
+        return null;
+    }
+    
+    /**
+     * Check if current user is a seller
+     */
+    private function isSeller()
+    {
+        return auth()->user() && auth()->user()->role === 'Seller';
+    }
+    
+    /**
+     * Get seller-specific payout statistics
+     */
+    private function getSellerSpecificStats($sellerId)
+    {
+        return [
+            'total_payouts' => Payout::where('seller_id', $sellerId)->count(),
+            'paid_payouts' => Payout::where('seller_id', $sellerId)->where('payment_status', 'paid')->count(),
+            'unpaid_payouts' => Payout::where('seller_id', $sellerId)->where('payment_status', 'unpaid')->count(),
+            'overdue_payouts' => Payout::where('seller_id', $sellerId)->overdue()->count(),
+            'due_soon_payouts' => Payout::where('seller_id', $sellerId)->dueSoon()->count(),
+            'total_amount_paid' => Payout::where('seller_id', $sellerId)->where('payment_status', 'paid')->sum('payout_amount'),
+            'total_amount_pending' => Payout::where('seller_id', $sellerId)->where('payment_status', 'unpaid')->sum('payout_amount'),
+        ];
+    }
+    
     public function with()
     {
         $query = Payout::with(['seller', 'transactions']);
+        
+        // If current user is a seller, filter payouts to show only their own
+        $currentSeller = $this->getCurrentSeller();
+        if ($currentSeller) {
+            $query->where('seller_id', $currentSeller->id);
+        }
         
         if ($this->search) {
             $query->where(function($q) {
@@ -68,7 +110,8 @@ new class extends Component
             $query->where('payment_status', $this->statusFilter);
         }
         
-        if ($this->sellerFilter) {
+        // Only allow seller filter for admin users
+        if ($this->sellerFilter && !$this->isSeller()) {
             $query->where('seller_id', $this->sellerFilter);
         }
         
@@ -85,14 +128,33 @@ new class extends Component
         
         $payoutService = new PayoutService();
         
+        // Prepare sellers list based on user role
+        $sellersQuery = Sellers::where('status', 'approved');
+        if ($currentSeller) {
+            // For sellers, only show their own record
+            $sellersQuery->where('id', $currentSeller->id);
+        }
+        
+        // Prepare next payout schedule based on user role
+        $nextPayoutQuery = Sellers::where('status', 'approved')
+            ->whereNotNull('next_payout_date')
+            ->orderBy('next_payout_date', 'asc');
+        if ($currentSeller) {
+            $nextPayoutQuery->where('id', $currentSeller->id);
+        }
+        
+        // Get stats filtered by seller if applicable
+        $stats = $this->isSeller() && $currentSeller 
+            ? $this->getSellerSpecificStats($currentSeller->id)
+            : $payoutService->getPayoutStats();
+        
         return [
             'payouts' => $query->latest()->paginate(15),
-            'sellers' => Sellers::where('status', 'approved')->get(),
-            'sellersWithNextPayout' => Sellers::where('status', 'approved')
-                ->whereNotNull('next_payout_date')
-                ->orderBy('next_payout_date', 'asc')
-                ->get(),
-            'stats' => $payoutService->getPayoutStats(),
+            'sellers' => $sellersQuery->get(),
+            'sellersWithNextPayout' => $nextPayoutQuery->get(),
+            'stats' => $stats,
+            'currentSeller' => $currentSeller,
+            'isSeller' => $this->isSeller(),
         ];
     }
     
@@ -154,7 +216,18 @@ new class extends Component
     // View payout details
     public function viewPayout($id)
     {
-        $this->viewingPayout = Payout::with(['seller', 'transactions'])->findOrFail($id);
+        $payout = Payout::with(['seller', 'transactions'])->findOrFail($id);
+        
+        // Security check: If user is a seller, ensure they can only view their own payouts
+        if ($this->isSeller()) {
+            $currentSeller = $this->getCurrentSeller();
+            if (!$currentSeller || $payout->seller_id !== $currentSeller->id) {
+                session()->flash('error', 'You can only view your own payouts.');
+                return;
+            }
+        }
+        
+        $this->viewingPayout = $payout;
         $this->showViewModal = true;
     }
     
@@ -167,7 +240,15 @@ new class extends Component
     // Payment processing
     public function openPaymentModal($id)
     {
-        $this->selectedPayout = Payout::findOrFail($id);
+        $payout = Payout::findOrFail($id);
+        
+        // Security check: If user is a seller, they cannot process payments
+        if ($this->isSeller()) {
+            session()->flash('error', 'You do not have permission to process payments.');
+            return;
+        }
+        
+        $this->selectedPayout = $payout;
         $this->showPaymentModal = true;
         $this->resetPaymentForm();
     }
@@ -258,63 +339,122 @@ new class extends Component
         <div class="mb-8">
             <div class="flex justify-between items-center">
                 <div>
-                    <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Seller Payouts</h1>
+                    <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
+                        @if($isSeller)
+                            My Payouts
+                        @else
+                            Seller Payouts
+                        @endif
+                    </h1>
                     <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">
-                        Automatic payouts are generated every 15 days for each seller. 
-                        Manual generation is available for custom periods.
+                        @if($isSeller)
+                            View your payout history and upcoming payments. Payouts are automatically generated every 15 days.
+                        @else
+                            Automatic payouts are generated every 15 days for each seller. 
+                            Manual generation is available for custom periods.
+                        @endif
                     </p>
                 </div>
-                <div class="flex space-x-3">
-                    <button 
-                        wire:click="exportPayouts"
-                        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2"
-                    >
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        Export
-                    </button>
-                    <button 
-                        wire:click="openGenerateModal"
-                        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2"
-                    >
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                        </svg>
-                        Manual Generation
-                    </button>
-                </div>
+                @if(!$isSeller)
+                    <div class="flex space-x-3">
+                        <button 
+                            wire:click="exportPayouts"
+                            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2"
+                        >
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            Export
+                        </button>
+                        <button 
+                            wire:click="openGenerateModal"
+                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2"
+                        >
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                            </svg>
+                            Manual Generation
+                        </button>
+                    </div>
+                @else
+                    <div class="flex space-x-3">
+                        <button 
+                            wire:click="exportPayouts"
+                            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2"
+                        >
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            Export My Payouts
+                        </button>
+                    </div>
+                @endif
             </div>
         </div>
 
         <!-- Auto-Generation Info Banner -->
-        <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-8">
-            <div class="flex items-start">
-                <div class="flex-shrink-0">
-                    <svg class="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                </div>
-                <div class="ml-3">
-                    <h3 class="text-sm font-medium text-blue-800 dark:text-blue-300">
-                        Automatic Payout Generation
-                    </h3>
-                    <div class="mt-2 text-sm text-blue-700 dark:text-blue-400">
-                        <p>• Payouts are automatically generated every 15 days for each seller</p>
-                        <p>• First payout is scheduled 15 days after seller approval</p>
-                        <p>• System runs daily at 9:00 AM to check for due payouts</p>
-                        <p>• Only periods with sales will generate payouts</p>
+        @if(!$isSeller)
+            <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-8">
+                <div class="flex items-start">
+                    <div class="flex-shrink-0">
+                        <svg class="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-blue-800 dark:text-blue-300">
+                            Automatic Payout Generation
+                        </h3>
+                        <div class="mt-2 text-sm text-blue-700 dark:text-blue-400">
+                            <p>• Payouts are automatically generated every 15 days for each seller</p>
+                            <p>• First payout is scheduled 15 days after seller approval</p>
+                            <p>• System runs daily at 9:00 AM to check for due payouts</p>
+                            <p>• Only periods with sales will generate payouts</p>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        @else
+            <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-8">
+                <div class="flex items-start">
+                    <div class="flex-shrink-0">
+                        <svg class="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-green-800 dark:text-green-300">
+                            Your Payout Schedule
+                        </h3>
+                        <div class="mt-2 text-sm text-green-700 dark:text-green-400">
+                            <p>• Your payouts are automatically generated every 15 days</p>
+                            <p>• You'll receive payments 5-15 days after each payout period ends</p>
+                            <p>• Payouts are only generated for periods with completed orders</p>
+                            <p>• You can view your payout history and upcoming payments below</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
 
         <!-- Next Payout Schedule -->
         @if($sellersWithNextPayout->isNotEmpty())
             <div class="bg-white dark:bg-zinc-900 rounded-lg shadow mb-8">
                 <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Upcoming Automatic Payouts</h3>
-                    <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Next scheduled payout dates for sellers</p>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                        @if($isSeller)
+                            Your Next Payout Schedule
+                        @else
+                            Upcoming Automatic Payouts
+                        @endif
+                    </h3>
+                    <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                        @if($isSeller)
+                            Your next scheduled payout date
+                        @else
+                            Next scheduled payout dates for sellers
+                        @endif
+                    </p>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -436,14 +576,14 @@ new class extends Component
 
         <!-- Filters -->
         <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6 mb-8">
-            <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-{{ $isSeller ? '4' : '5' }} gap-4">
                 <!-- Search -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Search</label>
                     <input 
                         type="text" 
                         wire:model.live="search"
-                        placeholder="Search payouts, sellers..."
+                        placeholder="{{ $isSeller ? 'Search your payouts...' : 'Search payouts, sellers...' }}"
                         class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
                     >
                 </div>
@@ -463,19 +603,21 @@ new class extends Component
                     </select>
                 </div>
 
-                <!-- Seller Filter -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Seller</label>
-                    <select 
-                        wire:model.live="sellerFilter"
-                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-                    >
-                        <option value="">All Sellers</option>
-                        @foreach($sellers as $seller)
-                            <option value="{{ $seller->id }}">{{ $seller->company_name }}</option>
-                        @endforeach
-                    </select>
-                </div>
+                <!-- Seller Filter (Hidden for sellers) -->
+                @if(!$isSeller)
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Seller</label>
+                        <select 
+                            wire:model.live="sellerFilter"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
+                        >
+                            <option value="">All Sellers</option>
+                            @foreach($sellers as $seller)
+                                <option value="{{ $seller->id }}">{{ $seller->company_name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                @endif
 
                 <!-- Date Filter -->
                 <div>
@@ -590,7 +732,7 @@ new class extends Component
                                             </svg>
                                         </button>
                                         
-                                        @if($payout->payment_status === 'unpaid')
+                                        @if($payout->payment_status === 'unpaid' && !$isSeller)
                                             <button 
                                                 wire:click="openPaymentModal({{ $payout->id }})"
                                                 class="text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300"
@@ -622,8 +764,8 @@ new class extends Component
         </div>
     </div>
 
-    <!-- Generate Payouts Modal -->
-    @if($showGenerateModal)
+    <!-- Generate Payouts Modal (Only for admin users) -->
+    @if($showGenerateModal && !$isSeller)
         <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div class="bg-white dark:bg-zinc-900 rounded-lg max-w-md w-full">
                 <div class="p-6">
@@ -686,8 +828,8 @@ new class extends Component
         </div>
     @endif
 
-    <!-- Payment Modal -->
-    @if($showPaymentModal && $selectedPayout)
+    <!-- Payment Modal (Only for admin users) -->
+    @if($showPaymentModal && $selectedPayout && !$isSeller)
         <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div class="bg-white dark:bg-zinc-900 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
                 <div class="p-6">
