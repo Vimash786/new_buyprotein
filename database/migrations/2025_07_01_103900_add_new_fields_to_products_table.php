@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::table('products', function (Blueprint $table) {
             $table->enum('section_category', ['everyday_essential', 'popular_pick', 'exclusive_deal'])
-                  ->default('everyday_essential')
                   ->after('sub_category_id');
             $table->string('thumbnail_image')->nullable()->after('stock_quantity');
             $table->boolean('has_variants')->default(false)->after('status');
