@@ -28,6 +28,7 @@ class OrderSellerProduct extends Model
         'unit_price' => 'decimal:2',
         'total_amount' => 'decimal:2',
         'status' => 'string',
+        'variant' => 'array',
     ];
 
     /**
@@ -60,5 +61,43 @@ class OrderSellerProduct extends Model
     public function variantCombination(): BelongsTo
     {
         return $this->belongsTo(ProductVariantCombination::class, 'variant_combination_id');
+    }
+
+    /**
+     * Get formatted variant text for display purposes.
+     */
+    public function getFormattedVariantText()
+    {
+        // If variant_combination_id exists, use it for consistency
+        if ($this->variant_combination_id) {
+            $variantCombination = $this->variantCombination;
+            return $variantCombination ? $variantCombination->getFormattedVariantText() : null;
+        }
+
+        // Fallback to using the variant field (array of option IDs)
+        if (!$this->variant || !is_array($this->variant)) {
+            return null;
+        }
+
+        try {
+            $options = \App\Models\ProductVariantOption::whereIn('id', $this->variant)
+                ->with('variant')
+                ->get();
+
+            if ($options->isEmpty()) {
+                return null;
+            }
+
+            $variantText = [];
+            foreach ($options->groupBy('variant.name') as $variantName => $variantOptions) {
+                foreach ($variantOptions as $option) {
+                    $variantText[] = ucfirst($variantName) . ': ' . ($option->display_value ?? $option->value);
+                }
+            }
+
+            return implode(', ', $variantText);
+        } catch (\Exception $e) {
+            return 'Error loading variant: ' . $e->getMessage();
+        }
     }
 }

@@ -37,6 +37,10 @@ class OrderService
                     'total_amount' => $item['quantity'] * $item['unit_price'],
                     'status' => 'pending',
                     'notes' => $item['notes'] ?? null,
+                    'variant_combination_id' => $item['variant_combination_id'] ?? null,
+                    'variant' => isset($item['variant_combination_id']) && $item['variant_combination_id'] 
+                        ? $this->getVariantOptionsById($item['variant_combination_id']) 
+                        : ($item['variant_option_ids'] ?? null),
                 ]);
 
                 $totalAmount += $orderSellerProduct->total_amount;
@@ -152,5 +156,18 @@ class OrderService
                 $order->update(['overall_status' => 'processing']);
             }
         }
+    }
+
+    /**
+     * Get variant options by variant combination ID.
+     */
+    private function getVariantOptionsById($variantCombinationId)
+    {
+        if (!$variantCombinationId) {
+            return null;
+        }
+
+        $variant = \App\Models\ProductVariantCombination::find($variantCombinationId);
+        return $variant ? $variant->variant_options : null;
     }
 }

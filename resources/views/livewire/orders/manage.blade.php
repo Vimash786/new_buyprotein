@@ -430,7 +430,7 @@ new class extends Component
                     'status' => $this->overall_status,
                     'notes' => $this->notes,
                     'variant_combination_id' => $this->orderItems[0]['variant_combination_id'] ?? null,
-                    'variant' => $this->getVariantText($this->orderItems[0]['variant_combination_id'] ?? null),
+                    'variant' => $this->getVariantOptions($this->orderItems[0]['variant_combination_id'] ?? null),
                 ]);
                 
                 // Update order total
@@ -466,7 +466,7 @@ new class extends Component
                         'status' => $this->overall_status,
                         'notes' => $this->notes,
                         'variant_combination_id' => $item['variant_combination_id'] ?? null,
-                        'variant' => $this->getVariantText($item['variant_combination_id'] ?? null),
+                        'variant' => $this->getVariantOptions($item['variant_combination_id'] ?? null),
                     ]);
                 }
 
@@ -494,7 +494,7 @@ new class extends Component
                     'status' => $this->overall_status,
                     'notes' => $this->notes,
                     'variant_combination_id' => $item['variant_combination_id'] ?? null,
-                    'variant' => $this->getVariantText($item['variant_combination_id'] ?? null),
+                    'variant' => $this->getVariantOptions($item['variant_combination_id'] ?? null),
                 ]);
             }
 
@@ -678,14 +678,14 @@ new class extends Component
         }
     }
 
-    private function getVariantText($variantCombinationId)
+    private function getVariantOptions($variantCombinationId)
     {
         if (!$variantCombinationId) {
             return null;
         }
 
         $variant = \App\Models\ProductVariantCombination::find($variantCombinationId);
-        return $variant ? $variant->getFormattedVariantText() : null;
+        return $variant ? $variant->variant_options : null;
     }
 }; ?>
 

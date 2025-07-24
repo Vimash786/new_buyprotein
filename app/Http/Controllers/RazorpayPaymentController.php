@@ -111,7 +111,7 @@ class RazorpayPaymentController extends Controller
                 'order_id' => $orderId,
                 'seller_id' => $productData->seller_id,
                 'product_id' => $productData->id,
-                'variant' => json_encode($cart->variant_option_ids),
+                'variant' => $cart->variant_option_ids,
                 'quantity' => $cart->quantity,
                 'unit_price' => $cart->price,
                 'total_amount' => $cart->quantity * $cart->price,
