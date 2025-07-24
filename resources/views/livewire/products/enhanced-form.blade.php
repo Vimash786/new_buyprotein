@@ -736,8 +736,9 @@
     <!-- Buttons -->
     <div class="flex gap-3 pt-4">
         <button 
-            type="submit"
-            onclick="syncProductDescriptionContent()"
+            type="button"
+            onclick="handleFormSubmission()"
+            id="submit-button"
             class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium"
             wire:loading.attr="disabled"
         >

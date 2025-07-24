@@ -327,6 +327,10 @@ new class extends Component
 
     public function save()
     {
+        // Debug: Log the description value at the start of save
+        \Log::info('Product Save - Description value at start: ' . $this->description);
+        \Log::info('Product Save - Edit mode: ' . ($this->editMode ? 'true' : 'false'));
+        
         $this->validate();
 
         // Calculate final prices based on discounts
@@ -373,6 +377,9 @@ new class extends Component
             'section_category' => $this->section_category,
             'has_variants' => $this->has_variants,
         ];
+
+        // Debug: Log the data array with description
+        \Log::info('Product Save - Data array description: ' . $data['description']);
 
         // Handle thumbnail image upload
         if ($this->thumbnail_image) {
@@ -1737,85 +1744,112 @@ new class extends Component
     <script>
       let productDescriptionQuill;
       let quillContent = '';
-      
-      // Function to initialize or reinitialize Quill editor
-      function initializeQuillEditor() {
-        const editorElement = document.getElementById('product-description-editor');
-        
-        if (!editorElement) {
-          return;
-        }
-        
-        // Destroy existing editor if it exists
-        if (productDescriptionQuill) {
-          // Save current content before destroying
-          quillContent = productDescriptionQuill.root.innerHTML;
-          productDescriptionQuill = null;
-        }
-        
-        // Create new Quill instance
-        productDescriptionQuill = new Quill('#product-description-editor', {
-          theme: 'snow',
-          placeholder: 'Enter product description...',
-          modules: {
-            toolbar: [
-              ['bold', 'italic', 'underline', 'strike'],
-              ['blockquote', 'code-block'],
-              [{ 'header': 1 }, { 'header': 2 }],
-              [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-              [{ 'script': 'sub'}, { 'script': 'super' }],
-              [{ 'indent': '-1'}, { 'indent': '+1' }],
-              [{ 'direction': 'rtl' }],
-              [{ 'size': ['small', false, 'large', 'huge'] }],
-              [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-              [{ 'color': [] }, { 'background': [] }],
-              [{ 'font': [] }],
-              [{ 'align': [] }],
-              ['clean']
-            ]
-          }
-        });
-
-        // Function to load content into Quill
-        function loadContentIntoQuill() {
-          const hiddenInput = document.getElementById('description-input');
-          let contentToLoad = '';
-          
-          // Priority: saved content > hidden input value > empty
-          if (quillContent && quillContent.trim() !== '' && quillContent !== '<p><br></p>') {
-            contentToLoad = quillContent;
-          } else if (hiddenInput && hiddenInput.value && hiddenInput.value.trim() !== '') {
-            contentToLoad = hiddenInput.value;
-          }
-          
-          if (contentToLoad) {
-            productDescriptionQuill.root.innerHTML = contentToLoad;
-          }
-        }
-
-        // Load initial content
-        loadContentIntoQuill();
-
-        // Update hidden input and save content on text change
-        productDescriptionQuill.on('text-change', function() {
-          const content = productDescriptionQuill.root.innerHTML;
-          quillContent = content; // Save to global variable
-          
-          const hiddenInput = document.getElementById('description-input');
-          if (hiddenInput) {
-            hiddenInput.value = content;
-          }
-          
-          // Hide validation error immediately when typing
-          const errorElement = document.querySelector('span.text-red-500');
-          if (errorElement && errorElement.textContent.includes('description field is required')) {
-            errorElement.style.display = 'none';
-          }
-        });
-      }
+      let isUpdatingFromLivewire = false;
+      let debounceTimer = null;
       
       // Initialize Quill when modal opens
       document.addEventListener('livewire:init', function () {
+        // Function to initialize or reinitialize Quill editor
+        function initializeQuillEditor() {
+          const editorElement = document.getElementById('product-description-editor');
+          
+          if (!editorElement) {
+            return;
+          }
+          
+          // Destroy existing editor if it exists
+          if (productDescriptionQuill) {
+            // Save current content before destroying
+            quillContent = productDescriptionQuill.root.innerHTML;
+            productDescriptionQuill = null;
+          }
+          
+          // Create new Quill instance
+          productDescriptionQuill = new Quill('#product-description-editor', {
+            theme: 'snow',
+            placeholder: 'Enter product description...',
+            modules: {
+              toolbar: [
+                ['bold', 'italic', 'underline', 'strike'],
+                ['blockquote', 'code-block'],
+                [{ 'header': 1 }, { 'header': 2 }],
+                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                [{ 'script': 'sub'}, { 'script': 'super' }],
+                [{ 'indent': '-1'}, { 'indent': '+1' }],
+                [{ 'direction': 'rtl' }],
+                [{ 'size': ['small', false, 'large', 'huge'] }],
+                [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                [{ 'color': [] }, { 'background': [] }],
+                [{ 'font': [] }],
+                [{ 'align': [] }],
+                ['clean']
+              ]
+            }
+          });
+
+          // Function to load content into Quill
+          function loadContentIntoQuill() {
+            const hiddenInput = document.getElementById('description-input');
+            let contentToLoad = '';
+            
+            // Priority: saved content > hidden input value > empty
+            if (quillContent && quillContent.trim() !== '' && quillContent !== '<p><br></p>') {
+              contentToLoad = quillContent;
+            } else if (hiddenInput && hiddenInput.value && hiddenInput.value.trim() !== '') {
+              contentToLoad = hiddenInput.value;
+            }
+            
+            if (contentToLoad) {
+              isUpdatingFromLivewire = true;
+              productDescriptionQuill.root.innerHTML = contentToLoad;
+              setTimeout(() => {
+                isUpdatingFromLivewire = false;
+              }, 100);
+            }
+          }
+
+          // Load initial content
+          loadContentIntoQuill();
+
+          // Update hidden input and save content on text change
+          productDescriptionQuill.onclick('#submit-button', function(delta, oldDelta, source) {
+            // Prevent loop when changes come from Livewire updates
+            if (isUpdatingFromLivewire || source === 'api') {
+              return;
+            }
+            
+            const content = productDescriptionQuill.root.innerHTML;
+            console.log('Quill text-change event, content:', content);
+            quillContent = content; // Save to global variable
+            
+            const hiddenInput = document.getElementById('description-input');
+            if (hiddenInput) {
+              hiddenInput.value = content;
+              console.log('Hidden input updated in text-change event');
+              
+              // Trigger input event to ensure Livewire detects the change
+              const event = new Event('input', { bubbles: true });
+              hiddenInput.dispatchEvent(event);
+            }
+            
+            // Debounce Livewire property updates to prevent excessive calls
+            if (debounceTimer) {
+              clearTimeout(debounceTimer);
+            }
+            
+            debounceTimer = setTimeout(() => {
+              console.log('Updating Livewire property (debounced)');
+              @this.set('description', content);
+            }, 300); // 300ms debounce
+            
+            // Hide validation error immediately when typing
+            const errorElement = document.querySelector('span.text-red-500');
+            if (errorElement && errorElement.textContent.includes('description field is required')) {
+              errorElement.style.display = 'none';
+            }
+          });
+        }
+
         Livewire.on('showModal', () => {
           setTimeout(initializeQuillEditor, 100);
         });
@@ -1836,8 +1870,12 @@ new class extends Component
             if (productDescriptionQuill) {
               const hiddenInput = document.getElementById('description-input');
               if (hiddenInput && hiddenInput.value && hiddenInput.value.trim() !== '') {
+                isUpdatingFromLivewire = true;
                 productDescriptionQuill.root.innerHTML = hiddenInput.value;
                 quillContent = hiddenInput.value;
+                setTimeout(() => {
+                  isUpdatingFromLivewire = false;
+                }, 100);
               }
             }
           }, 100);
@@ -1849,7 +1887,81 @@ new class extends Component
             productDescriptionQuill = null;
           }
           quillContent = '';
+          isUpdatingFromLivewire = false;
+          if (debounceTimer) {
+            clearTimeout(debounceTimer);
+            debounceTimer = null;
+          }
         });
+
+        // Define handleFormSubmission inside Livewire context
+        window.handleFormSubmission = function() {
+          console.log('handleFormSubmission called');
+          
+          // Clear any pending debounce timer
+          if (debounceTimer) {
+            clearTimeout(debounceTimer);
+            debounceTimer = null;
+          }
+          
+          // Function to sync and submit
+          function syncAndSubmit(content) {
+            console.log('Syncing content and submitting:', content);
+            
+            // Update hidden input immediately
+            const hiddenInput = document.getElementById('description-input');
+            if (hiddenInput) {
+              hiddenInput.value = content || '';
+              console.log('Hidden input updated with content:', hiddenInput.value);
+              
+              // Trigger change event to ensure Livewire detects the change
+              const event = new Event('input', { bubbles: true });
+              hiddenInput.dispatchEvent(event);
+            }
+            
+            // Save to global variable
+            quillContent = content || '';
+            
+            // Set Livewire property with fallback
+            @this.set('description', content || '').then(() => {
+              console.log('Livewire description property set successfully');
+              setTimeout(() => {
+                console.log('Calling save method');
+                @this.call('save');
+              }, 50); // Small delay to ensure the set operation completes
+            }).catch((error) => {
+              console.error('Error setting description property:', error);
+              // Try to submit anyway after a brief delay
+              setTimeout(() => {
+                console.log('Fallback: calling save method directly');
+                @this.call('save');
+              }, 100);
+            });
+          }
+          
+          // First try to get content from Quill editor
+          if (productDescriptionQuill && productDescriptionQuill.root) {
+            try {
+              const content = productDescriptionQuill.root.innerHTML;
+              console.log('Quill editor content retrieved:', content);
+              syncAndSubmit(content);
+            } catch (error) {
+              console.error('Error getting content from Quill editor:', error);
+              // Fallback to saved content or empty
+              syncAndSubmit(quillContent || '');
+            }
+          } else if (quillContent) {
+            console.log('Using saved quill content:', quillContent);
+            syncAndSubmit(quillContent);
+          } else {
+            console.log('No editor or saved content found, checking hidden input');
+            // Last resort: check if hidden input has content
+            const hiddenInput = document.getElementById('description-input');
+            const existingContent = hiddenInput ? hiddenInput.value : '';
+            console.log('Existing hidden input content:', existingContent);
+            syncAndSubmit(existingContent);
+          }
+        };
       });
 
       // Function to sync content before form submission
