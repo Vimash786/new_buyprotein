@@ -219,7 +219,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
             session()->forget('url.intended');
             $this->redirect(route('dashboard', absolute: false), navigate: true);
         }elseif($completed){
-            $this->redirectIntended(route('home', absolute: false), navigate: true);
+            $this->redirectIntended(route('user.account', absolute: false));
         }
        
     }
