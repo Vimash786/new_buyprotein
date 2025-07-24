@@ -113,11 +113,11 @@ new #[Layout('components.layouts.auth')] class extends Component {
         if ($this->role !== 'Seller') {
             // Base validation rules for all user types
             $rules = [
-                'role' => ['required', 'string', 'in:User,Gym Owner/Trainer/Influencer,Shop Owner'],
+                'role' => ['required', 'string', 'in:User,Gym Owner/Trainer/Influencer/Dietitian,Shop Owner'],
             ];
             
             // Add conditional validation based on role
-            if ($this->role === 'Gym Owner/Trainer/Influencer') {
+            if ($this->role === 'Gym Owner/Trainer/Influencer/Dietitian') {
                 $rules['document_proof'] = ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'];
                 $rules['social_link'] = ['required', 'string', 'url', 'max:255'];
                 $rules['business_images'] = ['required', 'array', 'min:1'];
@@ -135,18 +135,18 @@ new #[Layout('components.layouts.auth')] class extends Component {
                 'profile_completed' => true,
             ]);
 
-            // Save document proof for Gym Owner/Trainer/Influencer
+            // Save document proof for Gym Owner/Trainer/Influencer/Dietitian
             if (isset($validated['document_proof'])) {
                 $documentProofPath = $validated['document_proof']->store('user_documents', 'public');
                 $user->update(['document_proof' => $documentProofPath]);
             }
 
-            // Save social media link for Gym Owner/Trainer/Influencer
+            // Save social media link for Gym Owner/Trainer/Influencer/Dietitian
             if (isset($validated['social_link'])) {
                 $user->update(['social_media_link' => $validated['social_link']]);
             }
 
-            // Save business images for both Gym Owner/Trainer/Influencer and Shop Owner
+            // Save business images for both Gym Owner/Trainer/Influencer/Dietitian and Shop Owner
             if (isset($validated['business_images']) && is_array($validated['business_images'])) {
                 $businessImagePaths = [];
                 foreach ($validated['business_images'] as $image) {
@@ -239,14 +239,14 @@ new #[Layout('components.layouts.auth')] class extends Component {
             <!-- Industry Selection -->
             <flux:select wire:model.live="role" placeholder="Choose your category..." label="I am a...">
             <flux:select.option value="User">Regular User</flux:select.option>
-            <flux:select.option value="Gym Owner/Trainer/Influencer">Gym Owner/Trainer/Influencer</flux:select.option>
+            <flux:select.option value="Gym Owner/Trainer/Influencer/Dietitian/">Gym Owner/Trainer/Influencer/Dietitian</flux:select.option>
             <flux:select.option value="Shop Owner">Shop Owner</flux:select.option>
             </flux:select>
             
-            <!-- Document proof and Business images - only show for Gym Owner/Trainer/Influencer and Shop Owner -->
-            @if(in_array($role, ['Gym Owner/Trainer/Influencer', 'Shop Owner']))
+            <!-- Document proof and Business images - only show for Gym Owner/Trainer/Influencer/Dietitian and Shop Owner -->
+            @if(in_array($role, ['Gym Owner/Trainer/Influencer/Dietitian', 'Shop Owner']))
                 <!-- Document proof -->
-                @if($role === 'Gym Owner/Trainer/Influencer')
+                @if($role === 'Gym Owner/Trainer/Influencer/Dietitian')
                     <flux:input 
                         type="file" 
                         wire:model="document_proof" 

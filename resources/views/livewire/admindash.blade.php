@@ -308,7 +308,7 @@ new class extends Component
                     <div class="flex items-center">
                         <div class="flex-1">
                             <h3 class="text-lg font-medium text-gray-900 dark:text-white">Gym/Trainers/Influencers</h3>
-                            <p class="text-3xl font-bold text-green-600">{{ User::where('role', 'Gym Owner/Trainer/Influencer')->count() }}</p>
+                            <p class="text-3xl font-bold text-green-600">{{ User::where('role', 'Gym Owner/Trainer/Influencer/Dietitian')->count() }}</p>
                             <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">Fitness professionals</p>
                         </div>
                         <div class="w-12 h-12 bg-green-100 dark:bg-green-900/50 rounded-lg flex items-center justify-center">

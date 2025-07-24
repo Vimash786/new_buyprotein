@@ -40,7 +40,7 @@ new class extends Component
     protected $rules = [
         'name' => 'required|string|max:255',
         'email' => 'required|email|max:255',
-        'role' => 'required|string|in:User,Gym Owner/Trainer/Influencer,Shop Owner,Seller',
+        'role' => 'required|string|in:User,Gym Owner/Trainer/Influencer/Dietitian,Shop Owner,Seller',
         'document_proof' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
         'social_link' => 'nullable|string|url|max:255',
         'business_images.*' => 'nullable|file|image|max:10240',
@@ -72,7 +72,7 @@ new class extends Component
         return [
             'users' => $query->latest()->paginate(10),
             'totalUsers' => User::count(),
-            'gymUsers' => User::where('role', 'Gym Owner/Trainer/Influencer')->count(),
+            'gymUsers' => User::where('role', 'Gym Owner/Trainer/Influencer/Dietitian')->count(),
             'shopUsers' => User::where('role', 'Shop Owner')->count(),
             'sellers' => User::where('role', 'Seller')->count(),
             'regularUsers' => User::where('role', 'User')->count(),
@@ -119,11 +119,11 @@ new class extends Component
         $rules = [
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255',
-            'role' => 'required|string|in:User,Gym Owner/Trainer/Influencer,Shop Owner,Seller',
+            'role' => 'required|string|in:User,Gym Owner/Trainer/Influencer/Dietitian,Shop Owner,Seller',
         ];
         
         // Add conditional validation based on role
-        if ($this->role === 'Gym Owner/Trainer/Influencer') {
+        if ($this->role === 'Gym Owner/Trainer/Influencer/Dietitian') {
             $rules['document_proof'] = ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'];
             $rules['social_link'] = ['required', 'string', 'url', 'max:255'];
             $rules['business_images'] = ['required', 'array', 'min:1'];
@@ -156,7 +156,7 @@ new class extends Component
         ];
 
         // Handle file uploads based on role
-        if ($this->role === 'Gym Owner/Trainer/Influencer') {
+        if ($this->role === 'Gym Owner/Trainer/Influencer/Dietitian') {
             if ($this->document_proof) {
                 $userData['document_proof'] = $this->document_proof->store('user_documents', 'public');
             }
@@ -420,7 +420,7 @@ new class extends Component
                         <select wire:model.live="roleFilter" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white">
                             <option value="">All Roles</option>
                             <option value="User">Regular User</option>
-                            <option value="Gym Owner/Trainer/Influencer">Gym Owner/Trainer/Influencer</option>
+                            <option value="Gym Owner/Trainer/Influencer/Dietitian">Gym Owner/Trainer/Influencer/Dietitian</option>
                             <option value="Shop Owner">Shop Owner</option>
                             <option value="Seller">Seller</option>
                         </select>
@@ -478,14 +478,14 @@ new class extends Component
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
                                            {{ $user->role === 'Seller' ? 'bg-purple-100 text-purple-800' :
-                                              ($user->role === 'Gym Owner/Trainer/Influencer' ? 'bg-green-100 text-green-800' :
+                                              ($user->role === 'Gym Owner/Trainer/Influencer/Dietitian' ? 'bg-green-100 text-green-800' :
                                                ($user->role === 'Shop Owner' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800')) }}">
                                         {{ $user->role }}
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400">
                                     <div class="space-y-1">
-                                        @if($user->role === 'Gym Owner/Trainer/Influencer')
+                                        @if($user->role === 'Gym Owner/Trainer/Influencer/Dietitian')
                                             @if($user->document_proof)
                                                 <div>
                                                     <a href="{{ Storage::url($user->document_proof) }}" target="_blank" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center gap-1">
@@ -687,7 +687,7 @@ new class extends Component
                             >
                                 <option value="">Select Role</option>
                                 <option value="User">Regular User</option>
-                                <option value="Gym Owner/Trainer/Influencer">Gym Owner/Trainer/Influencer</option>
+                                <option value="Gym Owner/Trainer/Influencer/Dietitian">Gym Owner/Trainer/Influencer/Dietitian</option>
                                 <option value="Shop Owner">Shop Owner</option>
                                 <option value="Seller">Seller</option>
                             </select>
@@ -695,7 +695,7 @@ new class extends Component
                         </div>
 
                         <!-- Role-specific fields -->
-                        @if($role === 'Gym Owner/Trainer/Influencer')
+                        @if($role === 'Gym Owner/Trainer/Influencer/Dietitian')
                             <!-- Document Proof -->
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Document Proof</label>
@@ -898,7 +898,7 @@ new class extends Component
                             </div>
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
                                    {{ $selectedUser->role === 'Seller' ? 'bg-purple-100 text-purple-800' :
-                                      ($selectedUser->role === 'Gym Owner/Trainer/Influencer' ? 'bg-green-100 text-green-800' :
+                                      ($selectedUser->role === 'Gym Owner/Trainer/Influencer/Dietitian' ? 'bg-green-100 text-green-800' :
                                        ($selectedUser->role === 'Shop Owner' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800')) }}">
                                 {{ $selectedUser->role }}
                             </span>
@@ -907,7 +907,7 @@ new class extends Component
 
                     <!-- Documents Section -->
                     <div class="py-4 max-h-96 overflow-y-auto">
-                        @if($selectedUser->role === 'Gym Owner/Trainer/Influencer')
+                        @if($selectedUser->role === 'Gym Owner/Trainer/Influencer/Dietitian')
                             <!-- Document Proof -->
                             @if($selectedUser->document_proof)
                                 <div class="mb-4 p-4 border dark:border-gray-600 rounded-lg">
