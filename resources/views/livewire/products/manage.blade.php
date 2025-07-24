@@ -83,33 +83,73 @@ new class extends Component
     public $variantStock = [];
     public $productDetails = [];
 
-    protected $rules = [
-        'seller_id' => 'required|exists:sellers,id',
-        'name' => 'required|string|max:255',
-        'description' => 'nullable|string',
-        'gym_owner_price' => 'required_if:has_variants,false|nullable|numeric|min:0',
-        'regular_user_price' => 'required_if:has_variants,false|nullable|numeric|min:0',
-        'shop_owner_price' => 'required_if:has_variants,false|nullable|numeric|min:0',
-        'gym_owner_discount' => 'nullable|numeric|min:0|max:100',
-        'regular_user_discount' => 'nullable|numeric|min:0|max:100',
-        'shop_owner_discount' => 'nullable|numeric|min:0|max:100',
-        'gym_owner_final_price' => 'nullable|numeric|min:0',
-        'regular_user_final_price' => 'nullable|numeric|min:0',
-        'shop_owner_final_price' => 'nullable|numeric|min:0',
-        'stock_quantity' => 'required_if:has_variants,false|nullable|integer|min:0',
-        'weight' => 'nullable|string|max:50',
-        'category_id' => 'required|exists:categories,id',
-        'sub_category_id' => 'nullable|exists:sub_categories,id',
-        'status' => 'required|in:active,inactive',
-        'section_category' => 'required|array|min:1',
-        'section_category.*' => 'required|in:everyday_essential,popular_pick,exclusive_deal',
-        'has_variants' => 'boolean',
-        'thumbnail_image' => 'nullable|image|max:400', // Maximum 400KB
-        'product_images' => 'nullable|array|max:3', // Maximum 3 images
-        'product_images.*' => 'nullable|image|max:400', // Maximum 400KB
-        'variant_images.*' => 'nullable|array|max:3', // Maximum 3 images per variant
-        'variant_images.*.*' => 'nullable|image|max:400', // Maximum 400KB
-        'variant_thumbnails.*' => 'nullable|image|max:400', // Maximum 400KB
+    protected function rules()
+    {
+        $rules = [
+            'seller_id' => 'required|exists:sellers,id',
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'gym_owner_price' => 'required_if:has_variants,false|nullable|numeric|min:0',
+            'regular_user_price' => 'required_if:has_variants,false|nullable|numeric|min:0',
+            'shop_owner_price' => 'required_if:has_variants,false|nullable|numeric|min:0',
+            'gym_owner_discount' => 'nullable|numeric|min:0|max:100',
+            'regular_user_discount' => 'nullable|numeric|min:0|max:100',
+            'shop_owner_discount' => 'nullable|numeric|min:0|max:100',
+            'gym_owner_final_price' => 'nullable|numeric|min:0',
+            'regular_user_final_price' => 'nullable|numeric|min:0',
+            'shop_owner_final_price' => 'nullable|numeric|min:0',
+            'stock_quantity' => 'required_if:has_variants,false|nullable|integer|min:0',
+            'weight' => 'nullable|string|max:50',
+            'category_id' => 'required|exists:categories,id',
+            'sub_category_id' => 'nullable|exists:sub_categories,id',
+            'status' => 'required|in:active,inactive',
+            'section_category' => 'required|array|min:1',
+            'section_category.*' => 'required|in:everyday_essential,popular_pick,exclusive_deal',
+            'has_variants' => 'boolean',
+            'thumbnail_image' => 'nullable|image|max:400', // Maximum 400KB
+            'product_images' => 'nullable|array|max:3', // Maximum 3 images
+            'product_images.*' => 'nullable|image|max:400', // Maximum 400KB
+            'variant_images.*' => 'nullable|array|max:3', // Maximum 3 images per variant
+            'variant_images.*.*' => 'nullable|image|max:400', // Maximum 400KB
+            'variant_thumbnails.*' => 'nullable|image|max:400', // Maximum 400KB
+        ];
+
+        // Add variant validation when has_variants is true
+        if ($this->has_variants) {
+            $rules = array_merge($rules, [
+                'variants' => 'required|array|min:1',
+                'variants.*.name' => 'required|string|max:255',
+                'variants.*.display_name' => 'nullable|string|max:255',
+                'variants.*.options' => 'required|array|min:1',
+                'variants.*.options.*.value' => 'required|string|max:255',
+                'variant_combinations' => 'required|array|min:1',
+                'variant_combinations.*.gym_owner_price' => 'required|numeric|min:0',
+                'variant_combinations.*.regular_user_price' => 'required|numeric|min:0',
+                'variant_combinations.*.shop_owner_price' => 'required|numeric|min:0',
+                'variant_combinations.*.gym_owner_discount' => 'nullable|numeric|min:0|max:100',
+                'variant_combinations.*.regular_user_discount' => 'nullable|numeric|min:0|max:100',
+                'variant_combinations.*.shop_owner_discount' => 'nullable|numeric|min:0|max:100',
+                'variant_combinations.*.stock_quantity' => 'required|integer|min:0',
+            ]);
+        }
+
+        return $rules;
+    }
+
+    protected $messages = [
+        'variants.required' => 'At least one variant type is required when variants are enabled.',
+        'variants.*.name.required' => 'Variant name is required.',
+        'variants.*.options.required' => 'At least one option is required for each variant.',
+        'variants.*.options.*.value.required' => 'Option value cannot be empty.',
+        'variant_combinations.required' => 'At least one variant combination must be generated.',
+        'variant_combinations.*.gym_owner_price.required' => 'Gym owner price is required for all variant combinations.',
+        'variant_combinations.*.regular_user_price.required' => 'Regular user price is required for all variant combinations.',
+        'variant_combinations.*.shop_owner_price.required' => 'Shop owner price is required for all variant combinations.',
+        'variant_combinations.*.stock_quantity.required' => 'Stock quantity is required for all variant combinations.',
+        'variant_combinations.*.gym_owner_price.min' => 'Gym owner price must be at least 0.',
+        'variant_combinations.*.regular_user_price.min' => 'Regular user price must be at least 0.',
+        'variant_combinations.*.shop_owner_price.min' => 'Shop owner price must be at least 0.',
+        'variant_combinations.*.stock_quantity.min' => 'Stock quantity must be at least 0.',
     ];
 
     public function with()
@@ -332,6 +372,11 @@ new class extends Component
         \Log::info('Product Save - Edit mode: ' . ($this->editMode ? 'true' : 'false'));
         
         $this->validate();
+
+        // Additional variant validation
+        if ($this->has_variants) {
+            $this->validateVariants();
+        }
 
         // Calculate final prices based on discounts
         $this->calculateFinalPrices();
@@ -1274,6 +1319,91 @@ new class extends Component
         $this->showDetailsModal = false;
         $this->productDetails = [];
         $this->selectedProduct = null;
+    }
+
+    /**
+     * Validate variants and combinations thoroughly
+     */
+    private function validateVariants()
+    {
+        // Check if variants exist when has_variants is true
+        if (empty($this->variants)) {
+            $this->addError('variants', 'At least one variant type is required when variants are enabled.');
+            return;
+        }
+
+        // Validate each variant has at least one option with a value
+        foreach ($this->variants as $index => $variant) {
+            if (empty(trim($variant['name']))) {
+                $this->addError("variants.{$index}.name", 'Variant name is required.');
+            }
+
+            if (empty($variant['options'])) {
+                $this->addError("variants.{$index}.options", 'At least one option is required for each variant.');
+                continue;
+            }
+
+            // Check if at least one option has a value
+            $hasValidOption = false;
+            foreach ($variant['options'] as $optionIndex => $option) {
+                if (!empty(trim($option['value']))) {
+                    $hasValidOption = true;
+                } else {
+                    $this->addError("variants.{$index}.options.{$optionIndex}.value", 'Option value cannot be empty.');
+                }
+            }
+
+            if (!$hasValidOption) {
+                $this->addError("variants.{$index}.options", 'At least one option must have a value.');
+            }
+        }
+
+        // Check if variant combinations exist and are properly filled
+        if (empty($this->variant_combinations)) {
+            $this->addError('variant_combinations', 'No variant combinations found. Please regenerate combinations.');
+            return;
+        }
+
+        // Validate each combination has required pricing and stock
+        foreach ($this->variant_combinations as $index => $combination) {
+            // Check if combination has options
+            if (empty($combination['options'])) {
+                $this->addError("variant_combinations.{$index}", 'Invalid variant combination - missing options.');
+                continue;
+            }
+
+            // Validate required prices
+            $requiredPriceFields = ['gym_owner_price', 'regular_user_price', 'shop_owner_price'];
+            foreach ($requiredPriceFields as $field) {
+                if (!isset($combination[$field]) || $combination[$field] === '' || $combination[$field] === null) {
+                    $this->addError("variant_combinations.{$index}.{$field}", ucfirst(str_replace('_', ' ', $field)) . ' is required.');
+                } elseif (!is_numeric($combination[$field]) || $combination[$field] < 0) {
+                    $this->addError("variant_combinations.{$index}.{$field}", ucfirst(str_replace('_', ' ', $field)) . ' must be a valid number greater than or equal to 0.');
+                }
+            }
+
+            // Validate stock quantity
+            if (!isset($combination['stock_quantity']) || $combination['stock_quantity'] === '' || $combination['stock_quantity'] === null) {
+                $this->addError("variant_combinations.{$index}.stock_quantity", 'Stock quantity is required.');
+            } elseif (!is_numeric($combination['stock_quantity']) || $combination['stock_quantity'] < 0) {
+                $this->addError("variant_combinations.{$index}.stock_quantity", 'Stock quantity must be a valid number greater than or equal to 0.');
+            }
+
+            // Validate discount percentages if provided
+            $discountFields = ['gym_owner_discount', 'regular_user_discount', 'shop_owner_discount'];
+            foreach ($discountFields as $field) {
+                if (isset($combination[$field]) && $combination[$field] !== '' && $combination[$field] !== null) {
+                    if (!is_numeric($combination[$field]) || $combination[$field] < 0 || $combination[$field] > 100) {
+                        $this->addError("variant_combinations.{$index}.{$field}", ucfirst(str_replace('_', ' ', $field)) . ' must be between 0 and 100.');
+                    }
+                }
+            }
+        }
+
+        // If there are any errors, throw validation exception
+        if ($this->getErrorBag()->isNotEmpty()) {
+            throw \Illuminate\Validation\ValidationException::withMessages($this->getErrorBag()->toArray());
+        }
     }
 
     /**
