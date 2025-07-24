@@ -38,10 +38,10 @@
                     
                     @if($user->role === 'Super' || $isApprovedSeller)
                     <flux:navlist.group expandable :heading="__('Products')" class="grid">
-                        <flux:navlist.item icon="cube" :href="route('products.manage')" :current="request()->routeIs('products.manage')" wire:navigate>{{ __('All Products') }}</flux:navlist.item>
+                        <flux:navlist.item icon="cube" :href="route('products.manage')" :current="request()->routeIs('products.manage')" >{{ __('All Products') }}</flux:navlist.item>
                         @if(auth()->user()->role === 'Super')
                         <flux:navlist.item icon="plus-circle" :href="route('products.requests')" :current="request()->routeIs('products.requests')" wire:navigate>{{ __('New Product Requests') }}</flux:navlist.item>
-                        <flux:navlist.item icon="square-3-stack-3d" :href="route('categories.manage')" :current="request()->routeIs('categories.manage')" wire:navigate>{{ __('Categories') }}</flux:navlist.item>
+                        <flux:navlist.item icon="square-3-stack-3d" :href="route('categories.manage')" :current="request()->routeIs('categories.manage')" >{{ __('Categories') }}</flux:navlist.item>
                         @endif
                     </flux:navlist.group>
                     @endif
@@ -86,7 +86,7 @@
                     <flux:navlist.group expandable :heading="__('Site Settings')" class="grid">
                         <flux:navlist.item icon="photo" :href="route('banners.manage')" :current="request()->routeIs('banners.manage')" wire:navigate>{{ __('Banners') }}</flux:navlist.item>
                         <flux:navlist.item icon="document-text" :href="route('blogs.manage')" :current="request()->routeIs('blogs.manage')" wire:navigate>{{ __('Blogs') }}</flux:navlist.item>
-                        <flux:navlist.item icon="document-duplicate" :href="route('policies.manage')" :current="request()->routeIs('policies.*')" wire:navigate>{{ __('Policy Management') }}</flux:navlist.item>
+                        <flux:navlist.item icon="document-duplicate" :href="route('policies.manage')" :current="request()->routeIs('policies.*')" >{{ __('Policy Management') }}</flux:navlist.item>
                         <flux:navlist.item icon="currency-dollar" :href="route('settings.commission')" :current="request()->routeIs('settings.commission')" wire:navigate>{{ __('Global Commission') }}</flux:navlist.item>
                     </flux:navlist.group>
                     
