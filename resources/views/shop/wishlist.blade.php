@@ -8,7 +8,7 @@
                     <div class="navigator-breadcrumb-wrapper">
                         <a href="index.html">Home</a>
                         <i class="fa-regular fa-chevron-right"></i>
-                        <a class="current" href="index.html">Blog Lists With Sidebar</a>
+                        <a class="current" href="index.html">Wishlist</a>
                     </div>
                 </div>
             </div>
@@ -301,6 +301,9 @@
                             position: "right",
                             backgroundColor: "#e74c3c"
                         }).showToast();
+
+                        $(".cartCount").text(res.cartCounter);
+                        $(".wishlistCount").text(res.wishlistCount);
                     }
                 },
                 error: function() {

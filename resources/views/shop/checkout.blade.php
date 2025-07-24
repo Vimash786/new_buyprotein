@@ -85,13 +85,13 @@
                                 <label class="option-card">
                                     <input type="radio" id="sameYes" name="sameAsShipping" value="yes" checked />
                                     <div class="custom-radio"></div>
-                                    <span>Same as shipping address</span>
+                                    <span>Same as billing address</span>
                                 </label>
 
                                 <label class="option-card">
                                     <input type="radio" name="sameAsShipping" id="sameNo" value="no" />
                                     <div class="custom-radio"></div>
-                                    <span>Use a different billing address</span>
+                                    <span>Use a different Shipping address</span>
                                 </label>
                             </div><br>
 

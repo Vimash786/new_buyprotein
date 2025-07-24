@@ -93,7 +93,7 @@
                         <div class="bottom">
                             <div class="wrapper total">
                                 <span>Subtotal</span>
-                                <h6 class="price">₹{{ $totalPrice }}</h6>
+                                <h6 class="totalPrice">₹{{ $totalPrice }}</h6>
                             </div>
                             <div class="button-area">
                                 <a href="{{ route('user.checkout') }}" class="rts-btn btn-primary">Proceed To Checkout</a>
@@ -308,14 +308,16 @@
                         // Update subtotal
                         const $subtotalElem = $('.subtotal .price');
                         const $totalElem = $('.total .price');
-
+                        
                         let currentSubtotal = parseFloat($subtotalElem.text().replace(
                             /[₹,]/g, ''));
                         let newSubtotal = currentSubtotal - itemTotal;
                         if (newSubtotal < 0) newSubtotal = 0;
 
+                        $(".totalPrice").text('₹' + res.totalPrice);
+
                         // Format currency
-                        $subtotalElem.text('₹' + newSubtotal.toFixed(2));
+                        // $subtotalElem.text('₹' + totalCart.toFixed(2));
 
                         Toastify({
                             text: "Item removed from Cart.",
@@ -324,6 +326,9 @@
                             position: "right",
                             backgroundColor: "#e74c3c"
                         }).showToast();
+
+                        $(".cartCount").text(res.cartCounter);
+                        $(".wishlistCount").text(res.wishlistCount);
                     }
                 },
                 error: function() {

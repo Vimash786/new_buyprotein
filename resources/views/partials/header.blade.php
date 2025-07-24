@@ -40,9 +40,10 @@
                                 <ul class="category-sub-menu" id="category-active-four">
                                     @foreach ($catData as $cat)
                                         <li>
-                                            <a href="{{ route('shop', ['type' => 'category', 'id' => Crypt::encrypt($cat->id)]) }}" class="menu-item">
+                                            <a href="{{ route('shop', ['type' => 'category', 'id' => Crypt::encrypt($cat->id)]) }}"
+                                                class="menu-item">
                                                 <span>{{ $cat->name }}</span>
-                                            </a>    
+                                            </a>
                                         </li>
                                     @endforeach
                                 </ul>
@@ -98,7 +99,8 @@
                             <a href="{{ route('user.wishlist') }}" class="btn-border-only wishlist">
                                 <i class="fa-regular fa-heart"></i>
                                 <span class="text">Wishlist</span>
-                                <span class="number">{{ isset($wishlistItem) ? $wishlistItem->count() : 0 }}</span>
+                                <span class="number"><span
+                                        class="wishlistCount">{{ isset($wishlistItem) ? $wishlistItem->count() : 0 }}</span></span>
                             </a>
                             @php
                                 use App\Models\Cart;
@@ -126,7 +128,8 @@
                             <div class="btn-border-only cart category-hover-header">
                                 <i class="fa-sharp fa-regular fa-cart-shopping"></i>
                                 <span class="text">My Cart</span>
-                                <span class="number">{{ isset($cartData) ? $cartData->count() : 0 }}</span>
+                                <span class="number"><span
+                                        class="cartCount">{{ isset($cartData) ? $cartData->count() : 0 }}</span></span>
                                 {{-- <div class="category-sub-menu card-number-show">
                                     <h5 class="shopping-cart-number">Shopping Cart
                                         ({{ isset($cartData) ? $cartData->count() : 0 }})</h5>
@@ -225,9 +228,12 @@
                                     <li class="parent has-dropdown">
                                         <a class="nav-link" href="{{ route('privacy.policy') }}">Policies</a>
                                         <ul class="submenu">
-                                            <li><a class="sub-b" href="{{ route('privacy.policy') }}">Privacy Policy</a></li>
-                                            <li><a class="sub-b" href="{{ route('shipping.policy') }}">Shipping Policy</a></li>
-                                            <li><a class="sub-b" href="{{ route('return.policy') }}">Return Policy</a></li>
+                                            <li><a class="sub-b" href="{{ route('privacy.policy') }}">Privacy
+                                                    Policy</a></li>
+                                            <li><a class="sub-b" href="{{ route('shipping.policy') }}">Shipping
+                                                    Policy</a></li>
+                                            <li><a class="sub-b" href="{{ route('return.policy') }}">Return
+                                                    Policy</a></li>
                                         </ul>
                                     </li>
                                 </ul>

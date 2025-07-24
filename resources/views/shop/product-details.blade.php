@@ -194,7 +194,7 @@
                                             </p>
                                             <span class="product-price mb--15 d-block"
                                                 style="color: #DC2626; font-weight: 600;" id="product-price">
-                                                ₹{{ $product->regular_user_price }}<span
+                                                {{ format_price($product->id) }}<span
                                                     class="old-price ml--15">$69.35</span></span>
                                             {{-- @if (Auth::user() && Auth::user()->role == 'Gym Owner/Trainer/Influencer/Dietitian') --}}
                                             <a class="mb-4" data-bs-toggle="modal" data-bs-target="#exampleModal">
@@ -1089,6 +1089,8 @@
                         position: "right",
                         backgroundColor: "#009ec9",
                     }).showToast();
+
+                    $(".cartCount").text(response.cartCount);
                 },
                 error: function(xhr) {
                     if (xhr.status == 401) {
@@ -1137,9 +1139,7 @@
                             backgroundColor: "#009ec9",
                         }).showToast();
 
-                        setTimeout(function() {
-                            location.reload();
-                        }, 2000);
+                        $(".cartCount").text(response.cartCount);
                     }
                 },
                 error: function(xhr) {
@@ -1197,6 +1197,8 @@
                         position: "right",
                         backgroundColor: "#009ec9",
                     }).showToast();
+
+                    $(".wishlistCount").text(response.wishlistCount);
                 },
                 error: function(xhr) {
                     Toastify({
