@@ -16,6 +16,10 @@ return new class extends Migration
             // Drop the old enum column and recreate with new values
             DB::statement("ALTER TABLE coupon_assignments MODIFY COLUMN assignable_type ENUM('product', 'user', 'seller', 'user_type', 'all_products')");
         });
+        Schema::table('reference_assign', function (Blueprint $table) {
+            // Drop the old enum column and recreate with new values
+            DB::statement("ALTER TABLE reference_assign MODIFY COLUMN assignable_type ENUM('product', 'user', 'seller', 'user_type', 'all_products')");
+        });
     }
 
     /**
@@ -26,6 +30,10 @@ return new class extends Migration
         Schema::table('coupon_assignments', function (Blueprint $table) {
             // Revert back to original enum values
             DB::statement("ALTER TABLE coupon_assignments MODIFY COLUMN assignable_type ENUM('product', 'user', 'seller', 'user_type')");
+        });
+        Schema::table('reference_assign', function (Blueprint $table) {
+            // Revert back to original enum values
+            DB::statement("ALTER TABLE reference_assign MODIFY COLUMN assignable_type ENUM('product', 'user', 'seller', 'user_type')");
         });
     }
 };
