@@ -68,6 +68,7 @@
                                                 @if ($image)
                                                     <img src="{{ asset('storage/' . $image->image_path) }}"
                                                         alt="Thumbnail for Variant {{ $value }}">
+                                                        @break
                                                 @else
                                                     <p>No image for variant {{ $value }}</p>
                                                 @endif

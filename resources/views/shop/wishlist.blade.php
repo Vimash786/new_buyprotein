@@ -56,6 +56,15 @@
                                     </div>
                                     <div class="thumbnail">
                                         @if ($listData->product->has_variants == 1)
+                                            @php
+                                                $rawVariantOptionIds = $listData->variant_option_ids;
+                                                $variantOptionIds = is_array($rawVariantOptionIds)
+                                                    ? $rawVariantOptionIds
+                                                    : json_decode($rawVariantOptionIds, true);
+
+                                                $variantValues = array_values($variantOptionIds);
+                                            @endphp
+
                                             @foreach ($listData->variant_option_ids as $key => $value)
                                                 @php
                                                     $image = $listData->product->images->firstWhere(
@@ -67,6 +76,7 @@
                                                 @if ($image)
                                                     <img src="{{ asset('storage/' . $image->image_path) }}"
                                                         alt="Thumbnail for Variant {{ $value }}">
+                                                        @break
                                                 @else
                                                     <p>No image for variant {{ $value }}</p>
                                                 @endif

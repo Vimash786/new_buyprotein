@@ -22,7 +22,7 @@
                 $defaultImages[] = $image->image_path;
             }
         }
-
+        
         $variantImages = [];
         foreach ($product->images as $image) {
             if ($image->variant_combination_id) {
@@ -114,16 +114,16 @@
                                             <div id="variant-images" class="product-thumb-filter-group left">
                                                 @foreach ($variantImages as $combinationId => $images)
                                                     @foreach ($images as $index => $img)
-                                                        @if ($index === 0)
+                                                        {{-- @if ($index === 0)
                                                             @continue
-                                                        @endif
+                                                        @endif --}}
                                                         @php
                                                             $key = "variant-{$combinationId}-{$index}";
                                                             $classNames[
                                                                 $key
                                                             ] = "variant-image-{$combinationId}-{$index}";
                                                         @endphp
-                                                        <div class="thumb-filter filter-btn {{ $index === 1 ? 'active' : '' }}"
+                                                        <div class="thumb-filter filter-btn {{ $index === 0 ? 'active' : '' }}"
                                                             data-combination-id="{{ $combinationId }}"
                                                             data-show=".{{ $classNames[$key] }}" style="display: none;">
                                                             <img src="{{ asset('storage/' . $img) }}"
@@ -156,9 +156,9 @@
 
                                                 @foreach ($variantImages as $combinationId => $images)
                                                     @foreach ($images as $index => $img)
-                                                        @if ($index === 0)
+                                                        {{-- @if ($index === 0)
                                                             @continue
-                                                        @endif
+                                                        @endif --}}
                                                         @php
                                                             $key = "variant-{$combinationId}-{$index}";
                                                             $wrapperClass = $classNames[$key];
@@ -1029,6 +1029,12 @@
                     } else {
                         priceElement.textContent = "₹" + matchingCombination.shop_owner_price;
                     }
+                } else {
+                    if (matchingCombination.regular_user_discount > 0) {
+                        priceElement.textContent = "₹" + matchingCombination.regular_user_final_price;
+                    } else {
+                        priceElement.textContent = "₹" + matchingCombination.regular_user_price;
+                    }
                 }
                 updateImageBasedOnSelection(matchingCombination.id);
             } else {
@@ -1199,7 +1205,7 @@
                         position: "right",
                         backgroundColor: "#009ec9",
                     }).showToast();
-
+                    
                     $(".wishlistCount").text(response.wishlistCount);
                 },
                 error: function(xhr) {
