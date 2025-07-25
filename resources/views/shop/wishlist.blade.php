@@ -8,7 +8,7 @@
                     <div class="navigator-breadcrumb-wrapper">
                         <a href="index.html">Home</a>
                         <i class="fa-regular fa-chevron-right"></i>
-                        <a class="current" href="index.html">Blog Lists With Sidebar</a>
+                        <a class="current" href="index.html">Wishlist</a>
                     </div>
                 </div>
             </div>
@@ -55,8 +55,26 @@
                                         <img src="assets/images/shop/01.png" alt="shop">
                                     </div>
                                     <div class="thumbnail">
-                                        <img src="{{ asset('storage/' . $listData->product->thumbnail_image) }}"
-                                            alt="shop">
+                                        @if ($listData->product->has_variants == 1)
+                                            @foreach ($listData->variant_option_ids as $key => $value)
+                                                @php
+                                                    $image = $listData->product->images->firstWhere(
+                                                        'variant_combination_id',
+                                                        $value,
+                                                    );
+                                                @endphp
+
+                                                @if ($image)
+                                                    <img src="{{ asset('storage/' . $image->image_path) }}"
+                                                        alt="Thumbnail for Variant {{ $value }}">
+                                                @else
+                                                    <p>No image for variant {{ $value }}</p>
+                                                @endif
+                                            @endforeach
+                                        @else
+                                            <img src="{{ asset('storage/' . $listData->product->thumbnail_image) }}"
+                                                alt="shop">
+                                        @endif
                                     </div>
                                     <div class="information">
                                         <h6 class="title">{{ $listData->product->name }}</h6>
@@ -78,7 +96,8 @@
                                     </div>
                                 </div>
                                 <div class="subtotal">
-                                    <p data-subtotal-id="{{ $listData->id }}">₹{{ $listData->price * $listData->quantity }}
+                                    <p data-subtotal-id="{{ $listData->id }}">
+                                        ₹{{ $listData->price * $listData->quantity }}
                                     </p>
                                 </div>
                                 <div class="button-area">
@@ -301,6 +320,9 @@
                             position: "right",
                             backgroundColor: "#e74c3c"
                         }).showToast();
+
+                        $(".cartCount").text(res.cartCounter);
+                        $(".wishlistCount").text(res.wishlistCount);
                     }
                 },
                 error: function() {

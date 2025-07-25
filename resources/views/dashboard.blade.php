@@ -115,7 +115,8 @@
                                             <a href="{{ route('shop', ['type' => 'category', 'id' => Crypt::encrypt($category->id)]) }}"
                                                 class="single-category-card">
                                                 <div class="category-image-wrapper">
-                                                    <img src="{{ asset('storage/' . $category->image) }}" alt="{{ $category->name }}">
+                                                    <img src="{{ asset('storage/' . $category->image) }}"
+                                                        alt="{{ $category->name }}">
                                                 </div>
                                                 <div class="category-content">
                                                     <h5 class="category-title">{{ $category->name }}</h5>
@@ -144,8 +145,8 @@
                         <h2 class="title-left">
                             Everyday essential
                         </h2>
-                        <div class="countdown">
-                            <div class="countDown"><a href="{{ route('shop', ['type' => 'everyday-essential']) }}"
+                        <div class="">
+                            <div class=""><a href="{{ route('shop', ['type' => 'everyday-essential']) }}"
                                     class="bg-light p-3">View All ></a></div>
                         </div>
                         {{-- <div class="next-prev-swiper-wrapper">
@@ -199,81 +200,85 @@
                         }'>
                             <div class="swiper-wrapper">
                                 @foreach ($everyDayEssentials as $everyDayProduct)
-                                    <div class="swiper-slide">
-                                        <div class="single-shopping-card-one">
-                                            <!-- iamge and sction area start -->
-                                            <div class="image-and-action-area-wrapper">
-                                                <a href="{{ route('product.details', Crypt::encrypt($everyDayProduct->id)) }}"
-                                                    class="thumbnail-preview">
-                                                    @if ($everyDayProduct->discount_percentage > 0)
-                                                        <div class="badge">
-                                                            <span>{{ $everyDayProduct->discount_percentage }}% <br>
-                                                                Off
-                                                            </span>
-                                                            <i class="fa-solid fa-bookmark"></i>
-                                                        </div>
-                                                    @endif
-                                                    @php
-                                                        $variantThumbnail = $everyDayProduct->images->first(function (
-                                                            $img,
-                                                        ) {
-                                                            return $img->image_type === 'variant_thumbnail';
-                                                        });
-                                                    @endphp
+                                    @if (isset($everyDayProduct->seller) && $everyDayProduct->seller->status == 'approved')
+                                        <div class="swiper-slide">
+                                            <div class="single-shopping-card-one">
+                                                <!-- iamge and sction area start -->
+                                                <div class="image-and-action-area-wrapper">
+                                                    <a href="{{ route('product.details', Crypt::encrypt($everyDayProduct->id)) }}"
+                                                        class="thumbnail-preview">
+                                                        @if ($everyDayProduct->discount_percentage > 0)
+                                                            <div class="badge">
+                                                                <span>{{ $everyDayProduct->discount_percentage }}% <br>
+                                                                    Off
+                                                                </span>
+                                                                <i class="fa-solid fa-bookmark"></i>
+                                                            </div>
+                                                        @endif
+                                                        @php
+                                                            $variantThumbnail = $everyDayProduct->images->first(
+                                                                function ($img) {
+                                                                    return $img->image_type === 'variant_thumbnail';
+                                                                },
+                                                            );
+                                                        @endphp
 
-                                                    @if ($everyDayProduct->variants->count() > 0)
-                                                        @if ($variantThumbnail)
-                                                            <img src="{{ asset('storage/' . $variantThumbnail->image_path) }}"
+                                                        @if ($everyDayProduct->variants->count() > 0)
+                                                            @if ($variantThumbnail)
+                                                                <img src="{{ asset('storage/' . $variantThumbnail->image_path) }}"
+                                                                    alt="product">
+                                                            @endif
+                                                        @else
+                                                            <img src="{{ asset('storage/' . $everyDayProduct->thumbnail_image) }}"
                                                                 alt="product">
                                                         @endif
-                                                    @else
-                                                        <img src="{{ asset('storage/' . $everyDayProduct->thumbnail_image) }}"
-                                                            alt="product">
-                                                    @endif
-                                                    {{-- <img src="assets/images/grocery/01.jpg" alt="grocery"> --}}
-                                                </a>
-                                            </div>
-                                            <!-- iamge and sction area start -->
-
-                                            <div class="body-content">
-
-                                                <a
-                                                    href="{{ route('product.details', Crypt::encrypt($everyDayProduct->id)) }}">
-                                                    <h4 class="title">{{ $everyDayProduct->name }}</h4>
-                                                </a>
-                                                <span class="availability">500g Pack</span>
-                                                <div class="price-area">
-                                                    {{-- <span class="current">₹{{ $everyDayProduct->regular_user_price }}</span> --}}
-                                                    <div class="current">{{ format_price($everyDayProduct->id) }}</div>
-                                                    <div class="previous">{{ format_price($everyDayProduct->id) }}</div>
+                                                        {{-- <img src="assets/images/grocery/01.jpg" alt="grocery"> --}}
+                                                    </a>
                                                 </div>
-                                                <div class="cart-counter-action">
-                                                    <div class="quantity-edit">
-                                                        <input type="text" class="input quantity-input" value="1">
-                                                        <div class="button-wrapper-action">
-                                                            <button class="button"><i
-                                                                    class="fa-regular fa-chevron-down"></i></button>
-                                                            <button class="button plus">+<i
-                                                                    class="fa-regular fa-chevron-up"></i></button>
+                                                <!-- iamge and sction area start -->
+
+                                                <div class="body-content">
+
+                                                    <a
+                                                        href="{{ route('product.details', Crypt::encrypt($everyDayProduct->id)) }}">
+                                                        <h4 class="title">{{ $everyDayProduct->name }}</h4>
+                                                    </a>
+                                                    <span class="availability">500g Pack</span>
+                                                    <div class="price-area">
+                                                        {{-- <span class="current">₹{{ $everyDayProduct->regular_user_price }}</span> --}}
+                                                        <div class="current">{{ format_price($everyDayProduct->id) }}</div>
+                                                        <div class="previous">{{ format_price($everyDayProduct->id, 'actual') }}
                                                         </div>
                                                     </div>
-                                                    <a href="#"
-                                                        class="rts-btn btn-primary radious-sm with-icon add-to-cart-btn"
-                                                        data-product-id="{{ $everyDayProduct->id }}">
-                                                        <div class="btn-text">
-                                                            Add
+                                                    <div class="cart-counter-action">
+                                                        <div class="quantity-edit">
+                                                            <input type="text" class="input quantity-input"
+                                                                value="1">
+                                                            <div class="button-wrapper-action">
+                                                                <button class="button"><i
+                                                                        class="fa-regular fa-chevron-down"></i></button>
+                                                                <button class="button plus">+<i
+                                                                        class="fa-regular fa-chevron-up"></i></button>
+                                                            </div>
                                                         </div>
-                                                        <div class="arrow-icon">
-                                                            <i class="fa-regular fa-cart-shopping"></i>
-                                                        </div>
-                                                        <div class="arrow-icon">
-                                                            <i class="fa-regular fa-cart-shopping"></i>
-                                                        </div>
-                                                    </a>
+                                                        <a href="#"
+                                                            class="rts-btn btn-primary radious-sm with-icon add-to-cart-btn"
+                                                            data-product-id="{{ $everyDayProduct->id }}">
+                                                            <div class="btn-text">
+                                                                Add
+                                                            </div>
+                                                            <div class="arrow-icon">
+                                                                <i class="fa-regular fa-cart-shopping"></i>
+                                                            </div>
+                                                            <div class="arrow-icon">
+                                                                <i class="fa-regular fa-cart-shopping"></i>
+                                                            </div>
+                                                        </a>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
+                                    @endif
                                 @endforeach
                             </div>
                         </div>
@@ -293,8 +298,8 @@
                         <h2 class="title-left">
                             Popular Picks
                         </h2>
-                        <div class="countdown">
-                            <div class="countDown"><a href="{{ route('shop', ['type' => 'popular-picks']) }}"
+                        <div class="">
+                            <div class=""><a href="{{ route('shop', ['type' => 'popular-picks']) }}"
                                     class="bg-light p-3">View All ></a></div>
                         </div>
                     </div>
@@ -306,76 +311,82 @@
                         <div class="col-xl-12 col-lg-12">
                             <div class="row">
                                 @foreach ($populerProducts as $populerProduct)
-                                    <div class="col-lg-4">
-                                        <div class="single-shopping-card-one discount-offer">
-                                            <a href="{{ route('product.details', Crypt::encrypt($populerProduct->id)) }}"
-                                                class="thumbnail-preview">
-                                                @if ($populerProduct->discount_percentage > 0)
-                                                    <div class="badge">
-                                                        <span>{{ $populerProduct->discount_percentage }}% <br>
-                                                            Off
-                                                        </span>
-                                                        <i class="fa-solid fa-bookmark"></i>
-                                                    </div>
-                                                @endif
-                                                @php
-                                                    $variantThumbnail = $populerProduct->images->first(function ($img) {
-                                                        return $img->image_type === 'variant_thumbnail';
-                                                    });
-                                                @endphp
+                                    @if (isset($populerProduct->seller) && $populerProduct->seller->status == 'approved')
+                                        <div class="col-lg-4">
+                                            <div class="single-shopping-card-one discount-offer">
+                                                <a href="{{ route('product.details', Crypt::encrypt($populerProduct->id)) }}"
+                                                    class="thumbnail-preview">
+                                                    @if ($populerProduct->discount_percentage > 0)
+                                                        <div class="badge">
+                                                            <span>{{ $populerProduct->discount_percentage }}% <br>
+                                                                Off
+                                                            </span>
+                                                            <i class="fa-solid fa-bookmark"></i>
+                                                        </div>
+                                                    @endif
+                                                    @php
+                                                        $variantThumbnail = $populerProduct->images->first(function (
+                                                            $img,
+                                                        ) {
+                                                            return $img->image_type === 'variant_thumbnail';
+                                                        });
+                                                    @endphp
 
-                                                @if ($populerProduct->variants->count() > 0)
-                                                    @if ($variantThumbnail)
-                                                        <img src="{{ asset('storage/' . $variantThumbnail->image_path) }}"
+                                                    @if ($populerProduct->variants->count() > 0)
+                                                        @if ($variantThumbnail)
+                                                            <img src="{{ asset('storage/' . $variantThumbnail->image_path) }}"
+                                                                alt="product">
+                                                        @endif
+                                                    @else
+                                                        <img src="{{ asset('storage/' . $populerProduct->thumbnail_image) }}"
                                                             alt="product">
                                                     @endif
-                                                @else
-                                                    <img src="{{ asset('storage/' . $populerProduct->thumbnail_image) }}"
-                                                        alt="product">
-                                                @endif
 
-                                                {{-- <img src="{{ asset('storage/' . $populerProduct->thumbnail_image) }}"
+                                                    {{-- <img src="{{ asset('storage/' . $populerProduct->thumbnail_image) }}"
                                                     alt="product"> --}}
-                                            </a>
-                                            <div class="body-content">
-
-                                                <a
-                                                    href="{{ route('product.details', Crypt::encrypt($populerProduct->id)) }}">
-                                                    <h4 class="title">{{ $populerProduct->name }}</h4>
                                                 </a>
-                                                <span class="availability">500g Pack</span>
-                                                <div class="price-area">
-                                                    <span class="current">{{ format_price($populerProduct->id) }}</span>
-                                                    <div class="previous">{{ format_price($populerProduct->id) }}</div>
-                                                </div>
-                                                <div class="cart-counter-action">
-                                                    <div class="quantity-edit">
-                                                        <input type="text" class="input quantity-input"
-                                                            value="1">
-                                                        <div class="button-wrapper-action">
-                                                            <button class="button"><i
-                                                                    class="fa-regular fa-chevron-down"></i></button>
-                                                            <button class="button plus">+<i
-                                                                    class="fa-regular fa-chevron-up"></i></button>
+                                                <div class="body-content">
+
+                                                    <a
+                                                        href="{{ route('product.details', Crypt::encrypt($populerProduct->id)) }}">
+                                                        <h4 class="title">{{ $populerProduct->name }}</h4>
+                                                    </a>
+                                                    <span class="availability">500g Pack</span>
+                                                    <div class="price-area">
+                                                        <span
+                                                            class="current">{{ format_price($populerProduct->id) }}</span>
+                                                        <div class="previous">{{ format_price($populerProduct->id, 'actual') }}
                                                         </div>
                                                     </div>
-                                                    <a href="#"
-                                                        class="rts-btn btn-primary radious-sm with-icon add-to-cart-btn"
-                                                        data-product-id="{{ $populerProduct->id }}">
-                                                        <div class="btn-text">
-                                                            Add
+                                                    <div class="cart-counter-action">
+                                                        <div class="quantity-edit">
+                                                            <input type="text" class="input quantity-input"
+                                                                value="1">
+                                                            <div class="button-wrapper-action">
+                                                                <button class="button"><i
+                                                                        class="fa-regular fa-chevron-down"></i></button>
+                                                                <button class="button plus">+<i
+                                                                        class="fa-regular fa-chevron-up"></i></button>
+                                                            </div>
                                                         </div>
-                                                        <div class="arrow-icon">
-                                                            <i class="fa-regular fa-cart-shopping"></i>
-                                                        </div>
-                                                        <div class="arrow-icon">
-                                                            <i class="fa-regular fa-cart-shopping"></i>
-                                                        </div>
-                                                    </a>
+                                                        <a href="#"
+                                                            class="rts-btn btn-primary radious-sm with-icon add-to-cart-btn"
+                                                            data-product-id="{{ $populerProduct->id }}">
+                                                            <div class="btn-text">
+                                                                Add
+                                                            </div>
+                                                            <div class="arrow-icon">
+                                                                <i class="fa-regular fa-cart-shopping"></i>
+                                                            </div>
+                                                            <div class="arrow-icon">
+                                                                <i class="fa-regular fa-cart-shopping"></i>
+                                                            </div>
+                                                        </a>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
+                                    @endif
                                 @endforeach
                             </div>
                         </div>
@@ -396,8 +407,8 @@
                         <h2 class="title-left">
                             New Arrival
                         </h2>
-                        <div class="countdown">
-                            <div class="countDown"><a href="{{ route('shop', ['type' => 'new-arrivals']) }}"
+                        <div class="">
+                            <div class=""><a href="{{ route('shop', ['type' => 'new-arrivals']) }}"
                                     class="bg-light p-3">View All ></a></div>
                         </div>
                     </div>
@@ -411,78 +422,83 @@
                             aria-labelledby="home-tab">
                             <div class="row g-4">
                                 @foreach ($latestProducts as $lat_pro)
-                                    <div class="col-xxl-2 col-xl-3 col-lg-4 col-md-4 col-sm-6 col-12">
-                                        <div class="single-shopping-card-one">
-                                            <!-- iamge and sction area start -->
-                                            <div class="image-and-action-area-wrapper">
-                                                <a href="{{ route('product.details', Crypt::encrypt($lat_pro->id)) }}"
-                                                    class="thumbnail-preview">
-                                                    @if ($lat_pro->discount_percentage > 0)
-                                                        <div class="badge">
-                                                            <span>{{ $lat_pro->discount_percentage }}% <br>
-                                                                Off
-                                                            </span>
-                                                            <i class="fa-solid fa-bookmark"></i>
-                                                        </div>
-                                                    @endif
-                                                    @php
-                                                        $variantThumbnail = $lat_pro->images->first(function ($img) {
-                                                            return $img->image_type === 'variant_thumbnail';
-                                                        });
-                                                    @endphp
+                                    @if (isset($lat_pro->seller) && $lat_pro->seller->status == 'approved')
+                                        <div class="col-xxl-2 col-xl-3 col-lg-4 col-md-4 col-sm-6 col-12">
+                                            <div class="single-shopping-card-one">
+                                                <!-- iamge and sction area start -->
+                                                <div class="image-and-action-area-wrapper">
+                                                    <a href="{{ route('product.details', Crypt::encrypt($lat_pro->id)) }}"
+                                                        class="thumbnail-preview">
+                                                        @if ($lat_pro->discount_percentage > 0)
+                                                            <div class="badge">
+                                                                <span>{{ $lat_pro->discount_percentage }}% <br>
+                                                                    Off
+                                                                </span>
+                                                                <i class="fa-solid fa-bookmark"></i>
+                                                            </div>
+                                                        @endif
+                                                        @php
+                                                            $variantThumbnail = $lat_pro->images->first(function (
+                                                                $img,
+                                                            ) {
+                                                                return $img->image_type === 'variant_thumbnail';
+                                                            });
+                                                        @endphp
 
-                                                    @if ($lat_pro->variants->count() > 0)
-                                                        @if ($variantThumbnail)
-                                                            <img src="{{ asset('storage/' . $variantThumbnail->image_path) }}"
+                                                        @if ($lat_pro->variants->count() > 0)
+                                                            @if ($variantThumbnail)
+                                                                <img src="{{ asset('storage/' . $variantThumbnail->image_path) }}"
+                                                                    alt="product">
+                                                            @endif
+                                                        @else
+                                                            <img src="{{ asset('storage/' . $lat_pro->thumbnail_image) }}"
                                                                 alt="product">
                                                         @endif
-                                                    @else
-                                                        <img src="{{ asset('storage/' . $lat_pro->thumbnail_image) }}"
-                                                            alt="product">
-                                                    @endif
-                                                    {{-- <img src="{{ asset('storage/' . $lat_pro->thumbnail_image) }}"
+                                                        {{-- <img src="{{ asset('storage/' . $lat_pro->thumbnail_image) }}"
                                                         alt="product"> --}}
-                                                </a>
-                                            </div>
-                                            <!-- iamge and sction area start -->
-                                            <div class="body-content">
-
-                                                <a href="{{ route('product.details', Crypt::encrypt($lat_pro->id)) }}">
-                                                    <h4 class="title">{{ $lat_pro->name }}</h4>
-                                                </a>
-                                                <span class="availability">500g Pack</span>
-                                                <div class="price-area">
-                                                    <span class="current">{{ format_price($lat_pro->id) }}</span>
-                                                    <div class="previous">{{ format_price($lat_pro->id) }}</div>
-                                                </div>
-                                                <div class="cart-counter-action">
-                                                    <div class="quantity-edit">
-                                                        <input type="text" class="input quantity-input"
-                                                            value="1">
-                                                        <div class="button-wrapper-action">
-                                                            <button class="button"><i
-                                                                    class="fa-regular fa-chevron-down"></i></button>
-                                                            <button class="button plus">+<i
-                                                                    class="fa-regular fa-chevron-up"></i></button>
-                                                        </div>
-                                                    </div>
-                                                    <a href="#"
-                                                        class="rts-btn btn-primary radious-sm with-icon add-to-cart-btn"
-                                                        data-product-id="{{ $lat_pro->id }}">
-                                                        <div class="btn-text">
-                                                            Add
-                                                        </div>
-                                                        <div class="arrow-icon">
-                                                            <i class="fa-regular fa-cart-shopping"></i>
-                                                        </div>
-                                                        <div class="arrow-icon">
-                                                            <i class="fa-regular fa-cart-shopping"></i>
-                                                        </div>
                                                     </a>
+                                                </div>
+                                                <!-- iamge and sction area start -->
+                                                <div class="body-content">
+
+                                                    <a
+                                                        href="{{ route('product.details', Crypt::encrypt($lat_pro->id)) }}">
+                                                        <h4 class="title">{{ $lat_pro->name }}</h4>
+                                                    </a>
+                                                    <span class="availability">500g Pack</span>
+                                                    <div class="price-area">
+                                                        <span class="current">{{ format_price($lat_pro->id) }}</span>
+                                                        <div class="previous">{{ format_price($lat_pro->id, 'actual') }}</div>
+                                                    </div>
+                                                    <div class="cart-counter-action">
+                                                        <div class="quantity-edit">
+                                                            <input type="text" class="input quantity-input"
+                                                                value="1">
+                                                            <div class="button-wrapper-action">
+                                                                <button class="button"><i
+                                                                        class="fa-regular fa-chevron-down"></i></button>
+                                                                <button class="button plus">+<i
+                                                                        class="fa-regular fa-chevron-up"></i></button>
+                                                            </div>
+                                                        </div>
+                                                        <a href="#"
+                                                            class="rts-btn btn-primary radious-sm with-icon add-to-cart-btn"
+                                                            data-product-id="{{ $lat_pro->id }}">
+                                                            <div class="btn-text">
+                                                                Add
+                                                            </div>
+                                                            <div class="arrow-icon">
+                                                                <i class="fa-regular fa-cart-shopping"></i>
+                                                            </div>
+                                                            <div class="arrow-icon">
+                                                                <i class="fa-regular fa-cart-shopping"></i>
+                                                            </div>
+                                                        </a>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
+                                    @endif
                                 @endforeach
                             </div>
                         </div>
@@ -541,8 +557,8 @@
                         <h2 class="title-left mb--10">
                             Exclusive deal & offers
                         </h2>
-                        <div class="countdown">
-                            <div class="countDown"><a href="{{ route('shop', ['type' => 'exclusive-deal']) }}"
+                        <div class="">
+                            <div class=""><a href="{{ route('shop', ['type' => 'exclusive-deal']) }}"
                                     class="bg-light p-3">View All ></a></div>
                         </div>
                     </div>
@@ -590,7 +606,7 @@
                                             <span class="availability">500g Pack</span>
                                             <div class="price-area">
                                                 <span class="current">{{ format_price($offer->id) }}</span>
-                                                <div class="previous">{{ format_price($offer->id) }}</div>
+                                                <div class="previous">{{ format_price($offer->id, 'actual') }}</div>
                                             </div>
                                         </div>
                                     </div>
@@ -783,9 +799,7 @@
                             backgroundColor: "#009ec9",
                         }).showToast();
 
-                        setTimeout(function() {
-                            location.reload();
-                        }, 2000);
+                        $(".cartCount").text(response.cartCount);
                     }
                 },
                 error: function(xhr) {

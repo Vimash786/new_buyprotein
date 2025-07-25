@@ -182,10 +182,7 @@
                                                 <span
                                                     class="product-catagory">{{ isset($product->category) ? $product->category->name : '' }}</span>
                                                 <div class="rating-stars-group">
-                                                    <div class="rating-star"><i class="fas fa-star"></i></div>
-                                                    <div class="rating-star"><i class="fas fa-star"></i></div>
-                                                    <div class="rating-star"><i class="fas fa-star-half-alt"></i></div>
-                                                    <span>10 Reviews</span>
+                                                    <span>{{ isset($totalReviews) ? $totalReviews : '' }} Reviews</span>
                                                 </div>
                                             </div>
                                             <h2 class="product-title">{{ $product->name }}</h2>
@@ -194,13 +191,13 @@
                                             </p>
                                             <span class="product-price mb--15 d-block"
                                                 style="color: #DC2626; font-weight: 600;" id="product-price">
-                                                ₹{{ $product->regular_user_price }}<span
+                                                {{ format_price($product->id, 'actual') }}<span
                                                     class="old-price ml--15">$69.35</span></span>
-                                            {{-- @if (Auth::user() && Auth::user()->role == 'Gym Owner/Trainer/Influencer/Dietitian') --}}
-                                            <a class="mb-4" data-bs-toggle="modal" data-bs-target="#exampleModal">
-                                                Bulk Order
-                                            </a>
-                                            {{-- @endif --}}
+                                            @if (Auth::user() && Auth::user()->role == 'Gym Owner/Trainer/Influencer/Dietitian')
+                                                <a class="mb-4" data-bs-toggle="modal" data-bs-target="#exampleModal">
+                                                    Bulk Order
+                                                </a>
+                                            @endif
                                             <div class="product-bottom-action mt-4">
                                                 <div class="cart-edits">
                                                     <div class="quantity-edit action-item">
@@ -283,6 +280,7 @@
                                                                             <input type="radio"
                                                                                 name="variant_{{ $variant->id }}"
                                                                                 value="{{ $option->id }}"
+                                                                                data-product-id="{{ $product->id }}"
                                                                                 {{ $loop->first ? 'checked' : '' }}>
                                                                             {{ $option->value }}
                                                                         </label>
@@ -333,21 +331,6 @@
                                     aria-labelledby="home-tab" tabindex="0">
                                     <div class="single-tab-content-shop-details">
                                         <div class="details-row-2">
-                                            <div class="left-area">
-                                                @if (!empty($variantImages))
-                                                    @foreach ($variantImages as $combinationId => $images)
-                                                        @if (isset($images[1]))
-                                                            <img src="{{ asset('storage/' . $images[1]) }}"
-                                                                alt="variant-image" class="variant-display-image"
-                                                                data-combination-id="{{ $combinationId }}"
-                                                                style="border-radius: 5px; {{ $loop->first ? 'display: block;' : 'display: none;' }}">
-                                                        @endif
-                                                    @endforeach
-                                                @else
-                                                    <img src="{{ asset('storage/' . $product->thumbnail_image) }}"
-                                                        alt="shop">
-                                                @endif
-                                            </div>
                                             <div class="right">
                                                 <h4 class="title">{{ $product->name }}</h4>
                                                 <p class="mb--25">
@@ -1000,13 +983,12 @@
 
                     visibleThumbs.forEach((thumb, i) => {
                         thumb.style.display = 'inline-block';
-                        if (i === 0) thumb.click(); // auto-select
+                        if (i === 0) thumb.click();
                     });
                     return;
                 }
             }
 
-            // Fallback
             variantImages.style.display = 'none';
             const firstDefault = document.querySelector('#default-images .thumb-filter');
             if (firstDefault) firstDefault.click();
@@ -1025,9 +1007,29 @@
                 return selectedOptionIds.every(id => combOptionIds.includes(id));
             });
 
+            const userType = @json(Auth::check() ? Auth::user()->role : null);
+
             const priceElement = document.getElementById('product-price');
             if (matchingCombination) {
-                priceElement.textContent = "₹" + matchingCombination.regular_user_price;
+                if (userType == 'User') {
+                    if (matchingCombination.regular_user_discount > 0) {
+                        priceElement.textContent = "₹" + matchingCombination.regular_user_final_price;
+                    } else {
+                        priceElement.textContent = "₹" + matchingCombination.regular_user_price;
+                    }
+                } else if (userType == 'Gym Owner/Trainer/Influencer/Dietitian') {
+                    if (matchingCombination.gym_owner_discount > 0) {
+                        priceElement.textContent = "₹" + matchingCombination.gym_owner_final_price;
+                    } else {
+                        priceElement.textContent = "₹" + matchingCombination.gym_owner_price;
+                    }
+                } else if (userType == 'Shop Owner') {
+                    if (matchingCombination.gym_owner_discount > 0) {
+                        priceElement.textContent = "₹" + matchingCombination.shop_owner_final_price;
+                    } else {
+                        priceElement.textContent = "₹" + matchingCombination.shop_owner_price;
+                    }
+                }
                 updateImageBasedOnSelection(matchingCombination.id);
             } else {
                 priceElement.textContent = "₹{{ $product->regular_user_price }}";
@@ -1067,7 +1069,7 @@
             let quantity = $('.quantity-input').val();
             let selectedVariants = {};
 
-            $('input[type=radio][name^="variant_"]:checked').each(function() {
+            $('input[type=radio][data-product-id="' + productId + '"]:checked').each(function() {
                 let variantId = $(this).attr('name').split('_')[1];
                 selectedVariants[variantId] = parseInt($(this).val());
             });
@@ -1089,6 +1091,8 @@
                         position: "right",
                         backgroundColor: "#009ec9",
                     }).showToast();
+
+                    $(".cartCount").text(response.cartCount);
                 },
                 error: function(xhr) {
                     if (xhr.status == 401) {
@@ -1137,9 +1141,7 @@
                             backgroundColor: "#009ec9",
                         }).showToast();
 
-                        setTimeout(function() {
-                            location.reload();
-                        }, 2000);
+                        $(".cartCount").text(response.cartCount);
                     }
                 },
                 error: function(xhr) {
@@ -1175,7 +1177,7 @@
             let quantity = $('.quantity-input').val();
             let selectedVariants = {};
 
-            $('input[type=radio][name^="variant_"]:checked').each(function() {
+            $('input[type=radio][data-product-id="' + productId + '"]:checked').each(function() {
                 let variantId = $(this).attr('name').split('_')[1];
                 selectedVariants[variantId] = parseInt($(this).val());
             });
@@ -1197,6 +1199,8 @@
                         position: "right",
                         backgroundColor: "#009ec9",
                     }).showToast();
+
+                    $(".wishlistCount").text(response.wishlistCount);
                 },
                 error: function(xhr) {
                     Toastify({

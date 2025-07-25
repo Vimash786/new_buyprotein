@@ -18,11 +18,11 @@
     <link rel="stylesheet preload" href="{{ asset('assets/css/style.css') }}" as="style">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
-   <style>
-    .single-shopping-card-one .thumbnail-preview img {
-    height: unset;
-   }
-   </style>
+    <style>
+        .single-shopping-card-one .thumbnail-preview img {
+            height: unset;
+        }
+    </style>
     @stack('styles')
 </head>
 
@@ -447,17 +447,16 @@
     <!-- header style two End -->
 
     <script>
-        window.addEventListener('load', function() {
-            const loader = document.getElementById('loaderWrapper');
-            if (loader) {
-                loader.classList.add('hidden');
-                setTimeout(() => {
-                    loader.style.display = 'none';
-                }, 500); // matches transition duration
+        $(window).on('load', function() {
+            const $loader = $('#loaderWrapper');
+            if ($loader.length) {
+                $loader.addClass('hidden');
+                setTimeout(function() {
+                    $loader.css('display', 'none');
+                }, 500);
             }
         });
     </script>
-
 
     <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
 

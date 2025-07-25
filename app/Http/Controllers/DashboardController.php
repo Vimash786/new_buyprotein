@@ -38,10 +38,10 @@ class DashboardController extends Controller
         // $productCounts = orders::select('product_id', DB::raw('count(*) as total'))->groupBy('product_id')->orderBy('product_id')->get();
         // $productIds = $productCounts->pluck('product_id');
         // $products = products::with(['subCategory', 'category'])->whereIn('id', $productIds)->get();
-        $everyDayEssentials = products::with(['subCategory', 'category', 'images', 'variants'])->where('section_category', 'LIKE', '%"everyday_essential"%')->where('super_status', 'approved')->limit(10)->get();
-        $populerProducts = products::with(['images', 'variants'])->where('section_category', 'LIKE', '%"popular_pick"%')->where('super_status', 'approved')->limit(6)->get();
-        $latestProducts = products::with(['images', 'variants'])->orderBy('created_at', 'desc')->where('super_status', 'approved')->take(12)->get();
-        $offers = products::with(['images', 'variants'])->where('section_category', 'LIKE', '%"exclusive_deal"%')->where('super_status', 'approved')->limit(8)->get();
+        $everyDayEssentials = products::with(['subCategory', 'category', 'images', 'variants', 'seller'])->where('section_category', 'LIKE', '%"everyday_essential"%')->where('super_status', 'approved')->limit(10)->get();
+        $populerProducts = products::with(['images', 'variants', 'seller'])->where('section_category', 'LIKE', '%"popular_pick"%')->where('super_status', 'approved')->limit(6)->get();
+        $latestProducts = products::with(['images', 'variants', 'seller'])->orderBy('created_at', 'desc')->where('super_status', 'approved')->take(12)->get();
+        $offers = products::with(['images', 'variants', 'seller'])->where('section_category', 'LIKE', '%"exclusive_deal"%')->where('super_status', 'approved')->limit(8)->get();
         $banners = Banner::where('status', 'active')->orderBy('created_at', 'desc')->get();
         $sellers = Sellers::where('status', 'approved')->limit(4)->get();
 
@@ -55,7 +55,7 @@ class DashboardController extends Controller
             $categories = Category::limit(10)->where('is_active', 1)->get();
             $brands = Sellers::where('status', 'approved')->limit(10)->get();
 
-            $productsQuery = products::query()->where('super_status', 'approved');
+            $productsQuery = products::query()->with('seller')->where('super_status', 'approved');
 
             if ($type == 'category' && $id) {
                 $productsQuery->where('category_id', $id);
@@ -189,7 +189,10 @@ class DashboardController extends Controller
             'price' => $price
         ]);
 
-        return response()->json(['status' => 'success']);
+        $cartData = Cart::where('user_id', Auth::user()->id)->get();
+        $countCart = $cartData->count();
+
+        return response()->json(['status' => 'success', 'cartCount' => $countCart]);
     }
 
     private function calculatePrice($product, $requestVariantOptionIds)
@@ -239,8 +242,8 @@ class DashboardController extends Controller
 
     public function wishList()
     {
-        $wishlistData = Wishlist::with('product')->where('user_id', Auth::user()->id)->get();
-
+        $wishlistData = Wishlist::with(['product', 'product.images'])->where('user_id', Auth::user()->id)->get();
+        
         return view('shop.wishlist', compact('wishlistData'));
     }
 
@@ -258,15 +261,18 @@ class DashboardController extends Controller
 
         $userId = Auth::id();
 
+        $wishlistData = Wishlist::where('user_id', Auth::user()->id)->get();
+        $wishlistCount = $wishlistData->count();
+
         Wishlist::create([
             'user_id' => $userId,
             'product_id' => $product->id,
             'variant_option_ids' => $variantOptionIds,
             'quantity' => $request->quantity,
-            'price' => $price
+            'price' => $price,
         ]);
 
-        return response()->json(['status' => 'success']);
+        return response()->json(['status' => 'success', 'wishlistCount' => $wishlistCount]);
     }
 
     public function updateQuantity(Request $request)
@@ -315,7 +321,15 @@ class DashboardController extends Controller
 
         $wishlist->delete();
 
-        return response()->json(['success' => true, 'id' => $request->id]);
+        $wishlistCounter = Wishlist::where('user_id', Auth::user()->id)->get()->count();
+        $cartItems = Cart::where('user_id', Auth::id())->get();
+        $cartCounter = $cartItems->count();
+
+        $totalPrice = $cartItems->sum(function ($item) {
+            return $item->price * $item->quantity;
+        });
+
+        return response()->json(['success' => true, 'id' => $request->id, 'wishlistCount' => $wishlistCounter, 'cartCounter' => $cartCounter, 'totalPrice' => $totalPrice]);
     }
 
     public function wishToCart(Request $request)
@@ -342,7 +356,7 @@ class DashboardController extends Controller
 
     public function cart()
     {
-        $cartData = Cart::with('product')->where('user_id', Auth::user()->id)->get();
+        $cartData = Cart::with(['product', 'product.images'])->where('user_id', Auth::user()->id)->get();
 
         return view('shop.cart', compact('cartData'));
     }

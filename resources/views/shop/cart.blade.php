@@ -56,8 +56,26 @@
                                         <img src="assets/images/shop/01.png" alt="shop">
                                     </div>
                                     <div class="thumbnail">
-                                        <img src="{{ asset('storage/' . $listData->product->thumbnail_image) }}"
-                                            alt="shop">
+                                        @if ($listData->product->has_variants == 1)
+                                            @foreach ($listData->variant_option_ids as $key => $value)
+                                                @php
+                                                    $image = $listData->product->images->firstWhere(
+                                                        'variant_combination_id',
+                                                        $value,
+                                                    );
+                                                @endphp
+
+                                                @if ($image)
+                                                    <img src="{{ asset('storage/' . $image->image_path) }}"
+                                                        alt="Thumbnail for Variant {{ $value }}">
+                                                @else
+                                                    <p>No image for variant {{ $value }}</p>
+                                                @endif
+                                            @endforeach
+                                        @else
+                                            <img src="{{ asset('storage/' . $listData->product->thumbnail_image) }}"
+                                                alt="shop">
+                                        @endif
                                     </div>
                                     <div class="information">
                                         <h6 class="title">{{ $listData->product->name }}</h6>
@@ -68,8 +86,8 @@
                                 </div>
                                 <div class="quantity">
                                     <div class="quantity-edit" data-id="{{ $listData->id }}">
-                                        <input type="text" class="input quantity-input" value="{{ $listData->quantity }}"
-                                            readonly>
+                                        <input type="text" class="input quantity-input"
+                                            value="{{ $listData->quantity }}" readonly>
                                         <div class="button-wrapper-action">
                                             <button class="button decrement"><i
                                                     class="fa-regular fa-chevron-down"></i></button>
@@ -79,7 +97,8 @@
                                     </div>
                                 </div>
                                 <div class="subtotal">
-                                    <p data-subtotal-id="{{ $listData->id }}">₹{{ $listData->price * $listData->quantity }}
+                                    <p data-subtotal-id="{{ $listData->id }}">
+                                        ₹{{ $listData->price * $listData->quantity }}
                                     </p>
                                 </div>
                             </div>
@@ -89,11 +108,11 @@
                 <div class="col-xl-3 col-lg-12 col-md-12 col-12 order-1 order-xl-2 order-lg-1 order-md-1 order-sm-1">
                     <div class="cart-total-area-start-right">
                         <h5 class="title">Cart Totals</h5>
-                        
+
                         <div class="bottom">
                             <div class="wrapper total">
                                 <span>Subtotal</span>
-                                <h6 class="price">₹{{ $totalPrice }}</h6>
+                                <h6 class="totalPrice">₹{{ $totalPrice }}</h6>
                             </div>
                             <div class="button-area">
                                 <a href="{{ route('user.checkout') }}" class="rts-btn btn-primary">Proceed To Checkout</a>
@@ -314,8 +333,10 @@
                         let newSubtotal = currentSubtotal - itemTotal;
                         if (newSubtotal < 0) newSubtotal = 0;
 
+                        $(".totalPrice").text('₹' + res.totalPrice);
+
                         // Format currency
-                        $subtotalElem.text('₹' + newSubtotal.toFixed(2));
+                        // $subtotalElem.text('₹' + totalCart.toFixed(2));
 
                         Toastify({
                             text: "Item removed from Cart.",
@@ -324,6 +345,9 @@
                             position: "right",
                             backgroundColor: "#e74c3c"
                         }).showToast();
+
+                        $(".cartCount").text(res.cartCounter);
+                        $(".wishlistCount").text(res.wishlistCount);
                     }
                 },
                 error: function() {
