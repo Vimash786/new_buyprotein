@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('coupon_assignments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('coupon_id')->constrained()->onDelete('cascade');
-            $table->enum('assignable_type', ['product', 'user', 'seller', 'user_type']);
+            $table->enum('assignable_type', ['product', 'user', 'seller', 'user_type', 'all_products']);
             $table->unsignedBigInteger('assignable_id')->nullable();
             $table->string('user_type')->nullable(); // When assignable_type is 'user_type'
             $table->foreignId('assigned_by')->nullable()->constrained('users')->onDelete('set null');

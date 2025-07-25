@@ -10,6 +10,7 @@ use App\Models\Sellers;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Auth;
 
 class ManageCoupons extends Component
 {
@@ -52,8 +53,17 @@ class ManageCoupons extends Component
     public $reportDateTo = '';
     public $reportCouponId = '';
 
+    // Delete modal properties
+    public $showDeleteModal = false;
+    public $couponToDelete = null;
+
     public function mount()
     {
+        // Check if user has access to coupons (only Super role)
+        if (Auth::user()->role !== 'Seller') {
+            abort(403, 'Access denied. Only administrators can manage coupons.');
+        }
+
         $this->starts_at = now()->format('Y-m-d\TH:i');
         $this->expires_at = now()->addDays(30)->format('Y-m-d\TH:i');
         $this->reportDateFrom = now()->startOfMonth()->format('Y-m-d');
@@ -151,12 +161,25 @@ class ManageCoupons extends Component
         $this->closeModal();
     }
 
-    public function delete($id)
+    public function delete($id = null)
     {
-        $coupon = Coupon::findOrFail($id);
+        $coupon = $this->couponToDelete ?? Coupon::findOrFail($id);
         $coupon->delete();
         
         session()->flash('message', 'Coupon deleted successfully!');
+        $this->closeDeleteModal();
+    }
+
+    public function confirmDelete($id)
+    {
+        $this->couponToDelete = Coupon::findOrFail($id);
+        $this->showDeleteModal = true;
+    }
+
+    public function closeDeleteModal()
+    {
+        $this->showDeleteModal = false;
+        $this->couponToDelete = null;
     }
 
     public function resetForm()
@@ -198,7 +221,7 @@ class ManageCoupons extends Component
 
     public function getAssignableItems()
     {
-        if (!$this->assignmentType || !$this->searchItems) {
+        if (!$this->assignmentType) {
             return collect();
         }
 

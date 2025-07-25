@@ -43,6 +43,8 @@ class CouponAssignment extends Model
                 return $this->product;
             case 'seller':
                 return $this->seller;
+            case 'all_products':
+                return null; // No specific model for all products
             default:
                 return null;
         }

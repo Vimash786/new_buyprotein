@@ -61,6 +61,9 @@
                     <flux:navlist.group expandable :heading="__('Payouts')" class="grid">
                         <flux:navlist.item icon="banknotes" :href="route('payouts.sellers')" :current="request()->routeIs('payouts.sellers')" wire:navigate>{{ __('My Payouts') }}</flux:navlist.item>
                     </flux:navlist.group>
+                     <flux:navlist.group expandable :heading="__('Coupons')" class="grid">
+                        <flux:navlist.item icon="ticket" :href="route('coupons.manage')" :current="request()->routeIs('coupons.manage')" wire:navigate>{{ __('Coupons') }}</flux:navlist.item>
+                    </flux:navlist.group>
                     @endif
                     
                     @if(auth()->user()->role === 'Super')
@@ -72,8 +75,7 @@
                     </flux:navlist.group>
                     
                     <!-- Coupons & Reference Code -->
-                    <flux:navlist.group expandable :heading="__('Coupons & Reference Code')" class="grid">
-                        <flux:navlist.item icon="ticket" :href="route('coupons.manage')" :current="request()->routeIs('coupons.manage')" wire:navigate>{{ __('Coupons') }}</flux:navlist.item>
+                    <flux:navlist.group expandable :heading="__('Reference Code')" class="grid">
                         <flux:navlist.item icon="hashtag" href="#" :current="request()->routeIs('reference.codes')" wire:navigate>{{ __('Reference Code') }}</flux:navlist.item>
                     </flux:navlist.group>
                     

@@ -116,6 +116,14 @@ class Coupon extends Model
     }
 
     /**
+     * Check if coupon is assigned to all products
+     */
+    public function isAssignedToAllProducts()
+    {
+        return $this->hasMany(CouponAssignment::class)->where('assignable_type', 'all_products')->exists();
+    }
+
+    /**
      * Get all assignments for this coupon
      */
     public function assignments()
@@ -286,6 +294,8 @@ class Coupon extends Model
                 return 'product';
             case 'App\Models\Sellers':
                 return 'seller';
+            case 'all_products':
+                return 'all_products';
             default:
                 throw new \InvalidArgumentException("Unsupported model type: {$className}");
         }

@@ -175,42 +175,7 @@
                             </select>
                             @error('status') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                         </div>
-
-                        <!-- Applicable To -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Applicable To</label>
-                            <select 
-                                wire:model="applicable_to"
-                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-                            >
-                                <option value="all">All</option>
-                                <option value="users">Specific Users</option>
-                                <option value="products">Specific Products</option>
-                                <option value="sellers">Specific Sellers</option>
-                            </select>
-                            @error('applicable_to') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                        </div>
-
                         <!-- User Types (when applicable_to is users) -->
-                        @if($applicable_to === 'users' || $applicable_to === 'all')
-                            <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">User Types (Optional)</label>
-                                <div class="grid grid-cols-2 gap-2">
-                                    @foreach($availableUserTypes as $value => $label)
-                                        <label class="flex items-center">
-                                            <input 
-                                                type="checkbox" 
-                                                wire:model="user_types" 
-                                                value="{{ $value }}"
-                                                class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-                                            >
-                                            <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">{{ $label }}</span>
-                                        </label>
-                                    @endforeach
-                                </div>
-                                @error('user_types') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                            </div>
-                        @endif
                     </div>
 
                     <!-- Submit Button -->

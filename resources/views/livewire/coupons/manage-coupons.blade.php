@@ -158,4 +158,8 @@
     @if($showAssignModal)
         @include('livewire.coupons.partials.assign-modal')
     @endif
+
+    @if($showDeleteModal)
+        @include('livewire.coupons.partials.delete-modal')
+    @endif
 </div>

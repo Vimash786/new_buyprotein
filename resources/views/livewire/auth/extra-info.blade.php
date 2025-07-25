@@ -358,11 +358,4 @@ new #[Layout('components.layouts.auth')] class extends Component {
             </flux:button>
         </div>
     </form>
-
-    @if ($role !== 'Seller')
-    <div class="space-x-1 rtl:space-x-reverse text-center text-sm text-zinc-600 dark:text-zinc-400">
-        {{ __('Want to register as a seller instead?') }}
-        <flux:link href="{{ route('seller.register') }}" wire:navigate>{{ __('Seller Registration') }}</flux:link>
-    </div>
-    @endif
 </div>
