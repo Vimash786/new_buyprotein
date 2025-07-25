@@ -51,10 +51,10 @@ new #[Layout('components.layouts.auth')] class extends Component {
                 session()->forget('url.intended');
                 $this->redirect(route('dashboard', absolute: false), navigate: true);
             } else {
-                $this->redirectIntended(route('home', absolute: false), navigate: true);
+                $this->redirectIntended(route('user.account', absolute: false));
             }
         } else {
-            $this->redirect(route('extra.info', absolute: false), navigate: true);
+            $this->redirect(route('extra.info', absolute: false));
         }
     }
 

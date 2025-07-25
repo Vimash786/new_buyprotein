@@ -430,6 +430,7 @@ new class extends Component
                     'status' => $this->overall_status,
                     'notes' => $this->notes,
                     'variant_combination_id' => $this->orderItems[0]['variant_combination_id'] ?? null,
+                    'variant' => $this->getVariantOptions($this->orderItems[0]['variant_combination_id'] ?? null),
                 ]);
                 
                 // Update order total
@@ -465,6 +466,7 @@ new class extends Component
                         'status' => $this->overall_status,
                         'notes' => $this->notes,
                         'variant_combination_id' => $item['variant_combination_id'] ?? null,
+                        'variant' => $this->getVariantOptions($item['variant_combination_id'] ?? null),
                     ]);
                 }
 
@@ -492,6 +494,7 @@ new class extends Component
                     'status' => $this->overall_status,
                     'notes' => $this->notes,
                     'variant_combination_id' => $item['variant_combination_id'] ?? null,
+                    'variant' => $this->getVariantOptions($item['variant_combination_id'] ?? null),
                 ]);
             }
 
@@ -673,6 +676,16 @@ new class extends Component
                 // The base product price will be used if no variant is selected
             }
         }
+    }
+
+    private function getVariantOptions($variantCombinationId)
+    {
+        if (!$variantCombinationId) {
+            return null;
+        }
+
+        $variant = \App\Models\ProductVariantCombination::find($variantCombinationId);
+        return $variant ? $variant->variant_options : null;
     }
 }; ?>
 

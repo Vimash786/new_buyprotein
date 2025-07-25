@@ -387,6 +387,7 @@
                         Add Variant Type
                     </button>
                 </div>
+                @error('variants') <span class="text-red-500 text-sm mb-4 block">{{ $errors->first('variants') }}</span> @enderror
 
                 @foreach($variants as $variantIndex => $variant)
                     <div class="bg-gray-50 dark:bg-zinc-800 p-4 rounded-lg mb-4">
@@ -413,6 +414,7 @@
                                     placeholder="e.g., Weight, Flavor, Size"
                                     class="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
                                 >
+                                @error('variants.' . $variantIndex . '.name') <span class="text-red-500 text-xs">{{ $errors->first('variants.' . $variantIndex . '.name') }}</span> @enderror
                             </div>
                             <div>
                                 <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Display Name</label>
@@ -422,6 +424,7 @@
                                     placeholder="e.g., Choose Weight, Select Flavor"
                                     class="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
                                 >
+                                @error('variants.' . $variantIndex . '.display_name') <span class="text-red-500 text-xs">{{ $errors->first('variants.' . $variantIndex . '.display_name') }}</span> @enderror
                             </div>
                         </div>
 
@@ -436,16 +439,20 @@
                                     Add Option
                                 </button>
                             </div>
+                            @error('variants.' . $variantIndex . '.options') <span class="text-red-500 text-xs mb-2 block">{{ $errors->first('variants.' . $variantIndex . '.options') }}</span> @enderror
                             
                             @foreach($variant['options'] as $optionIndex => $option)
                                 <div class="grid grid-cols-2 gap-2 mb-2">
-                                    <input 
-                                        type="text" 
-                                        wire:model="variants.{{ $variantIndex }}.options.{{ $optionIndex }}.value"
-                                        wire:blur="generateVariantCombinations"
-                                        placeholder="Value (e.g., 1kg, Chocolate)"
-                                        class="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
-                                    >
+                                    <div>
+                                        <input 
+                                            type="text" 
+                                            wire:model="variants.{{ $variantIndex }}.options.{{ $optionIndex }}.value"
+                                            wire:blur="generateVariantCombinations"
+                                            placeholder="Value (e.g., 1kg, Chocolate)"
+                                            class="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
+                                        >
+                                        @error('variants.' . $variantIndex . '.options.' . $optionIndex . '.value') <span class="text-red-500 text-xs">{{ $errors->first('variants.' . $variantIndex . '.options.' . $optionIndex . '.value') }}</span> @enderror
+                                    </div>
                                     <div class="flex items-center gap-1">
                                         @if(count($variant['options']) > 1)
                                             <button 
@@ -473,9 +480,11 @@
                                 Regenerate
                             </button>
                         </div>
+                        @error('variant_combinations') <span class="text-red-500 text-sm mb-2 block">{{ $errors->first('variant_combinations') }}</span> @enderror
                         <div class="max-h-100 overflow-y-auto">
                             @foreach($variant_combinations as $combIndex => $combination)
                                 <div class="bg-white dark:bg-zinc-900 p-3 rounded border mb-2">
+                                    @error('variant_combinations.' . $combIndex) <span class="text-red-500 text-xs mb-2 block">{{ $errors->first('variant_combinations.' . $combIndex) }}</span> @enderror
                                     <div class="grid grid-cols-1 gap-2">
                                         <div class="flex items-center justify-between">
                                             <span class="text-sm font-medium">
@@ -496,6 +505,7 @@
                                                     placeholder="0.00"
                                                     class="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
                                                 >
+                                                @error('variant_combinations.' . $combIndex . '.gym_owner_price') <span class="text-red-500 text-xs">{{ $errors->first('variant_combinations.' . $combIndex . '.gym_owner_price') }}</span> @enderror
                                             </div>
                                             <div>
                                                 <label class="text-xs text-gray-600 dark:text-gray-400">Regular User Price (₹)</label>
@@ -506,6 +516,7 @@
                                                     placeholder="0.00"
                                                     class="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
                                                 >
+                                                @error('variant_combinations.' . $combIndex . '.regular_user_price') <span class="text-red-500 text-xs">{{ $errors->first('variant_combinations.' . $combIndex . '.regular_user_price') }}</span> @enderror
                                             </div>
                                             <div>
                                                 <label class="text-xs text-gray-600 dark:text-gray-400">Shop Owner Price (₹)</label>
@@ -516,6 +527,7 @@
                                                     placeholder="0.00"
                                                     class="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
                                                 >
+                                                @error('variant_combinations.' . $combIndex . '.shop_owner_price') <span class="text-red-500 text-xs">{{ $errors->first('variant_combinations.' . $combIndex . '.shop_owner_price') }}</span> @enderror
                                             </div>
                                         </div>
                                         
@@ -531,6 +543,7 @@
                                                     placeholder="0"
                                                     class="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
                                                 >
+                                                @error('variant_combinations.' . $combIndex . '.gym_owner_discount') <span class="text-red-500 text-xs">{{ $errors->first('variant_combinations.' . $combIndex . '.gym_owner_discount') }}</span> @enderror
                                             </div>
                                             <div>
                                                 <label class="text-xs text-gray-600 dark:text-gray-400">Regular User Discount (%)</label>
@@ -542,6 +555,7 @@
                                                     placeholder="0"
                                                     class="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
                                                 >
+                                                @error('variant_combinations.' . $combIndex . '.regular_user_discount') <span class="text-red-500 text-xs">{{ $errors->first('variant_combinations.' . $combIndex . '.regular_user_discount') }}</span> @enderror
                                             </div>
                                             <div>
                                                 <label class="text-xs text-gray-600 dark:text-gray-400">Shop Owner Discount (%)</label>
@@ -553,6 +567,7 @@
                                                     placeholder="0"
                                                     class="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
                                                 >
+                                                @error('variant_combinations.' . $combIndex . '.shop_owner_discount') <span class="text-red-500 text-xs">{{ $errors->first('variant_combinations.' . $combIndex . '.shop_owner_discount') }}</span> @enderror
                                             </div>
                                         </div>
                                         
@@ -599,6 +614,7 @@
                                                     placeholder="0"
                                                     class="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
                                                 >
+                                                @error('variant_combinations.' . $combIndex . '.stock_quantity') <span class="text-red-500 text-xs">{{ $errors->first('variant_combinations.' . $combIndex . '.stock_quantity') }}</span> @enderror
                                             </div>
                                         </div>
                                         
@@ -736,8 +752,9 @@
     <!-- Buttons -->
     <div class="flex gap-3 pt-4">
         <button 
-            type="submit"
-            onclick="syncProductDescriptionContent()"
+            type="button"
+            onclick="handleFormSubmission()"
+            id="submit-button"
             class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium"
             wire:loading.attr="disabled"
         >

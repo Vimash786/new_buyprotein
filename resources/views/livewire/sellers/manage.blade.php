@@ -40,7 +40,7 @@ new class extends Component
         'company_name' => 'required|string|max:255',
         'gst_number' => 'required|string|max:255|unique:sellers,gst_number',
         'product_category' => 'required|array|min:1',
-        'product_category.*' => 'string',
+        'product_category.*' => 'string|exists:categories,id',
         'contact_no' => ['required', 'string', 'regex:/^\+91[6-9]\d{9}$/'],
         'commission' => 'required|string|max:255',
         'brand' => 'required|string|max:255',
@@ -156,10 +156,17 @@ new class extends Component
 
         $this->validate($rules);
 
+        // Convert category IDs to names for storage
+        $categoryNames = [];
+        if (!empty($this->product_category)) {
+            $categories = Category::whereIn('id', $this->product_category)->pluck('name')->toArray();
+            $categoryNames = $categories;
+        }
+
         $data = [
             'company_name' => $this->company_name,
             'gst_number' => $this->gst_number,
-            'product_category' => implode(',', array_filter($this->product_category)), // Convert array to comma-separated string
+            'product_category' => implode(',', $categoryNames), // Convert array of names to comma-separated string
             'contact_no' => $this->contact_no,
             'commission' => $this->commission,
             'brand' => $this->brand,
@@ -207,7 +214,16 @@ new class extends Component
         $this->sellerId = $seller->id;
         $this->company_name = $seller->company_name;
         $this->gst_number = $seller->gst_number;
-        $this->product_category = $seller->product_category ? array_filter(array_map('trim', preg_split('/,\s*/', $seller->product_category))) : [];
+        
+        // Convert category names to IDs for the multiselect component
+        if ($seller->product_category) {
+            $categoryNames = array_filter(array_map('trim', preg_split('/,\s*/', $seller->product_category)));
+            $categories = Category::whereIn('name', $categoryNames)->pluck('id')->toArray();
+            $this->product_category = array_map('strval', $categories); // Convert to strings to match component expectations
+        } else {
+            $this->product_category = [];
+        }
+        
         $this->contact_no = $seller->contact_no;
         $this->commission = $seller->commission;
         $this->brand = $seller->brand;
@@ -251,10 +267,10 @@ new class extends Component
         $this->resetPage();
     }
 
-    public function removeCategory($category)
+    public function removeCategory($categoryId)
     {
-        $this->product_category = array_values(array_filter($this->product_category, function($cat) use ($category) {
-            return $cat !== $category;
+        $this->product_category = array_values(array_filter($this->product_category, function($id) use ($categoryId) {
+            return $id !== $categoryId;
         }));
     }
 
@@ -662,7 +678,7 @@ new class extends Component
                             label="Product Categories"
                             wire-model="product_category"
                             :options="$categories"
-                            :selected="is_array($product_category) ? $product_category : (empty($product_category) ? [] : array_filter(array_map('trim', preg_split('/,\s*/', $product_category))))"
+                            :selected="$product_category"
                             placeholder="Choose product categories..."
                             description="Select one or more categories that best describe your products. You can choose multiple categories to reach a broader audience."
                             remove-method="removeCategory"

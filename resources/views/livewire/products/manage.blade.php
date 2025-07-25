@@ -83,33 +83,73 @@ new class extends Component
     public $variantStock = [];
     public $productDetails = [];
 
-    protected $rules = [
-        'seller_id' => 'required|exists:sellers,id',
-        'name' => 'required|string|max:255',
-        'description' => 'nullable|string',
-        'gym_owner_price' => 'required_if:has_variants,false|nullable|numeric|min:0',
-        'regular_user_price' => 'required_if:has_variants,false|nullable|numeric|min:0',
-        'shop_owner_price' => 'required_if:has_variants,false|nullable|numeric|min:0',
-        'gym_owner_discount' => 'nullable|numeric|min:0|max:100',
-        'regular_user_discount' => 'nullable|numeric|min:0|max:100',
-        'shop_owner_discount' => 'nullable|numeric|min:0|max:100',
-        'gym_owner_final_price' => 'nullable|numeric|min:0',
-        'regular_user_final_price' => 'nullable|numeric|min:0',
-        'shop_owner_final_price' => 'nullable|numeric|min:0',
-        'stock_quantity' => 'required_if:has_variants,false|nullable|integer|min:0',
-        'weight' => 'nullable|string|max:50',
-        'category_id' => 'required|exists:categories,id',
-        'sub_category_id' => 'nullable|exists:sub_categories,id',
-        'status' => 'required|in:active,inactive',
-        'section_category' => 'required|array|min:1',
-        'section_category.*' => 'required|in:everyday_essential,popular_pick,exclusive_deal',
-        'has_variants' => 'boolean',
-        'thumbnail_image' => 'nullable|image|max:400', // Maximum 400KB
-        'product_images' => 'nullable|array|max:3', // Maximum 3 images
-        'product_images.*' => 'nullable|image|max:400', // Maximum 400KB
-        'variant_images.*' => 'nullable|array|max:3', // Maximum 3 images per variant
-        'variant_images.*.*' => 'nullable|image|max:400', // Maximum 400KB
-        'variant_thumbnails.*' => 'nullable|image|max:400', // Maximum 400KB
+    protected function rules()
+    {
+        $rules = [
+            'seller_id' => 'required|exists:sellers,id',
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'gym_owner_price' => 'required_if:has_variants,false|nullable|numeric|min:0',
+            'regular_user_price' => 'required_if:has_variants,false|nullable|numeric|min:0',
+            'shop_owner_price' => 'required_if:has_variants,false|nullable|numeric|min:0',
+            'gym_owner_discount' => 'nullable|numeric|min:0|max:100',
+            'regular_user_discount' => 'nullable|numeric|min:0|max:100',
+            'shop_owner_discount' => 'nullable|numeric|min:0|max:100',
+            'gym_owner_final_price' => 'nullable|numeric|min:0',
+            'regular_user_final_price' => 'nullable|numeric|min:0',
+            'shop_owner_final_price' => 'nullable|numeric|min:0',
+            'stock_quantity' => 'required_if:has_variants,false|nullable|integer|min:0',
+            'weight' => 'nullable|string|max:50',
+            'category_id' => 'required|exists:categories,id',
+            'sub_category_id' => 'nullable|exists:sub_categories,id',
+            'status' => 'required|in:active,inactive',
+            'section_category' => 'required|array|min:1',
+            'section_category.*' => 'required|in:everyday_essential,popular_pick,exclusive_deal',
+            'has_variants' => 'boolean',
+            'thumbnail_image' => 'nullable|image|max:400', // Maximum 400KB
+            'product_images' => 'nullable|array|max:3', // Maximum 3 images
+            'product_images.*' => 'nullable|image|max:400', // Maximum 400KB
+            'variant_images.*' => 'nullable|array|max:3', // Maximum 3 images per variant
+            'variant_images.*.*' => 'nullable|image|max:400', // Maximum 400KB
+            'variant_thumbnails.*' => 'nullable|image|max:400', // Maximum 400KB
+        ];
+
+        // Add variant validation when has_variants is true
+        if ($this->has_variants) {
+            $rules = array_merge($rules, [
+                'variants' => 'required|array|min:1',
+                'variants.*.name' => 'required|string|max:255',
+                'variants.*.display_name' => 'nullable|string|max:255',
+                'variants.*.options' => 'required|array|min:1',
+                'variants.*.options.*.value' => 'required|string|max:255',
+                'variant_combinations' => 'required|array|min:1',
+                'variant_combinations.*.gym_owner_price' => 'required|numeric|min:0',
+                'variant_combinations.*.regular_user_price' => 'required|numeric|min:0',
+                'variant_combinations.*.shop_owner_price' => 'required|numeric|min:0',
+                'variant_combinations.*.gym_owner_discount' => 'nullable|numeric|min:0|max:100',
+                'variant_combinations.*.regular_user_discount' => 'nullable|numeric|min:0|max:100',
+                'variant_combinations.*.shop_owner_discount' => 'nullable|numeric|min:0|max:100',
+                'variant_combinations.*.stock_quantity' => 'required|integer|min:0',
+            ]);
+        }
+
+        return $rules;
+    }
+
+    protected $messages = [
+        'variants.required' => 'At least one variant type is required when variants are enabled.',
+        'variants.*.name.required' => 'Variant name is required.',
+        'variants.*.options.required' => 'At least one option is required for each variant.',
+        'variants.*.options.*.value.required' => 'Option value cannot be empty.',
+        'variant_combinations.required' => 'At least one variant combination must be generated.',
+        'variant_combinations.*.gym_owner_price.required' => 'Gym owner price is required for all variant combinations.',
+        'variant_combinations.*.regular_user_price.required' => 'Regular user price is required for all variant combinations.',
+        'variant_combinations.*.shop_owner_price.required' => 'Shop owner price is required for all variant combinations.',
+        'variant_combinations.*.stock_quantity.required' => 'Stock quantity is required for all variant combinations.',
+        'variant_combinations.*.gym_owner_price.min' => 'Gym owner price must be at least 0.',
+        'variant_combinations.*.regular_user_price.min' => 'Regular user price must be at least 0.',
+        'variant_combinations.*.shop_owner_price.min' => 'Shop owner price must be at least 0.',
+        'variant_combinations.*.stock_quantity.min' => 'Stock quantity must be at least 0.',
     ];
 
     public function with()
@@ -327,7 +367,16 @@ new class extends Component
 
     public function save()
     {
+        // Debug: Log the description value at the start of save
+        \Log::info('Product Save - Description value at start: ' . $this->description);
+        \Log::info('Product Save - Edit mode: ' . ($this->editMode ? 'true' : 'false'));
+        
         $this->validate();
+
+        // Additional variant validation
+        if ($this->has_variants) {
+            $this->validateVariants();
+        }
 
         // Calculate final prices based on discounts
         $this->calculateFinalPrices();
@@ -373,6 +422,9 @@ new class extends Component
             'section_category' => $this->section_category,
             'has_variants' => $this->has_variants,
         ];
+
+        // Debug: Log the data array with description
+        \Log::info('Product Save - Data array description: ' . $data['description']);
 
         // Handle thumbnail image upload
         if ($this->thumbnail_image) {
@@ -1270,6 +1322,91 @@ new class extends Component
     }
 
     /**
+     * Validate variants and combinations thoroughly
+     */
+    private function validateVariants()
+    {
+        // Check if variants exist when has_variants is true
+        if (empty($this->variants)) {
+            $this->addError('variants', 'At least one variant type is required when variants are enabled.');
+            return;
+        }
+
+        // Validate each variant has at least one option with a value
+        foreach ($this->variants as $index => $variant) {
+            if (empty(trim($variant['name']))) {
+                $this->addError("variants.{$index}.name", 'Variant name is required.');
+            }
+
+            if (empty($variant['options'])) {
+                $this->addError("variants.{$index}.options", 'At least one option is required for each variant.');
+                continue;
+            }
+
+            // Check if at least one option has a value
+            $hasValidOption = false;
+            foreach ($variant['options'] as $optionIndex => $option) {
+                if (!empty(trim($option['value']))) {
+                    $hasValidOption = true;
+                } else {
+                    $this->addError("variants.{$index}.options.{$optionIndex}.value", 'Option value cannot be empty.');
+                }
+            }
+
+            if (!$hasValidOption) {
+                $this->addError("variants.{$index}.options", 'At least one option must have a value.');
+            }
+        }
+
+        // Check if variant combinations exist and are properly filled
+        if (empty($this->variant_combinations)) {
+            $this->addError('variant_combinations', 'No variant combinations found. Please regenerate combinations.');
+            return;
+        }
+
+        // Validate each combination has required pricing and stock
+        foreach ($this->variant_combinations as $index => $combination) {
+            // Check if combination has options
+            if (empty($combination['options'])) {
+                $this->addError("variant_combinations.{$index}", 'Invalid variant combination - missing options.');
+                continue;
+            }
+
+            // Validate required prices
+            $requiredPriceFields = ['gym_owner_price', 'regular_user_price', 'shop_owner_price'];
+            foreach ($requiredPriceFields as $field) {
+                if (!isset($combination[$field]) || $combination[$field] === '' || $combination[$field] === null) {
+                    $this->addError("variant_combinations.{$index}.{$field}", ucfirst(str_replace('_', ' ', $field)) . ' is required.');
+                } elseif (!is_numeric($combination[$field]) || $combination[$field] < 0) {
+                    $this->addError("variant_combinations.{$index}.{$field}", ucfirst(str_replace('_', ' ', $field)) . ' must be a valid number greater than or equal to 0.');
+                }
+            }
+
+            // Validate stock quantity
+            if (!isset($combination['stock_quantity']) || $combination['stock_quantity'] === '' || $combination['stock_quantity'] === null) {
+                $this->addError("variant_combinations.{$index}.stock_quantity", 'Stock quantity is required.');
+            } elseif (!is_numeric($combination['stock_quantity']) || $combination['stock_quantity'] < 0) {
+                $this->addError("variant_combinations.{$index}.stock_quantity", 'Stock quantity must be a valid number greater than or equal to 0.');
+            }
+
+            // Validate discount percentages if provided
+            $discountFields = ['gym_owner_discount', 'regular_user_discount', 'shop_owner_discount'];
+            foreach ($discountFields as $field) {
+                if (isset($combination[$field]) && $combination[$field] !== '' && $combination[$field] !== null) {
+                    if (!is_numeric($combination[$field]) || $combination[$field] < 0 || $combination[$field] > 100) {
+                        $this->addError("variant_combinations.{$index}.{$field}", ucfirst(str_replace('_', ' ', $field)) . ' must be between 0 and 100.');
+                    }
+                }
+            }
+        }
+
+        // If there are any errors, throw validation exception
+        if ($this->getErrorBag()->isNotEmpty()) {
+            throw \Illuminate\Validation\ValidationException::withMessages($this->getErrorBag()->toArray());
+        }
+    }
+
+    /**
      * Validate image file size (maximum 400KB).
      */
     private function validateImageSize($file)
@@ -1737,85 +1874,112 @@ new class extends Component
     <script>
       let productDescriptionQuill;
       let quillContent = '';
-      
-      // Function to initialize or reinitialize Quill editor
-      function initializeQuillEditor() {
-        const editorElement = document.getElementById('product-description-editor');
-        
-        if (!editorElement) {
-          return;
-        }
-        
-        // Destroy existing editor if it exists
-        if (productDescriptionQuill) {
-          // Save current content before destroying
-          quillContent = productDescriptionQuill.root.innerHTML;
-          productDescriptionQuill = null;
-        }
-        
-        // Create new Quill instance
-        productDescriptionQuill = new Quill('#product-description-editor', {
-          theme: 'snow',
-          placeholder: 'Enter product description...',
-          modules: {
-            toolbar: [
-              ['bold', 'italic', 'underline', 'strike'],
-              ['blockquote', 'code-block'],
-              [{ 'header': 1 }, { 'header': 2 }],
-              [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-              [{ 'script': 'sub'}, { 'script': 'super' }],
-              [{ 'indent': '-1'}, { 'indent': '+1' }],
-              [{ 'direction': 'rtl' }],
-              [{ 'size': ['small', false, 'large', 'huge'] }],
-              [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-              [{ 'color': [] }, { 'background': [] }],
-              [{ 'font': [] }],
-              [{ 'align': [] }],
-              ['clean']
-            ]
-          }
-        });
-
-        // Function to load content into Quill
-        function loadContentIntoQuill() {
-          const hiddenInput = document.getElementById('description-input');
-          let contentToLoad = '';
-          
-          // Priority: saved content > hidden input value > empty
-          if (quillContent && quillContent.trim() !== '' && quillContent !== '<p><br></p>') {
-            contentToLoad = quillContent;
-          } else if (hiddenInput && hiddenInput.value && hiddenInput.value.trim() !== '') {
-            contentToLoad = hiddenInput.value;
-          }
-          
-          if (contentToLoad) {
-            productDescriptionQuill.root.innerHTML = contentToLoad;
-          }
-        }
-
-        // Load initial content
-        loadContentIntoQuill();
-
-        // Update hidden input and save content on text change
-        productDescriptionQuill.on('text-change', function() {
-          const content = productDescriptionQuill.root.innerHTML;
-          quillContent = content; // Save to global variable
-          
-          const hiddenInput = document.getElementById('description-input');
-          if (hiddenInput) {
-            hiddenInput.value = content;
-          }
-          
-          // Hide validation error immediately when typing
-          const errorElement = document.querySelector('span.text-red-500');
-          if (errorElement && errorElement.textContent.includes('description field is required')) {
-            errorElement.style.display = 'none';
-          }
-        });
-      }
+      let isUpdatingFromLivewire = false;
+      let debounceTimer = null;
       
       // Initialize Quill when modal opens
       document.addEventListener('livewire:init', function () {
+        // Function to initialize or reinitialize Quill editor
+        function initializeQuillEditor() {
+          const editorElement = document.getElementById('product-description-editor');
+          
+          if (!editorElement) {
+            return;
+          }
+          
+          // Destroy existing editor if it exists
+          if (productDescriptionQuill) {
+            // Save current content before destroying
+            quillContent = productDescriptionQuill.root.innerHTML;
+            productDescriptionQuill = null;
+          }
+          
+          // Create new Quill instance
+          productDescriptionQuill = new Quill('#product-description-editor', {
+            theme: 'snow',
+            placeholder: 'Enter product description...',
+            modules: {
+              toolbar: [
+                ['bold', 'italic', 'underline', 'strike'],
+                ['blockquote', 'code-block'],
+                [{ 'header': 1 }, { 'header': 2 }],
+                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                [{ 'script': 'sub'}, { 'script': 'super' }],
+                [{ 'indent': '-1'}, { 'indent': '+1' }],
+                [{ 'direction': 'rtl' }],
+                [{ 'size': ['small', false, 'large', 'huge'] }],
+                [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                [{ 'color': [] }, { 'background': [] }],
+                [{ 'font': [] }],
+                [{ 'align': [] }],
+                ['clean']
+              ]
+            }
+          });
+
+          // Function to load content into Quill
+          function loadContentIntoQuill() {
+            const hiddenInput = document.getElementById('description-input');
+            let contentToLoad = '';
+            
+            // Priority: saved content > hidden input value > empty
+            if (quillContent && quillContent.trim() !== '' && quillContent !== '<p><br></p>') {
+              contentToLoad = quillContent;
+            } else if (hiddenInput && hiddenInput.value && hiddenInput.value.trim() !== '') {
+              contentToLoad = hiddenInput.value;
+            }
+            
+            if (contentToLoad) {
+              isUpdatingFromLivewire = true;
+              productDescriptionQuill.root.innerHTML = contentToLoad;
+              setTimeout(() => {
+                isUpdatingFromLivewire = false;
+              }, 100);
+            }
+          }
+
+          // Load initial content
+          loadContentIntoQuill();
+
+          // Update hidden input and save content on text change
+          productDescriptionQuill.onclick('#submit-button', function(delta, oldDelta, source) {
+            // Prevent loop when changes come from Livewire updates
+            if (isUpdatingFromLivewire || source === 'api') {
+              return;
+            }
+            
+            const content = productDescriptionQuill.root.innerHTML;
+            console.log('Quill text-change event, content:', content);
+            quillContent = content; // Save to global variable
+            
+            const hiddenInput = document.getElementById('description-input');
+            if (hiddenInput) {
+              hiddenInput.value = content;
+              console.log('Hidden input updated in text-change event');
+              
+              // Trigger input event to ensure Livewire detects the change
+              const event = new Event('input', { bubbles: true });
+              hiddenInput.dispatchEvent(event);
+            }
+            
+            // Debounce Livewire property updates to prevent excessive calls
+            if (debounceTimer) {
+              clearTimeout(debounceTimer);
+            }
+            
+            debounceTimer = setTimeout(() => {
+              console.log('Updating Livewire property (debounced)');
+              @this.set('description', content);
+            }, 300); // 300ms debounce
+            
+            // Hide validation error immediately when typing
+            const errorElement = document.querySelector('span.text-red-500');
+            if (errorElement && errorElement.textContent.includes('description field is required')) {
+              errorElement.style.display = 'none';
+            }
+          });
+        }
+
         Livewire.on('showModal', () => {
           setTimeout(initializeQuillEditor, 100);
         });
@@ -1836,8 +2000,12 @@ new class extends Component
             if (productDescriptionQuill) {
               const hiddenInput = document.getElementById('description-input');
               if (hiddenInput && hiddenInput.value && hiddenInput.value.trim() !== '') {
+                isUpdatingFromLivewire = true;
                 productDescriptionQuill.root.innerHTML = hiddenInput.value;
                 quillContent = hiddenInput.value;
+                setTimeout(() => {
+                  isUpdatingFromLivewire = false;
+                }, 100);
               }
             }
           }, 100);
@@ -1849,7 +2017,81 @@ new class extends Component
             productDescriptionQuill = null;
           }
           quillContent = '';
+          isUpdatingFromLivewire = false;
+          if (debounceTimer) {
+            clearTimeout(debounceTimer);
+            debounceTimer = null;
+          }
         });
+
+        // Define handleFormSubmission inside Livewire context
+        window.handleFormSubmission = function() {
+          console.log('handleFormSubmission called');
+          
+          // Clear any pending debounce timer
+          if (debounceTimer) {
+            clearTimeout(debounceTimer);
+            debounceTimer = null;
+          }
+          
+          // Function to sync and submit
+          function syncAndSubmit(content) {
+            console.log('Syncing content and submitting:', content);
+            
+            // Update hidden input immediately
+            const hiddenInput = document.getElementById('description-input');
+            if (hiddenInput) {
+              hiddenInput.value = content || '';
+              console.log('Hidden input updated with content:', hiddenInput.value);
+              
+              // Trigger change event to ensure Livewire detects the change
+              const event = new Event('input', { bubbles: true });
+              hiddenInput.dispatchEvent(event);
+            }
+            
+            // Save to global variable
+            quillContent = content || '';
+            
+            // Set Livewire property with fallback
+            @this.set('description', content || '').then(() => {
+              console.log('Livewire description property set successfully');
+              setTimeout(() => {
+                console.log('Calling save method');
+                @this.call('save');
+              }, 50); // Small delay to ensure the set operation completes
+            }).catch((error) => {
+              console.error('Error setting description property:', error);
+              // Try to submit anyway after a brief delay
+              setTimeout(() => {
+                console.log('Fallback: calling save method directly');
+                @this.call('save');
+              }, 100);
+            });
+          }
+          
+          // First try to get content from Quill editor
+          if (productDescriptionQuill && productDescriptionQuill.root) {
+            try {
+              const content = productDescriptionQuill.root.innerHTML;
+              console.log('Quill editor content retrieved:', content);
+              syncAndSubmit(content);
+            } catch (error) {
+              console.error('Error getting content from Quill editor:', error);
+              // Fallback to saved content or empty
+              syncAndSubmit(quillContent || '');
+            }
+          } else if (quillContent) {
+            console.log('Using saved quill content:', quillContent);
+            syncAndSubmit(quillContent);
+          } else {
+            console.log('No editor or saved content found, checking hidden input');
+            // Last resort: check if hidden input has content
+            const hiddenInput = document.getElementById('description-input');
+            const existingContent = hiddenInput ? hiddenInput.value : '';
+            console.log('Existing hidden input content:', existingContent);
+            syncAndSubmit(existingContent);
+          }
+        };
       });
 
       // Function to sync content before form submission

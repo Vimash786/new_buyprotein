@@ -242,8 +242,8 @@ class DashboardController extends Controller
 
     public function wishList()
     {
-        $wishlistData = Wishlist::with('product')->where('user_id', Auth::user()->id)->get();
-
+        $wishlistData = Wishlist::with(['product', 'product.images'])->where('user_id', Auth::user()->id)->get();
+        
         return view('shop.wishlist', compact('wishlistData'));
     }
 
@@ -356,7 +356,7 @@ class DashboardController extends Controller
 
     public function cart()
     {
-        $cartData = Cart::with('product')->where('user_id', Auth::user()->id)->get();
+        $cartData = Cart::with(['product', 'product.images'])->where('user_id', Auth::user()->id)->get();
 
         return view('shop.cart', compact('cartData'));
     }

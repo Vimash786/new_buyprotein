@@ -20,7 +20,7 @@ if (!function_exists('format_price')) {
                     } else {
                         return '₹' . number_format($variant->regular_user_final_price, 2);
                     }
-                } elseif ($userRole == 'Gym Owner/Trainer/Influencer') {
+                } elseif ($userRole == 'Gym Owner/Trainer/Influencer/Dietitian') {
                     if ($type == 'actual' && $variant->gym_owner_discount > 0) {
                         return '₹' . number_format($variant->gym_owner_price, 2);
                     } else {
@@ -30,7 +30,7 @@ if (!function_exists('format_price')) {
                     if ($type == 'actual' && $variant->shop_owner_discount) {
                         return '₹' . number_format($variant->shop_owner_price, 2);
                     } else {
-                        return '₹' . number_format($variant->gym_owner_final_price, 2);
+                        return '₹' . number_format($variant->shop_owner_final_price, 2);
                     }
                 }
             } else {
@@ -40,7 +40,7 @@ if (!function_exists('format_price')) {
                     } else {
                         return '₹' . number_format($product->regular_user_final_price);
                     }
-                } elseif ($userRole == 'Gym Owner/Trainer/Influencer') {
+                } elseif ($userRole == 'Gym Owner/Trainer/Influencer/Dietitian') {
                     if ($type == 'actual' && $product->gym_owner_discount > 0) {
                         return '₹' . number_format($product->gym_owner_price, 2);
                     } else {

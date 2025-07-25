@@ -405,7 +405,7 @@ class ManageCoupons extends Component
             'upcomingCoupons' => Coupon::where('starts_at', '>', now())->count(),
             'availableUserTypes' => [
                 'User' => 'Regular User',
-                'Gym Owner/Trainer/Influencer' => 'Gym Owner/Trainer/Influencer',
+                'Gym Owner/Trainer/Influencer/Dietitian' => 'Gym Owner/Trainer/Influencer/Dietitian',
                 'Shop Owner' => 'Shop Owner',
                 'Seller' => 'Seller'
             ],
