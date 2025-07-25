@@ -244,7 +244,7 @@ class Reference extends Model
         $assignableType = $this->getAssignableType($model);
         
         return ReferenceAssign::create([
-            'coupon_id' => $this->id,
+            'reference_id' => $this->id,
             'assignable_type' => $assignableType,
             'assignable_id' => $model->id,
             'assigned_by' => $assignedBy,
@@ -260,7 +260,7 @@ class Reference extends Model
         $assignableType = $this->getAssignableType($model);
         
         return ReferenceAssign::where([
-            'coupon_id' => $this->id,
+            'reference_id' => $this->id,
             'assignable_type' => $assignableType,
             'assignable_id' => $model->id,
         ])->delete();
@@ -274,7 +274,7 @@ class Reference extends Model
         $assignableType = $this->getAssignableType($model);
         
         return ReferenceAssign::where([
-            'coupon_id' => $this->id,
+            'reference_id' => $this->id,
             'assignable_type' => $assignableType,
             'assignable_id' => $model->id,
         ])->exists();

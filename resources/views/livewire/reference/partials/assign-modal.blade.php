@@ -33,19 +33,27 @@
                         </select>
                     </div>
 
-                    @if($assignmentType === 'all_products')
+                    @if(in_array($assignmentType, ['all_users', 'gym_user', 'shop_user']))
                         <div class="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-md">
                             <div class="flex items-center">
                                 <svg class="w-5 h-5 text-blue-600 dark:text-blue-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                 </svg>
                                 <div>
-                                    <p class="text-sm font-medium text-blue-800 dark:text-blue-300">Assign to All Products</p>
-                                    <p class="text-xs text-blue-600 dark:text-blue-400">This reference will be available for all products in the system.</p>
+                                    <p class="text-sm font-medium text-blue-800 dark:text-blue-300">
+                                        @if($assignmentType === 'all_users')
+                                            Assign to All Users
+                                        @elseif($assignmentType === 'gym_user')
+                                            Assign to All Gym Owner/Trainer/Influencer/Dietitian
+                                        @elseif($assignmentType === 'shop_user')
+                                            Assign to All Shop Owner
+                                        @endif
+                                    </p>
+                                    <p class="text-xs text-blue-600 dark:text-blue-400">This reference will be available for the selected user type(s).</p>
                                 </div>
                             </div>
                         </div>
-                    @elseif($assignmentType && $assignmentType !== 'all_products')
+                    @elseif(in_array($assignmentType, ['specific_shop_user', 'specific_gym']))
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Search {{ ucfirst($assignmentType) }}
@@ -73,19 +81,13 @@
                                         >
                                         <div class="flex-1">
                                             <div class="text-sm font-medium text-gray-900 dark:text-white">
-                                                @if($assignmentType === 'users')
+                                                @if(in_array($assignmentType, ['specific_shop_user', 'specific_gym']))
                                                     {{ $item->name }}
-                                                @elseif($assignmentType === 'products')
-                                                    {{ $item->name }}
-                                                @elseif($assignmentType === 'sellers')
-                                                    {{ $item->company_name ?? $item->name }}
                                                 @endif
                                             </div>
                                             <div class="text-xs text-gray-500 dark:text-gray-400">
-                                                @if($assignmentType === 'users')
-                                                    {{ $item->email }}
-                                                @elseif($assignmentType === 'products')
-                                                    ID: {{ $item->id }}
+                                                @if(in_array($assignmentType, ['specific_shop_user', 'specific_gym']))
+                                                    {{ $item->email ?? 'ID: ' . $item->id }}
                                                 @endif
                                             </div>
                                         </div>
@@ -99,10 +101,14 @@
                         <button wire:click="closeAssignModal" class="px-4 py-2 text-gray-600 bg-gray-200 rounded-md hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500">
                             Cancel
                         </button>
-                        @if($assignmentType === 'all_products' || (!empty($selectedItems) && $assignmentType && $assignmentType !== 'all_products'))
-                            <button wire:click="assignCoupon" class="px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700">
-                                @if($assignmentType === 'all_products')
-                                    Assign to All Products
+                        @if(in_array($assignmentType, ['all_users', 'gym_user', 'shop_user']) || (!empty($selectedItems) && in_array($assignmentType, ['specific_shop_user', 'specific_gym'])))
+                            <button wire:click="assignReference" class="px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700">
+                                @if($assignmentType === 'all_users')
+                                    Assign to All Users
+                                @elseif($assignmentType === 'gym_user')
+                                    Assign to All Gym Owner/Trainer/Influencer/Dietitian
+                                @elseif($assignmentType === 'shop_user')
+                                    Assign to All Shop Owner
                                 @else
                                     Assign Reference
                                 @endif
@@ -123,16 +129,14 @@
                                             {{ ucfirst($assignment->assignable_type) }}
                                         </div>
                                         <div class="text-sm text-gray-500 dark:text-gray-400">
-                                            @if($assignment->assignable_type === 'user_type')
-                                                User Type: {{ ucfirst($assignment->user_type) }}
-                                            @elseif($assignment->assignable_type === 'all_products')
-                                                All Products
-                                            @elseif($assignment->assignable)
-                                                @if($assignment->assignable_type === 'user')
-                                                    {{ $assignment->assignable->name ?? 'N/A' }} ({{ $assignment->assignable->email ?? 'N/A' }})
-                                                @elseif($assignment->assignable_type === 'product')
-                                                    {{ $assignment->assignable->name ?? 'N/A' }}
-                                                @endif
+                                            @if($assignment->assignable_type === 'all_users')
+                                                All Users
+                                            @elseif($assignment->assignable_type === 'gym_user')
+                                                All Gym Owner/Trainer/Influencer/Dietitian
+                                            @elseif($assignment->assignable_type === 'shop_user')
+                                                All Shop Owner
+                                            @elseif($assignment->assignable_type === 'user' && $assignment->assignable)
+                                                {{ $assignment->assignable->name ?? 'N/A' }} ({{ $assignment->assignable->email ?? 'N/A' }})
                                             @else
                                                 N/A
                                             @endif

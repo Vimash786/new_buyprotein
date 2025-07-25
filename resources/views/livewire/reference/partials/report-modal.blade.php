@@ -43,7 +43,7 @@
              class="inline-block w-full max-w-6xl p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-lg dark:bg-gray-800">
             <div class="flex items-center justify-between pb-4 mb-4 border-b border-gray-200 dark:border-gray-600">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                    Coupon Reports
+                    Reference Reports
                 </h3>
                 <button @click="$wire.closeReportModal()" 
                         class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200">
@@ -69,12 +69,12 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Coupon
+                        Reference
                     </label>
-                    <select wire:model="reportCouponId" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                        <option value="">All Coupons</option>
-                        @foreach($coupons as $coupon)
-                            <option value="{{ $coupon->id }}">{{ $coupon->name }}</option>
+                    <select wire:model="reportReferenceId" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        <option value="">All References</option>
+                        @foreach($allReferences as $reference)
+                            <option value="{{ $reference->id }}">{{ $reference->name }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -91,9 +91,9 @@
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                     <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
                         <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                            {{ $reportData['total_coupons'] ?? 0 }}
+                            {{ $reportData['total_references'] ?? 0 }}
                         </div>
-                        <div class="text-sm text-gray-600 dark:text-gray-400">Total Coupons</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">Total References</div>
                     </div>
                     <div class="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
                         <div class="text-2xl font-bold text-green-600 dark:text-green-400">
@@ -121,7 +121,7 @@
                 <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
                     <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                         <tr>
-                            <th class="px-6 py-3">Coupon</th>
+                            <th class="px-6 py-3">Reference</th>
                             <th class="px-6 py-3">Type</th>
                             <th class="px-6 py-3">Value</th>
                             <th class="px-6 py-3">Usage</th>
@@ -131,35 +131,35 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @if($reportData && isset($reportData['coupons']) && is_array($reportData['coupons']) && count($reportData['coupons']) > 0)
-                            @foreach($reportData['coupons'] as $coupon)
+                        @if($reportData && isset($reportData['references']) && is_array($reportData['references']) && count($reportData['references']) > 0)
+                            @foreach($reportData['references'] as $reference)
                                 <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
                                     <td class="px-6 py-4">
-                                        <div class="font-medium text-gray-900 dark:text-white">{{ $coupon->name }}</div>
-                                        <div class="text-sm text-gray-500 dark:text-gray-400">{{ $coupon->code }}</div>
+                                        <div class="font-medium text-gray-900 dark:text-white">{{ $reference->name }}</div>
+                                        <div class="text-sm text-gray-500 dark:text-gray-400">{{ $reference->code }}</div>
                                     </td>
                                     <td class="px-6 py-4">
-                                        <span class="px-2 py-1 text-xs font-medium rounded-full {{ $coupon->type === 'percentage' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' }}">
-                                            {{ ucfirst($coupon->type) }}
+                                        <span class="px-2 py-1 text-xs font-medium rounded-full {{ $reference->type === 'percentage' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' }}">
+                                            {{ ucfirst($reference->type) }}
                                         </span>
                                     </td>
                                     <td class="px-6 py-4">
-                                        {{ $coupon->type === 'percentage' ? $coupon->value . '%' : '$' . number_format($coupon->value, 2) }}
+                                        {{ $reference->type === 'percentage' ? $reference->value . '%' : '$' . number_format($reference->value, 2) }}
                                     </td>
                                     <td class="px-6 py-4">
-                                        {{ $coupon->used_count ?? 0 }} / {{ $coupon->usage_limit ?? '∞' }}
+                                        {{ $reference->used_count ?? 0 }} / {{ $reference->usage_limit ?? '∞' }}
                                     </td>
                                     <td class="px-6 py-4">
                                         <span class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300 rounded-full">
-                                            {{ $coupon->assignments_count ?? 0 }}
+                                            {{ $reference->assignments_count ?? 0 }}
                                         </span>
                                     </td>
                                     <td class="px-6 py-4">
-                                        ${{ number_format($coupon->total_discount_amount ?? 0, 2) }}
+                                        ${{ number_format($reference->total_discount_amount ?? 0, 2) }}
                                     </td>
                                     <td class="px-6 py-4">
-                                        <span class="px-2 py-1 text-xs font-medium rounded-full {{ $coupon->status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' }}">
-                                            {{ ucfirst($coupon->status) }}
+                                        <span class="px-2 py-1 text-xs font-medium rounded-full {{ $reference->status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' }}">
+                                            {{ ucfirst($reference->status) }}
                                         </span>
                                     </td>
                                 </tr>
@@ -168,9 +168,9 @@
                             <tr>
                                 <td colspan="7" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
                                     @if($reportData === null)
-                                        Click "Generate Report" to view coupon data
+                                        Click "Generate Report" to view reference data
                                     @else
-                                        No coupons found for the selected criteria
+                                        No references found for the selected criteria
                                     @endif
                                 </td>
                             </tr>
@@ -182,8 +182,8 @@
             <!-- Export Options -->
             <div class="flex justify-between items-center mt-6 pt-4 border-t border-gray-200 dark:border-gray-600">
                 <div class="text-sm text-gray-600 dark:text-gray-400">
-                    @if($reportData && isset($reportData['coupons']) && is_array($reportData['coupons']))
-                        Showing {{ count($reportData['coupons']) }} coupon(s)
+                    @if($reportData && isset($reportData['references']) && is_array($reportData['references']))
+                        Showing {{ count($reportData['references']) }} reference(s)
                     @endif
                 </div>
                 <div class="flex space-x-2">

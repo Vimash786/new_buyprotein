@@ -17,6 +17,8 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->unsignedBigInteger('order_id')->nullable();
             $table->decimal('discount_amount', 10, 2);
+            $table->decimal('order_total', 10, 2)->nullable();
+            $table->timestamp('used_at')->nullable();
             $table->timestamps();
             
             // Add index for order_id for performance

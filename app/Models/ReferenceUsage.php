@@ -31,7 +31,7 @@ class ReferenceUsage extends Model
      */
     public function reference()
     {
-        return $this->belongsTo(reference::class);
+        return $this->belongsTo(Reference::class);
     }
 
     /**
