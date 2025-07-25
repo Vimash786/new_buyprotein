@@ -76,7 +76,7 @@
                     
                     <!-- Coupons & Reference Code -->
                     <flux:navlist.group expandable :heading="__('Reference Code')" class="grid">
-                        <flux:navlist.item icon="hashtag" href="#" :current="request()->routeIs('reference.codes')" wire:navigate>{{ __('Reference Code') }}</flux:navlist.item>
+                        <flux:navlist.item icon="ticket" :href="route('reference.manage')" :current="request()->routeIs('reference.manage')" wire:navigate>{{ __('Reference Code') }}</flux:navlist.item>
                     </flux:navlist.group>
                     
                     <!-- Reports & Analytics -->

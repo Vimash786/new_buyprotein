@@ -15,56 +15,56 @@
                 </tr>
             </thead>
             <tbody class="bg-white dark:bg-zinc-900 divide-y divide-gray-200 dark:divide-gray-700">
-                @forelse($coupons as $coupon)
+                @forelse($references as $reference)
                     <tr class="hover:bg-gray-50 dark:hover:bg-zinc-800">
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm font-mono font-medium text-gray-900 dark:text-white">{{ $coupon->code }}</div>
+                            <div class="text-sm font-mono font-medium text-gray-900 dark:text-white">{{ $reference->code }}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $coupon->name }}</div>
-                            @if($coupon->description)
-                                <div class="text-sm text-gray-500 dark:text-gray-400">{{ Str::limit($coupon->description, 50) }}</div>
+                            <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $reference->name }}</div>
+                            @if($reference->description)
+                                <div class="text-sm text-gray-500 dark:text-gray-400">{{ Str::limit($reference->description, 50) }}</div>
                             @endif
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
-                                   {{ $coupon->type === 'percentage' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800' }}">
-                                {{ ucfirst($coupon->type) }}
+                                   {{ $reference->type === 'percentage' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800' }}">
+                                {{ ucfirst($reference->type) }}
                             </span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                            {{ $coupon->type === 'percentage' ? $coupon->value . '%' : '₹' . number_format($coupon->value, 2) }}
-                            @if($coupon->minimum_amount)
-                                <div class="text-xs text-gray-500 dark:text-gray-400">Min: ₹{{ number_format($coupon->minimum_amount, 2) }}</div>
+                            {{ $reference->type === 'percentage' ? $reference->value . '%' : '₹' . number_format($reference->value, 2) }}
+                            @if($reference->minimum_amount)
+                                <div class="text-xs text-gray-500 dark:text-gray-400">Min: ₹{{ number_format($reference->minimum_amount, 2) }}</div>
                             @endif
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                            {{ $coupon->used_count }}{{ $coupon->usage_limit ? '/' . $coupon->usage_limit : '' }}
+                            {{ $reference->used_count }}{{ $reference->usage_limit ? '/' . $reference->usage_limit : '' }}
                             <div class="text-xs text-gray-500 dark:text-gray-400">
-                                {{ $coupon->assignments->count() }} assignments
+                                {{ $reference->assignments->count() }} assignments
                             </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <button 
-                                wire:click="confirmStatusToggle({{ $coupon->id }})"
+                                wire:click="confirmStatusToggle({{ $reference->id }})"
                                 class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
-                                       {{ $coupon->status_color === 'green' 
+                                       {{ $reference->status_color === 'green' 
                                           ? 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/70'
-                                          : ($coupon->status_color === 'red' 
+                                          : ($reference->status_color === 'red' 
                                              ? 'bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/70'
                                              : 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-300 hover:bg-yellow-200 dark:hover:bg-yellow-900/70') }}"
                             >
-                                {{ $coupon->human_status }}
+                                {{ $reference->human_status }}
                             </button>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                            <div>{{ $coupon->starts_at->format('M d, Y') }}</div>
-                            <div class="text-xs text-gray-500 dark:text-gray-400">to {{ $coupon->expires_at->format('M d, Y') }}</div>
+                            <div>{{ $reference->starts_at->format('M d, Y') }}</div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400">to {{ $reference->expires_at->format('M d, Y') }}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <div class="flex items-center gap-2">
                                 <button 
-                                    wire:click="openReportModal({{ $coupon->id }})"
+                                    wire:click="openReportModal({{ $reference->id }})"
                                     class="text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300"
                                     title="View Report"
                                 >
@@ -73,7 +73,7 @@
                                     </svg>
                                 </button>
                                 <button 
-                                    wire:click="openAssignModal({{ $coupon->id }})"
+                                    wire:click="openAssignModal({{ $reference->id }})"
                                     class="text-purple-600 dark:text-purple-400 hover:text-purple-900 dark:hover:text-purple-300"
                                     title="Assign Coupon"
                                 >
@@ -82,7 +82,7 @@
                                     </svg>
                                 </button>
                                 <button 
-                                    wire:click="edit({{ $coupon->id }})"
+                                    wire:click="edit({{ $reference->id }})"
                                     class="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300"
                                     title="Edit"
                                 >
@@ -91,7 +91,7 @@
                                     </svg>
                                 </button>
                                 <button 
-                                    wire:click="confirmDelete({{ $coupon->id }})"
+                                    wire:click="confirmDelete({{ $reference->id }})"
                                     class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300"
                                     title="Delete"
                                 >
@@ -105,7 +105,7 @@
                 @empty
                     <tr>
                         <td colspan="8" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
-                            No coupons found.
+                            No references found.
                         </td>
                     </tr>
                 @endforelse
@@ -115,6 +115,6 @@
 
     <!-- Pagination -->
     <div class="px-6 py-3 border-t border-gray-200 dark:border-gray-700">
-        {{ $coupons->links() }}
+        {{ $references->links() }}
     </div>
 </div>

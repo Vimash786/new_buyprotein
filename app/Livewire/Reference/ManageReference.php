@@ -23,7 +23,7 @@ class ManageReference extends Component
     public $showReportModal = false;
     public $showAssignModal = false;
     public $editMode = false;
-    public $referenceId = null; 
+    public $ReferenceId = null; 
     public $selectedReference = null;
 
     // Form fields
@@ -43,7 +43,7 @@ class ManageReference extends Component
     public $user_types = [];
 
     // Assignment fields
-    public $assignmentType = 'users'; // 'users', 'products', 'sellers'
+    public $assignmentType = 'all_users'; // 'users', 'products', 'sellers'
     public $selectedItems = [];
     public $searchItems = '';
 
@@ -60,7 +60,7 @@ class ManageReference extends Component
     public function mount()
     {
         // Check if user has access to references (only Super role)
-        if (Auth::user()->role !== 'Seller') {
+        if (Auth::user()->role !== 'Super') {
             abort(403, 'Access denied. Only administrators can manage references.');
         }
 
@@ -73,7 +73,7 @@ class ManageReference extends Component
     public function rules()
     {
         return [
-            'code' => 'required|string|max:255|unique:references,code,' . $this->referenceId,
+            'code' => 'required|string|max:255|unique:reference,code,' . $this->ReferenceId,
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'type' => 'required|in:percentage,fixed',
@@ -127,7 +127,7 @@ class ManageReference extends Component
     public function edit($id)
     {
         $Reference = Reference::findOrFail($id);
-        $this->referenceId = $Reference->id;
+        $this->ReferenceId = $Reference->id;
         $this->code = $Reference->code;
         $this->name = $Reference->name;
         $this->description = $Reference->description;
@@ -420,12 +420,12 @@ class ManageReference extends Component
             $query->where('type', $this->typeFilter);
         }
         
-        return view('livewire.References.manage-References', [
-            'References' => $query->latest()->paginate(10),
-            'totalReferences' => Reference::count(),
-            'activeReferences' => Reference::where('status', 'active')->count(),
-            'expiredReferences' => Reference::where('expires_at', '<', now())->count(),
-            'upcomingReferences' => Reference::where('starts_at', '>', now())->count(),
+        return view('livewire.Reference.manage-reference', [
+            'references' => $query->latest()->paginate(10),
+            'totalReference' => Reference::count(),
+            'activeReference' => Reference::where('status', 'active')->count(),
+            'expiredReference' => Reference::where('expires_at', '<', now())->count(),
+            'upcomingReference' => Reference::where('starts_at', '>', now())->count(),
             'availableUserTypes' => [
                 'User' => 'Regular User',
                 'Gym Owner/Trainer/Influencer/Dietitian' => 'Gym Owner/Trainer/Influencer/Dietitian',

@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class ReferenceAssign extends Model
 {
     use HasFactory;
-
+    protected $table = 'reference_assign'; // Explicitly set the table name
     protected $fillable = [
         'reference_id',
         'assignable_type',

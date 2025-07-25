@@ -10,7 +10,7 @@ use Carbon\Carbon;
 class Reference extends Model
 {
     use HasFactory, SoftDeletes;
-
+    protected $table = 'reference'; // Explicitly set the table name
     protected $fillable = [
         'code',
         'name',

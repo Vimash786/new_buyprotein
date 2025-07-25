@@ -2,7 +2,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Header -->
         <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Coupons Management</h1>
+            <h1 class="text-3xl font-bold text-gray-900 dark:text-white">References Management</h1>
             <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">Manage discount coupons and promotional codes (Super Role Access)</p>
         </div>
 
@@ -11,8 +11,8 @@
             <div class="bg-white dark:bg-zinc-900 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-zinc-700">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm text-gray-600 dark:text-gray-300">Total Coupons</p>
-                        <p class="text-2xl font-semibold text-gray-900 dark:text-white">{{ $totalCoupons }}</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-300">Total References</p>
+                        <p class="text-2xl font-semibold text-gray-900 dark:text-white">{{ $totalReference }}</p>
                     </div>
                     <div class="bg-blue-100 dark:bg-blue-900/20 p-3 rounded-full">
                         <svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -25,8 +25,8 @@
             <div class="bg-white dark:bg-zinc-900 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-zinc-700">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm text-gray-600 dark:text-gray-300">Active Coupons</p>
-                        <p class="text-2xl font-semibold text-gray-900 dark:text-white">{{ $activeCoupons }}</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-300">Active References</p>
+                        <p class="text-2xl font-semibold text-gray-900 dark:text-white">{{ $activeReference }}</p>
                     </div>
                     <div class="bg-green-100 dark:bg-green-900/20 p-3 rounded-full">
                         <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -39,8 +39,8 @@
             <div class="bg-white dark:bg-zinc-900 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-zinc-700">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm text-gray-600 dark:text-gray-300">Expired Coupons</p>
-                        <p class="text-2xl font-semibold text-gray-900 dark:text-white">{{ $expiredCoupons }}</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-300">Expired References</p>
+                        <p class="text-2xl font-semibold text-gray-900 dark:text-white">{{ $expiredReference }}</p>
                     </div>
                     <div class="bg-red-100 dark:bg-red-900/20 p-3 rounded-full">
                         <svg class="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -53,8 +53,8 @@
             <div class="bg-white dark:bg-zinc-900 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-zinc-700">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm text-gray-600 dark:text-gray-300">Upcoming Coupons</p>
-                        <p class="text-2xl font-semibold text-gray-900 dark:text-white">{{ $upcomingCoupons }}</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-300">Upcoming References</p>
+                        <p class="text-2xl font-semibold text-gray-900 dark:text-white">{{ $upcomingReference }}</p>
                     </div>
                     <div class="bg-yellow-100 dark:bg-yellow-900/20 p-3 rounded-full">
                         <svg class="w-6 h-6 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -86,7 +86,7 @@
                     <div class="relative">
                         <input 
                             type="text" 
-                            placeholder="Search coupons..."
+                            placeholder="Search references..."
                             class="w-full sm:w-64 px-4 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-zinc-800 dark:text-white"
                             wire:model.live="search"
                         >
@@ -136,30 +136,30 @@
                         <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
                         </svg>
-                        Create Coupon
+                        Create Reference
                     </button>
                 </div>
             </div>
         </div>
 
-        <!-- Coupons Table -->
-        @include('livewire.coupons.partials.table')
+        <!-- References Table -->
+        @include('livewire.reference.partials.table')
     </div>
 
     <!-- Modals -->
     @if($showModal)
-        @include('livewire.coupons.partials.create-edit-modal')
+        @include('livewire.reference.partials.create-edit-modal')
     @endif
     
     @if($showReportModal)
-        @include('livewire.coupons.partials.report-modal')
+        @include('livewire.reference.partials.report-modal')
     @endif
     
     @if($showAssignModal)
-        @include('livewire.coupons.partials.assign-modal')
+        @include('livewire.reference.partials.assign-modal')
     @endif
 
     @if($showDeleteModal)
-        @include('livewire.coupons.partials.delete-modal')
+        @include('livewire.reference.partials.delete-modal')
     @endif
 </div>
