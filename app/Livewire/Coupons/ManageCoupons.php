@@ -118,6 +118,9 @@ class ManageCoupons extends Component
         // Convert user_types array to JSON if needed
         $validatedData['user_types'] = !empty($this->user_types) ? json_encode($this->user_types) : null;
         
+        // Set created_by to current authenticated user
+        $validatedData['created_by'] = Auth::id();
+        
         Coupon::create($validatedData);
         
         session()->flash('message', 'Coupon created successfully!');
@@ -141,7 +144,7 @@ class ManageCoupons extends Component
         $this->expires_at = $coupon->expires_at->format('Y-m-d\TH:i');
         $this->status = $coupon->status;
         $this->applicable_to = $coupon->applicable_to;
-        $this->user_types = $coupon->user_types ? json_decode($coupon->user_types, true) : [];
+        $this->user_types = $coupon->user_types ?? [];
         
         $this->editMode = true;
         $this->showModal = true;
@@ -153,6 +156,9 @@ class ManageCoupons extends Component
         
         // Convert user_types array to JSON if needed
         $validatedData['user_types'] = !empty($this->user_types) ? json_encode($this->user_types) : null;
+        
+        // Set updated_by to current authenticated user
+        $validatedData['updated_by'] = Auth::id();
         
         $coupon = Coupon::findOrFail($this->couponId);
         $coupon->update($validatedData);
@@ -261,25 +267,18 @@ class ManageCoupons extends Component
             return;
         }
 
-        // Handle "all_products" assignment
-        if ($this->assignmentType === 'all_products') {
-            // Check if assignment already exists
-            $existingAssignment = CouponAssignment::where('coupon_id', $this->selectedCoupon->id)
-                ->where('assignable_type', 'all_products')
-                ->first();
-
-            if (!$existingAssignment) {
-                CouponAssignment::create([
-                    'coupon_id' => $this->selectedCoupon->id,
-                    'assignable_type' => 'all_products',
-                    'assignable_id' => null,
-                    'assigned_at' => now()
-                ]);
-                session()->flash('message', 'Coupon assigned to all products successfully!');
-            } else {
-                session()->flash('error', 'Coupon is already assigned to all products.');
-            }
+        // Handle "all_products" and "all_users" assignments by updating applicable_to column
+        if (in_array($this->assignmentType, ['all_products', 'all_users'])) {
+            $this->selectedCoupon->update([
+                'applicable_to' => $this->assignmentType,
+                'updated_by' => Auth::id()
+            ]);
             
+            $message = $this->assignmentType === 'all_products' 
+                ? 'Coupon assigned to all products successfully!' 
+                : 'Coupon assigned to all users successfully!';
+            
+            session()->flash('message', $message);
             $this->closeAssignModal();
             return;
         }
@@ -329,6 +328,12 @@ class ManageCoupons extends Component
                 }
             }
         }
+
+        // Update the coupon's applicable_to field for specific assignments
+        $this->selectedCoupon->update([
+            'applicable_to' => $this->assignmentType,
+            'updated_by' => Auth::id()
+        ]);
 
         session()->flash('message', "Coupon assigned to {$assignedCount} items successfully!");
         $this->closeAssignModal();

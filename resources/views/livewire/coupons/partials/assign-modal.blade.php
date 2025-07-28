@@ -26,6 +26,7 @@
                         <select wire:model.live="assignmentType" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                             <option value="">Select Assignment Type</option>
                             <option value="all_products">All Products</option>
+                            <option value="all_users">All Users</option>
                             <option value="users">Specific Users</option>
                             <option value="products">Specific Products</option>
                         </select>
@@ -43,7 +44,19 @@
                                 </div>
                             </div>
                         </div>
-                    @elseif($assignmentType && $assignmentType !== 'all_products')
+                    @elseif($assignmentType === 'all_users')
+                        <div class="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-md">
+                            <div class="flex items-center">
+                                <svg class="w-5 h-5 text-green-600 dark:text-green-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                </svg>
+                                <div>
+                                    <p class="text-sm font-medium text-green-800 dark:text-green-300">Assign to All Users</p>
+                                    <p class="text-xs text-green-600 dark:text-green-400">This coupon will be available for all users in the system.</p>
+                                </div>
+                            </div>
+                        </div>
+                    @elseif($assignmentType && !in_array($assignmentType, ['all_products', 'all_users']))
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Search {{ ucfirst($assignmentType) }}
@@ -100,9 +113,9 @@
                         
                         @php
                             $showButton = false;
-                            if ($assignmentType === 'all_products') {
+                            if (in_array($assignmentType, ['all_products', 'all_users'])) {
                                 $showButton = true;
-                            } elseif ($assignmentType && $assignmentType !== 'all_products' && !empty($selectedItems)) {
+                            } elseif ($assignmentType && !in_array($assignmentType, ['all_products', 'all_users']) && !empty($selectedItems)) {
                                 $showButton = true;
                             }
                         @endphp
@@ -111,6 +124,8 @@
                             <button wire:click="assignCoupon" class="px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700">
                                 @if($assignmentType === 'all_products')
                                     Assign to All Products
+                                @elseif($assignmentType === 'all_users')
+                                    Assign to All Users
                                 @else
                                     Assign Coupon
                                 @endif
@@ -122,6 +137,23 @@
                 <!-- Current Assignments -->
                 <div class="border-l border-gray-200 dark:border-gray-600 pl-6">
                     <h4 class="text-md font-medium text-gray-900 dark:text-white mb-4">Current Assignments</h4>
+                    
+                    {{-- Show applicable_to setting --}}
+                    @if($selectedCoupon && $selectedCoupon->applicable_to && in_array($selectedCoupon->applicable_to, ['all_products', 'all_users']))
+                        <div class="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-md">
+                            <div class="text-sm font-medium text-blue-900 dark:text-blue-100">
+                                @if($selectedCoupon->applicable_to === 'all_products')
+                                    🛍️ Assigned to All Products
+                                @elseif($selectedCoupon->applicable_to === 'all_users')
+                                    👥 Assigned to All Users
+                                @endif
+                            </div>
+                            <div class="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                                This coupon is available system-wide
+                            </div>
+                        </div>
+                    @endif
+                    
                     @if($selectedCoupon && $selectedCoupon->assignments && $selectedCoupon->assignments->count() > 0)
                         <div class="space-y-2 max-h-96 overflow-y-auto">
                             @foreach($selectedCoupon->assignments as $assignment)
@@ -155,7 +187,7 @@
                                 </div>
                             @endforeach
                         </div>
-                    @else
+                    @elseif(!$selectedCoupon || !in_array($selectedCoupon->applicable_to ?? '', ['all_products', 'all_users']))
                         <div class="text-center text-gray-500 dark:text-gray-400 py-8">
                             <svg class="w-12 h-12 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
