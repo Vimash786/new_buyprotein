@@ -256,7 +256,36 @@ class ManageCoupons extends Component
 
     public function assignCoupon()
     {
-        if (!$this->selectedCoupon || empty($this->selectedItems)) {
+        if (!$this->selectedCoupon) {
+            session()->flash('error', 'No coupon selected.');
+            return;
+        }
+
+        // Handle "all_products" assignment
+        if ($this->assignmentType === 'all_products') {
+            // Check if assignment already exists
+            $existingAssignment = CouponAssignment::where('coupon_id', $this->selectedCoupon->id)
+                ->where('assignable_type', 'all_products')
+                ->first();
+
+            if (!$existingAssignment) {
+                CouponAssignment::create([
+                    'coupon_id' => $this->selectedCoupon->id,
+                    'assignable_type' => 'all_products',
+                    'assignable_id' => null,
+                    'assigned_at' => now()
+                ]);
+                session()->flash('message', 'Coupon assigned to all products successfully!');
+            } else {
+                session()->flash('error', 'Coupon is already assigned to all products.');
+            }
+            
+            $this->closeAssignModal();
+            return;
+        }
+
+        // Handle specific item assignments
+        if (empty($this->selectedItems)) {
             session()->flash('error', 'Please select items to assign the coupon to.');
             return;
         }
@@ -398,6 +427,20 @@ class ManageCoupons extends Component
     public function updatingTypeFilter()
     {
         $this->resetPage();
+    }
+
+    public function updatedSelectedItems()
+    {
+        // This method is called whenever selectedItems is updated
+        // It ensures the component re-renders and button visibility is updated
+        $this->dispatch('selectedItemsUpdated');
+    }
+
+    public function updatedAssignmentType()
+    {
+        // Reset selected items when assignment type changes
+        $this->selectedItems = [];
+        $this->searchItems = '';
     }
 
     public function render()

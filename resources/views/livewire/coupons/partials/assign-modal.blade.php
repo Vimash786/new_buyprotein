@@ -65,7 +65,7 @@
                                     <label class="flex items-center p-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer border-b border-gray-100 dark:border-gray-600 last:border-b-0">
                                         <input 
                                             type="checkbox" 
-                                            wire:model="selectedItems" 
+                                            wire:model.live="selectedItems" 
                                             value="{{ $item->id }}" 
                                             class="mr-3 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                                         >
@@ -97,7 +97,17 @@
                         <button wire:click="closeAssignModal" class="px-4 py-2 text-gray-600 bg-gray-200 rounded-md hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500">
                             Cancel
                         </button>
-                        @if($assignmentType === 'all_products' || (!empty($selectedItems) && $assignmentType && $assignmentType !== 'all_products'))
+                        
+                        @php
+                            $showButton = false;
+                            if ($assignmentType === 'all_products') {
+                                $showButton = true;
+                            } elseif ($assignmentType && $assignmentType !== 'all_products' && !empty($selectedItems)) {
+                                $showButton = true;
+                            }
+                        @endphp
+                        
+                        @if($showButton)
                             <button wire:click="assignCoupon" class="px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700">
                                 @if($assignmentType === 'all_products')
                                     Assign to All Products
