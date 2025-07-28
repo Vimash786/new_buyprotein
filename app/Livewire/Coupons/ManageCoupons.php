@@ -57,6 +57,10 @@ class ManageCoupons extends Component
     public $showDeleteModal = false;
     public $couponToDelete = null;
 
+    // Status toggle modal properties
+    public $showStatusToggleModal = false;
+    public $couponToToggle = null;
+
     public function mount()
     {
         // Check if user has access to coupons (only Super role)
@@ -188,6 +192,35 @@ class ManageCoupons extends Component
         $this->couponToDelete = null;
     }
 
+    public function confirmStatusToggle($id)
+    {
+        $this->couponToToggle = Coupon::findOrFail($id);
+        $this->showStatusToggleModal = true;
+    }
+
+    public function toggleStatus()
+    {
+        if ($this->couponToToggle) {
+            $newStatus = $this->couponToToggle->status === 'active' ? 'inactive' : 'active';
+            
+            $this->couponToToggle->update([
+                'status' => $newStatus,
+                'updated_by' => Auth::id()
+            ]);
+            
+            $statusText = $newStatus === 'active' ? 'activated' : 'deactivated';
+            session()->flash('message', "Coupon {$statusText} successfully!");
+        }
+        
+        $this->closeStatusToggleModal();
+    }
+
+    public function closeStatusToggleModal()
+    {
+        $this->showStatusToggleModal = false;
+        $this->couponToToggle = null;
+    }
+
     public function resetForm()
     {
         $this->reset([
@@ -235,7 +268,7 @@ class ManageCoupons extends Component
         
         switch ($this->assignmentType) {
             case 'users':
-                $query = User::query();
+                $query = User::query()->whereNotIn('role', ['Seller', 'Super']);
                 if ($this->searchItems) {
                     $query->where('name', 'like', '%' . $this->searchItems . '%')
                           ->orWhere('email', 'like', '%' . $this->searchItems . '%');
@@ -243,18 +276,14 @@ class ManageCoupons extends Component
                 break;
                 
             case 'products':
-                $query = products::query();
+                $sellerId = sellers::where('user_id', Auth::id())->first();
+                
+                $query = products::query()->where('seller_id', $sellerId->id);  
                 if ($this->searchItems) {
                     $query->where('name', 'like', '%' . $this->searchItems . '%');
                 }
                 break;
                 
-            case 'sellers':
-                $query = Sellers::query();
-                if ($this->searchItems) {
-                    $query->where('company_name', 'like', '%' . $this->searchItems . '%');
-                }
-                break;
         }
 
         return $query ? $query->limit(20)->get() : collect();
@@ -303,10 +332,6 @@ class ManageCoupons extends Component
                 case 'products':
                     $modelClass = products::class;
                     $assignableType = 'product';
-                    break;
-                case 'sellers':
-                    $modelClass = Sellers::class;
-                    $assignableType = 'seller';
                     break;
             }
 
