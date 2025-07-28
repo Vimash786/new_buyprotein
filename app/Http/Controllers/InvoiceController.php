@@ -34,7 +34,8 @@ class InvoiceController extends Controller
         $order = $orderItem->order;
         
         // Generate PDF
-        $pdf = PDF::loadView('invoices.seller-invoice', [
+        $pdf = PDF::loadView('invoices.standard-invoice', [
+            'type' => 'seller',
             'orderItem' => $orderItem,
             'order' => $order,
             'seller' => $seller,
@@ -67,7 +68,8 @@ class InvoiceController extends Controller
         ])->findOrFail($orderId);
 
         // Generate PDF
-        $pdf = PDF::loadView('invoices.order-invoice', [
+        $pdf = PDF::loadView('invoices.standard-invoice', [
+            'type' => 'admin',
             'order' => $order,
             'customer' => $order->user,
             'billingDetail' => $order->billingDetail,

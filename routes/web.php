@@ -83,6 +83,7 @@ Route::middleware(['auth'])->group(function () {
     // Invoice routes
     Route::get('/invoice/seller/{orderItemId}', [App\Http\Controllers\InvoiceController::class, 'downloadSellerInvoice'])->name('invoice.seller.download');
     Route::get('/invoice/order/{orderId}', [App\Http\Controllers\InvoiceController::class, 'downloadOrderInvoice'])->name('invoice.order.download');
+    Route::get('/invoice/standard/{orderId}', [App\Http\Controllers\InvoiceController::class, 'downloadStandardInvoice'])->name('invoice.standard.download');
 });
 
 require __DIR__ . '/auth.php';
