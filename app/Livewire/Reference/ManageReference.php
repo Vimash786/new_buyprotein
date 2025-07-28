@@ -23,7 +23,7 @@ class ManageReference extends Component
     public $showReportModal = false;
     public $showAssignModal = false;
     public $editMode = false;
-    public $referenceId = null; 
+    public $ReferenceId = null; 
     public $selectedReference = null;
 
     // Form fields
@@ -43,7 +43,7 @@ class ManageReference extends Component
     public $user_types = [];
 
     // Assignment fields
-    public $assignmentType = 'users'; // 'users', 'products', 'sellers'
+    public $assignmentType = 'all_users'; // 'users', 'products', 'sellers'
     public $selectedItems = [];
     public $searchItems = '';
 
@@ -60,7 +60,7 @@ class ManageReference extends Component
     public function mount()
     {
         // Check if user has access to references (only Super role)
-        if (Auth::user()->role !== 'Seller') {
+        if (Auth::user()->role !== 'Super') {
             abort(403, 'Access denied. Only administrators can manage references.');
         }
 
@@ -73,7 +73,7 @@ class ManageReference extends Component
     public function rules()
     {
         return [
-            'code' => 'required|string|max:255|unique:references,code,' . $this->referenceId,
+            'code' => 'required|string|max:255|unique:reference,code,' . $this->ReferenceId,
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'type' => 'required|in:percentage,fixed',
@@ -115,8 +115,8 @@ class ManageReference extends Component
     {
         $validatedData = $this->validate();
         
-        // Convert user_types array to JSON if needed
-        $validatedData['user_types'] = !empty($this->user_types) ? json_encode($this->user_types) : null;
+        // user_types will be automatically cast to JSON by Laravel
+        $validatedData['user_types'] = $this->user_types;
         
         Reference::create($validatedData);
         
@@ -126,22 +126,22 @@ class ManageReference extends Component
 
     public function edit($id)
     {
-        $Reference = Reference::findOrFail($id);
-        $this->referenceId = $Reference->id;
-        $this->code = $Reference->code;
-        $this->name = $Reference->name;
-        $this->description = $Reference->description;
-        $this->type = $Reference->type;
-        $this->value = $Reference->value;
-        $this->minimum_amount = $Reference->minimum_amount;
-        $this->maximum_discount = $Reference->maximum_discount;
-        $this->usage_limit = $Reference->usage_limit;
-        $this->user_usage_limit = $Reference->user_usage_limit;
-        $this->starts_at = $Reference->starts_at->format('Y-m-d\TH:i');
-        $this->expires_at = $Reference->expires_at->format('Y-m-d\TH:i');
-        $this->status = $Reference->status;
-        $this->applicable_to = $Reference->applicable_to;
-        $this->user_types = $Reference->user_types ? json_decode($Reference->user_types, true) : [];
+        $reference = Reference::findOrFail($id);
+        $this->ReferenceId = $reference->id;
+        $this->code = $reference->code;
+        $this->name = $reference->name;
+        $this->description = $reference->description;
+        $this->type = $reference->type;
+        $this->value = $reference->value;
+        $this->minimum_amount = $reference->minimum_amount;
+        $this->maximum_discount = $reference->maximum_discount;
+        $this->usage_limit = $reference->usage_limit;
+        $this->user_usage_limit = $reference->user_usage_limit;
+        $this->starts_at = $reference->starts_at->format('Y-m-d\TH:i');
+        $this->expires_at = $reference->expires_at->format('Y-m-d\TH:i');
+        $this->status = $reference->status;
+        $this->applicable_to = $reference->applicable_to;
+        $this->user_types = $reference->user_types ?? [];
         
         $this->editMode = true;
         $this->showModal = true;
@@ -151,11 +151,11 @@ class ManageReference extends Component
     {
         $validatedData = $this->validate();
         
-        // Convert user_types array to JSON if needed
-        $validatedData['user_types'] = !empty($this->user_types) ? json_encode($this->user_types) : null;
+        // user_types will be automatically cast to JSON by Laravel
+        $validatedData['user_types'] = $this->user_types;
         
-        $Reference = Reference::findOrFail($this->ReferenceId);
-        $Reference->update($validatedData);
+        $reference = Reference::findOrFail($this->ReferenceId);
+        $reference->update($validatedData);
         
         session()->flash('message', 'Reference updated successfully!');
         $this->closeModal();
@@ -163,8 +163,8 @@ class ManageReference extends Component
 
     public function delete($id = null)
     {
-        $Reference = $this->ReferenceToDelete ?? Reference::findOrFail($id);
-        $Reference->delete();
+        $reference = $this->referenceToDelete ?? Reference::findOrFail($id);
+        $reference->delete();
         
         session()->flash('message', 'Reference deleted successfully!');
         $this->closeDeleteModal();
@@ -228,25 +228,23 @@ class ManageReference extends Component
         $query = null;
         
         switch ($this->assignmentType) {
-            case 'users':
-                $query = User::query();
+            case 'specific_shop_user':
+                $query = User::where('role', 'Seller');
                 if ($this->searchItems) {
-                    $query->where('name', 'like', '%' . $this->searchItems . '%')
+                    $query->where(function($q) {
+                        $q->where('name', 'like', '%' . $this->searchItems . '%')
                           ->orWhere('email', 'like', '%' . $this->searchItems . '%');
+                    });
                 }
                 break;
                 
-            case 'products':
-                $query = products::query();
+            case 'specific_gym':
+                $query = User::whereIn('role', ['Gym Owner', 'Trainer', 'Influencer', 'Dietitian']);
                 if ($this->searchItems) {
-                    $query->where('name', 'like', '%' . $this->searchItems . '%');
-                }
-                break;
-                
-            case 'sellers':
-                $query = Sellers::query();
-                if ($this->searchItems) {
-                    $query->where('company_name', 'like', '%' . $this->searchItems . '%');
+                    $query->where(function($q) {
+                        $q->where('name', 'like', '%' . $this->searchItems . '%')
+                          ->orWhere('email', 'like', '%' . $this->searchItems . '%');
+                    });
                 }
                 break;
         }
@@ -256,52 +254,104 @@ class ManageReference extends Component
 
     public function assignReference()
     {
-        if (!$this->selectedReference || empty($this->selectedItems)) {
-            session()->flash('error', 'Please select items to assign the Reference to.');
+        if (!$this->selectedReference) {
+            session()->flash('error', 'No reference selected.');
             return;
         }
 
         $assignedCount = 0;
-        
-        foreach ($this->selectedItems as $itemId) {
-            $modelClass = null;
-            $assignableType = null;
-            
-            switch ($this->assignmentType) {
-                case 'users':
-                    $modelClass = User::class;
-                    $assignableType = 'user';
-                    break;
-                case 'products':
-                    $modelClass = products::class;
-                    $assignableType = 'product';
-                    break;
-                case 'sellers':
-                    $modelClass = Sellers::class;
-                    $assignableType = 'seller';
-                    break;
-            }
 
-            if ($modelClass && $assignableType) {
-                // Check if assignment already exists
-                $existingAssignment = ReferenceAssign::where('Reference_id', $this->selectedReference->id)
-                    ->where('assignable_type', $assignableType)
-                    ->where('assignable_id', $itemId)
+        // Handle different assignment types
+        switch ($this->assignmentType) {
+            case 'all_users':
+                // Create assignment for all users
+                $existingAssignment = ReferenceAssign::where('reference_id', $this->selectedReference->id)
+                    ->where('assignable_type', 'all_users')
                     ->first();
 
                 if (!$existingAssignment) {
                     ReferenceAssign::create([
-                        'Reference_id' => $this->selectedReference->id,
-                        'assignable_type' => $assignableType,
-                        'assignable_id' => $itemId,
+                        'reference_id' => $this->selectedReference->id,
+                        'assignable_type' => 'all_users',
+                        'assignable_id' => null,
                         'assigned_at' => now()
                     ]);
-                    $assignedCount++;
+                    $assignedCount = 1;
                 }
-            }
+                break;
+
+            case 'gym_user':
+                // Create assignment for gym users
+                $existingAssignment = ReferenceAssign::where('reference_id', $this->selectedReference->id)
+                    ->where('assignable_type', 'gym_user')
+                    ->first();
+
+                if (!$existingAssignment) {
+                    ReferenceAssign::create([
+                        'reference_id' => $this->selectedReference->id,
+                        'assignable_type' => 'gym_user',
+                        'assignable_id' => null,
+                        'assigned_at' => now()
+                    ]);
+                    $assignedCount = 1;
+                }
+                break;
+
+            case 'shop_user':
+                // Create assignment for shop users
+                $existingAssignment = ReferenceAssign::where('reference_id', $this->selectedReference->id)
+                    ->where('assignable_type', 'shop_user')
+                    ->first();
+
+                if (!$existingAssignment) {
+                    ReferenceAssign::create([
+                        'reference_id' => $this->selectedReference->id,
+                        'assignable_type' => 'shop_user',
+                        'assignable_id' => null,
+                        'assigned_at' => now()
+                    ]);
+                    $assignedCount = 1;
+                }
+                break;
+
+            case 'specific_shop_user':
+            case 'specific_gym':
+                // Handle specific user assignments
+                if (empty($this->selectedItems)) {
+                    session()->flash('error', 'Please select items to assign the Reference to.');
+                    return;
+                }
+
+                foreach ($this->selectedItems as $itemId) {
+                    // Check if assignment already exists
+                    $existingAssignment = ReferenceAssign::where('reference_id', $this->selectedReference->id)
+                        ->where('assignable_type', 'user')
+                        ->where('assignable_id', $itemId)
+                        ->first();
+
+                    if (!$existingAssignment) {
+                        ReferenceAssign::create([
+                            'reference_id' => $this->selectedReference->id,
+                            'assignable_type' => 'user',
+                            'assignable_id' => $itemId,
+                            'assigned_at' => now()
+                        ]);
+                        $assignedCount++;
+                    }
+                }
+                break;
+
+            default:
+                session()->flash('error', 'Invalid assignment type selected.');
+                return;
         }
 
-        session()->flash('message', "Reference assigned to {$assignedCount} items successfully!");
+        if ($assignedCount > 0) {
+            session()->flash('message', "Reference assigned successfully! ({$assignedCount} assignment(s) created)");
+        } else {
+            session()->flash('message', "Reference assignment already exists.");
+        }
+        
         $this->closeAssignModal();
     }
 
@@ -334,14 +384,14 @@ class ManageReference extends Component
         $dateFrom = $this->reportDateFrom ?: now()->startOfMonth()->toDateString();
         $dateTo = $this->reportDateTo ?: now()->endOfMonth()->toDateString();
         
-        // Get References based on filters
-        $ReferencesQuery = Reference::query();
+        // Get references based on filters
+        $referencesQuery = Reference::query();
         
         if ($this->reportReferenceId) {
-            $ReferencesQuery->where('id', $this->reportReferenceId);
+            $referencesQuery->where('id', $this->reportReferenceId);
         }
         
-        $References = $ReferencesQuery->withCount([
+        $references = $referencesQuery->withCount([
             'assignments',
             'usages' => function($query) use ($dateFrom, $dateTo) {
                 $query->whereBetween('created_at', [$dateFrom, $dateTo]);
@@ -349,28 +399,28 @@ class ManageReference extends Component
         ])->get();
         
         // Calculate totals
-        $totalUsage = $References->sum('usages_count');
-        $totalDiscount = $References->sum(function($Reference) {
-            return $Reference->usages->sum('discount_amount') ?? 0;
+        $totalUsage = $references->sum('usages_count');
+        $totalDiscount = $references->sum(function($reference) {
+            return $reference->usages->sum('discount_amount') ?? 0;
         });
         
         $this->reportData = [
-            'total_References' => $References->count(),
+            'total_references' => $references->count(),
             'total_usage' => $totalUsage,
             'total_discount' => $totalDiscount,
-            'total_assignments' => $References->sum('assignments_count'),
-            'References' => $References->map(function($Reference) {
+            'total_assignments' => $references->sum('assignments_count'),
+            'references' => $references->map(function($reference) {
                 return (object)[
-                    'id' => $Reference->id,
-                    'name' => $Reference->name,
-                    'code' => $Reference->code,
-                    'type' => $Reference->type,
-                    'value' => $Reference->value,
-                    'status' => $Reference->status,
-                    'usage_limit' => $Reference->usage_limit,
-                    'used_count' => $Reference->usages_count ?? 0,
-                    'assignments_count' => $Reference->assignments_count ?? 0,
-                    'total_discount_amount' => $Reference->usages->sum('discount_amount') ?? 0,
+                    'id' => $reference->id,
+                    'name' => $reference->name,
+                    'code' => $reference->code,
+                    'type' => $reference->type,
+                    'value' => $reference->value,
+                    'status' => $reference->status,
+                    'usage_limit' => $reference->usage_limit,
+                    'used_count' => $reference->usages_count ?? 0,
+                    'assignments_count' => $reference->assignments_count ?? 0,
+                    'total_discount_amount' => $reference->usages->sum('discount_amount') ?? 0,
                 ];
             }),
             'date_range' => [
@@ -420,12 +470,13 @@ class ManageReference extends Component
             $query->where('type', $this->typeFilter);
         }
         
-        return view('livewire.References.manage-References', [
-            'References' => $query->latest()->paginate(10),
-            'totalReferences' => Reference::count(),
-            'activeReferences' => Reference::where('status', 'active')->count(),
-            'expiredReferences' => Reference::where('expires_at', '<', now())->count(),
-            'upcomingReferences' => Reference::where('starts_at', '>', now())->count(),
+        return view('livewire.reference.manage-reference', [
+            'references' => $query->latest()->paginate(10),
+            'allReferences' => Reference::select('id', 'name', 'code')->where('status', 'active')->get(),
+            'totalReference' => Reference::count(),
+            'activeReference' => Reference::where('status', 'active')->count(),
+            'expiredReference' => Reference::where('expires_at', '<', now())->count(),
+            'upcomingReference' => Reference::where('starts_at', '>', now())->count(),
             'availableUserTypes' => [
                 'User' => 'Regular User',
                 'Gym Owner/Trainer/Influencer/Dietitian' => 'Gym Owner/Trainer/Influencer/Dietitian',

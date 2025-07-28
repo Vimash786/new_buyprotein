@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class ReferenceAssign extends Model
 {
     use HasFactory;
-
+    protected $table = 'reference_assign'; // Explicitly set the table name
     protected $fillable = [
         'reference_id',
         'assignable_type',
@@ -28,7 +28,7 @@ class ReferenceAssign extends Model
      */
     public function reference()
     {
-        return $this->belongsTo(reference::class);
+        return $this->belongsTo(Reference::class);
     }
 
     /**
@@ -43,8 +43,10 @@ class ReferenceAssign extends Model
                 return $this->product;
             case 'seller':
                 return $this->seller;
-            case 'all_products':
-                return null; // No specific model for all products
+            case 'all_users':
+            case 'gym_user':
+            case 'shop_user':
+                return null; // No specific model for bulk assignments
             default:
                 return null;
         }

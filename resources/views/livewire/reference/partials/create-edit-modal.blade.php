@@ -5,7 +5,7 @@
             <div class="p-6">
                 <div class="flex items-center justify-between mb-6">
                     <h2 class="text-xl font-bold text-gray-900 dark:text-white">
-                        {{ $editMode ? 'Edit Coupon' : 'Add New Coupon' }}
+                        {{ $editMode ? 'Edit Reference' : 'Add New Reference' }}
                     </h2>
                     <button wire:click="closeModal" class="text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-gray-100">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -18,13 +18,13 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <!-- Coupon Code -->
                         <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Coupon Code</label>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Reference Code</label>
                             <div class="flex gap-2">
                                 <input 
                                     type="text" 
                                     wire:model="code"
                                     class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white font-mono"
-                                    placeholder="Enter coupon code"
+                                    placeholder="Enter reference code"
                                 >
                                 <button 
                                     type="button"
@@ -39,12 +39,12 @@
 
                         <!-- Name -->
                         <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Coupon Name</label>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Reference Name</label>
                             <input 
                                 type="text" 
                                 wire:model="name"
                                 class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-                                placeholder="Enter coupon name"
+                                placeholder="Enter reference name"
                             >
                             @error('name') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                         </div>
@@ -56,7 +56,7 @@
                                 wire:model="description"
                                 rows="3"
                                 class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-                                placeholder="Enter coupon description"
+                                placeholder="Enter reference description"
                             ></textarea>
                             @error('description') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                         </div>
@@ -191,7 +191,7 @@
                             type="submit"
                             class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
                         >
-                            {{ $editMode ? 'Update Coupon' : 'Create Coupon' }}
+                            {{ $editMode ? 'Update Reference' : 'Create Reference' }}
                         </button>
                     </div>
                 </form>

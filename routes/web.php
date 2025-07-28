@@ -44,7 +44,7 @@ Route::middleware(['auth'])->group(function () {
     Volt::route('sellers', 'sellers.manage')->name('sellers.manage');
     Volt::route('sellers/requests', 'sellers.requests')->name('sellers.requests');
     Volt::route('products', 'products.manage')->middleware('seller.approved')->name('products.manage');
-     Volt::route('products/requests', 'products.requests')->name('products.requests');
+    Volt::route('products/requests', 'products.requests')->name('products.requests');
     Volt::route('orders', 'orders.manage')->middleware('seller.approved')->name('orders.manage');
     Volt::route('bulk-orders-seller', 'bulk-orders.manage')->middleware('seller.approved')->name('bulk-orders.seller');
     Volt::route('users', 'users.manage')->name('users.manage');
@@ -55,7 +55,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('commission', \App\Livewire\Settings\GlobalCommissionSettings::class)->name('settings.commission');
     Volt::route('payouts', 'payouts.manage')->name('payouts.sellers');
     Volt::route('transactions', 'transactions.manage')->name('transactions.manage');
-    
+    Route::get('reference', \App\Livewire\Reference\ManageReference::class)->name('reference.manage');
+
     // Policy Management Routes
     Volt::route('policies', 'policies.manage')->name('policies.manage');
 

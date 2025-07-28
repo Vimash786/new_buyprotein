@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class ReferenceUsage extends Model
 {
     use HasFactory;
-
+    protected $table = 'reference_usage'; // Explicitly set the table name
     protected $fillable = [
         'reference_id',
         'user_id',
@@ -31,7 +31,7 @@ class ReferenceUsage extends Model
      */
     public function reference()
     {
-        return $this->belongsTo(reference::class);
+        return $this->belongsTo(Reference::class);
     }
 
     /**
