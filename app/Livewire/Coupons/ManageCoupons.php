@@ -118,6 +118,9 @@ class ManageCoupons extends Component
         // Convert user_types array to JSON if needed
         $validatedData['user_types'] = !empty($this->user_types) ? json_encode($this->user_types) : null;
         
+        // Set created_by to current authenticated user
+        $validatedData['created_by'] = Auth::id();
+        
         Coupon::create($validatedData);
         
         session()->flash('message', 'Coupon created successfully!');
@@ -141,7 +144,7 @@ class ManageCoupons extends Component
         $this->expires_at = $coupon->expires_at->format('Y-m-d\TH:i');
         $this->status = $coupon->status;
         $this->applicable_to = $coupon->applicable_to;
-        $this->user_types = $coupon->user_types ? json_decode($coupon->user_types, true) : [];
+        $this->user_types = $coupon->user_types ?? [];
         
         $this->editMode = true;
         $this->showModal = true;
@@ -153,6 +156,9 @@ class ManageCoupons extends Component
         
         // Convert user_types array to JSON if needed
         $validatedData['user_types'] = !empty($this->user_types) ? json_encode($this->user_types) : null;
+        
+        // Set updated_by to current authenticated user
+        $validatedData['updated_by'] = Auth::id();
         
         $coupon = Coupon::findOrFail($this->couponId);
         $coupon->update($validatedData);
@@ -256,7 +262,29 @@ class ManageCoupons extends Component
 
     public function assignCoupon()
     {
-        if (!$this->selectedCoupon || empty($this->selectedItems)) {
+        if (!$this->selectedCoupon) {
+            session()->flash('error', 'No coupon selected.');
+            return;
+        }
+
+        // Handle "all_products" and "all_users" assignments by updating applicable_to column
+        if (in_array($this->assignmentType, ['all_products', 'all_users'])) {
+            $this->selectedCoupon->update([
+                'applicable_to' => $this->assignmentType,
+                'updated_by' => Auth::id()
+            ]);
+            
+            $message = $this->assignmentType === 'all_products' 
+                ? 'Coupon assigned to all products successfully!' 
+                : 'Coupon assigned to all users successfully!';
+            
+            session()->flash('message', $message);
+            $this->closeAssignModal();
+            return;
+        }
+
+        // Handle specific item assignments
+        if (empty($this->selectedItems)) {
             session()->flash('error', 'Please select items to assign the coupon to.');
             return;
         }
@@ -300,6 +328,12 @@ class ManageCoupons extends Component
                 }
             }
         }
+
+        // Update the coupon's applicable_to field for specific assignments
+        $this->selectedCoupon->update([
+            'applicable_to' => $this->assignmentType,
+            'updated_by' => Auth::id()
+        ]);
 
         session()->flash('message', "Coupon assigned to {$assignedCount} items successfully!");
         $this->closeAssignModal();
@@ -398,6 +432,20 @@ class ManageCoupons extends Component
     public function updatingTypeFilter()
     {
         $this->resetPage();
+    }
+
+    public function updatedSelectedItems()
+    {
+        // This method is called whenever selectedItems is updated
+        // It ensures the component re-renders and button visibility is updated
+        $this->dispatch('selectedItemsUpdated');
+    }
+
+    public function updatedAssignmentType()
+    {
+        // Reset selected items when assignment type changes
+        $this->selectedItems = [];
+        $this->searchItems = '';
     }
 
     public function render()
