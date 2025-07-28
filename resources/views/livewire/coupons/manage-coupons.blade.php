@@ -162,4 +162,8 @@
     @if($showDeleteModal)
         @include('livewire.coupons.partials.delete-modal')
     @endif
+
+    @if($showStatusToggleModal)
+        @include('livewire.coupons.partials.status-toggle-modal')
+    @endif
 </div>
