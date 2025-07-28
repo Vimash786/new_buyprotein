@@ -12,6 +12,7 @@ use App\Models\Cart;
 use App\Models\Category;
 use App\Models\Contact;
 use App\Models\Coupon;
+use App\Models\CouponAssignment;
 use App\Models\orders;
 use App\Models\Policy;
 use App\Models\products;
@@ -243,7 +244,7 @@ class DashboardController extends Controller
     public function wishList()
     {
         $wishlistData = Wishlist::with(['product', 'product.images'])->where('user_id', Auth::user()->id)->get();
-        
+
         return view('shop.wishlist', compact('wishlistData'));
     }
 
@@ -535,13 +536,84 @@ class DashboardController extends Controller
 
     public function applyCoupon(Request $request)
     {
-        $couponData = Coupon::where('code', $request->coupon)->first();
+        $couponData = Coupon::with('assignments')->where('code', $request->coupon)->first();
+        $cartData = Cart::where('user_id', Auth::user()->id)->get();
 
         if ($couponData) {
             if ($couponData->status == 'active') {
                 if (Carbon::now()->between($couponData->starts_at, $couponData->expires_at)) {
                     if ($couponData->used_count <= $couponData->usage_limit) {
-                        dd($couponData->usage_limit);
+                        if ($couponData->applicable_to == 'products') {
+                            $productIds = $couponData->assignments->pluck('assignable_id')->toArray();
+                            $cartProductIds = $cartData->pluck('product_id')->toArray();
+
+                            $matchedProductIds = array_intersect($cartProductIds, $productIds);
+
+                            $matchingCartItems = $cartData->whereIn('product_id', $matchedProductIds);
+
+                            $matchedSubtotal = $matchingCartItems->sum(function ($item) {
+                                return $item->price * $item->quantity;
+                            });
+
+                            $perItemDiscounts = [];
+                            $totalDiscount = 0;
+
+                            if ($couponData->type == 'percentage') {
+                                foreach ($matchingCartItems as $item) {
+                                    $itemSubtotal = $item->price * $item->quantity;
+                                    $itemDiscount = $itemSubtotal * ($couponData->value / 100);
+
+                                    $perItemDiscounts[] = [
+                                        'cart_item_id' => $item->id,
+                                        'product_id' => $item->product_id,
+                                        'quantity' => $item->quantity,
+                                        'item_subtotal' => $itemSubtotal,
+                                        'discount' => round($itemDiscount, 2),
+                                    ];
+
+                                    $totalDiscount += $itemDiscount;
+                                }
+                                if (isset($couponData->max_discount) && $totalDiscount > $couponData->max_discount) {
+                                    $totalDiscount = $couponData->max_discount;
+
+                                    $perItemDiscounts = array_map(function ($item) use ($matchedSubtotal, $totalDiscount) {
+                                        $proportional = ($item['item_subtotal'] / $matchedSubtotal) * $totalDiscount;
+                                        $item['discount'] = round($proportional, 2);
+                                        return $item;
+                                    }, $perItemDiscounts);
+                                }
+                            } else {
+                                $flat = $couponData->value;
+                                if ($flat > $matchedSubtotal) {
+                                    $flat = $matchedSubtotal;
+                                }
+
+                                foreach ($matchingCartItems as $item) {
+                                    $itemSubtotal = $item->price * $item->quantity;
+                                    $itemDiscount = ($itemSubtotal / $matchedSubtotal) * $flat;
+
+                                    $perItemDiscounts[] = [
+                                        'cart_item_id' => $item->id,
+                                        'product_id' => $item->product_id,
+                                        'quantity' => $item->quantity,
+                                        'item_subtotal' => $itemSubtotal,
+                                        'discount' => round($itemDiscount, 2),
+                                    ];
+
+                                    $totalDiscount += $itemDiscount;
+                                }
+
+                                $totalDiscount = $flat;
+                            }
+
+                            return response()->json([
+                                'success' => true,
+                                'message' => 'Coupon applied successfully!',
+                                'total_discount' => round($totalDiscount, 2),
+                                'matched_subtotal' => round($matchedSubtotal, 2),
+                                'per_item_discounts' => $perItemDiscounts
+                            ]);
+                        }
                     } else {
                         return response()->json([
                             'success' => false,

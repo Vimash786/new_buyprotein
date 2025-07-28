@@ -150,8 +150,37 @@
                             <div class="single-shop-list">
                                 <div class="left-area">
                                     <a href="#" class="thumbnail">
-                                        <img src="{{ asset('storage/' . $item->product->thumbnail_image) }}"
-                                            alt="">
+                                        @if ($item->product->has_variants == 1)
+                                            @php
+                                                $rawVariantOptionIds = $item->variant_option_ids;
+                                                $variantOptionIds = is_array($rawVariantOptionIds)
+                                                    ? $rawVariantOptionIds
+                                                    : json_decode($rawVariantOptionIds, true);
+
+                                                $variantValues = array_values($variantOptionIds);
+                                            @endphp
+
+                                            @foreach ($item->variant_option_ids as $key => $value)
+                                                @php
+                                                    $image = $item->product->images->firstWhere(
+                                                        'variant_combination_id',
+                                                        $value,
+                                                    );
+                                                @endphp
+
+                                                @if ($image)
+                                                    <img src="{{ asset('storage/' . $image->image_path) }}"
+                                                        alt="Thumbnail for Variant {{ $value }}">
+                                                    @break
+
+                                                @else
+                                                    <p>No image for variant {{ $value }}</p>
+                                                @endif
+                                            @endforeach
+                                        @else
+                                            <img src="{{ asset('storage/' . $item->product->thumbnail_image) }}"
+                                                alt="shop">
+                                        @endif
                                     </a>
                                     <a href="#" class="title">
                                         {{ isset($item->product) ? $item->product->name : '' }} </br>
@@ -178,7 +207,14 @@
                             <div class="left-area">
                                 <span style="font-weight: 600; color: #2C3C28;">Total Price:</span>
                             </div>
-                            <span class="price" style="color: #009ec9;">₹{{ $shipTotal }}</span>
+                            <span class="price" id="totalAmount" style="color: #009ec9;">₹{{ $shipTotal }}</span>
+                        </div>
+                        <input type="hidden" name="total_pay_amount" id="total_pay_amount" value="{{ $shipTotal }}">
+                        <div class="single-shop-list d-none" id="couponDiscount">
+                            <div class="left-area">
+                                <span style="font-weight: 600; color: #2C3C28;">Coupon Discount:</span>
+                            </div>
+                            <span class="price" id="dicountAmount" style="color: #009ec9;"></span>
                         </div>
                         <div class="bottom-cupon-code-cart-area">
                             <input type="text" placeholder="Cupon Code" id="coupon" class="coupon">
@@ -333,7 +369,8 @@
             e.preventDefault();
 
             const allProductData = @json($allProduct);
-            const paymentAmount = {{ $shipTotal * 100 }};
+            const payAmountTotal = $("#total_pay_amount").val();
+            const paymentAmount = payAmountTotal * 100;
             const sameAsShipping = document.querySelector('input[name="sameAsShipping"]:checked').value;
 
             const selectedAddressId = $('input[name="billAdd"]:checked').val();
@@ -484,17 +521,10 @@
                 },
                 success: function(data) {
                     if (data.success) {
-                        Swal.fire({
-                            title: 'Payment Successful!',
-                            text: 'Thank you for your purchase.',
-                            icon: 'success',
-                            confirmButtonText: 'Keep Shopping'
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-                                window.location.href =
-                                    "{{ route('home') }}";
-                            }
-                        });
+                        $("#couponDiscount").removeClass('d-none');
+                        $("#dicountAmount").text("₹" + data.total_discount);
+                        $("#totalAmount").text("₹" + (paymentAmount - data.total_discount));
+                        $("#total_pay_amount").val(paymentAmount - data.total_discount);
                     } else {
                         Swal.fire({
                             title: 'Payment Failed',
