@@ -2,10 +2,12 @@
 
 use App\Models\Sellers;
 use App\Models\Category;
+use App\Models\User;
 use Livewire\WithPagination;
 use Livewire\WithFileUploads;
 use Livewire\Volt\Component;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Hash;
 
 new class extends Component
 {
@@ -24,6 +26,8 @@ new class extends Component
     public $sellerToToggle = null;
     
     // Form fields
+    public $username = '';
+    public $email = '';
     public $company_name = '';
     public $gst_number = '';
     public $product_category = [];
@@ -37,6 +41,8 @@ new class extends Component
     public $status = 'not_approved';
 
     protected $rules = [
+        'username' => 'required|string|max:255|unique:users,name',
+        'email' => 'required|email|max:255|unique:users,email',
         'company_name' => 'required|string|max:255',
         'gst_number' => 'required|string|max:255|unique:sellers,gst_number',
         'product_category' => 'required|array|min:1',
@@ -51,7 +57,7 @@ new class extends Component
 
     public function with()
     {
-        $query = Sellers::query();
+        $query = Sellers::with('user');
 
         if ($this->search) {
             $query->where(function($q) {
@@ -59,7 +65,11 @@ new class extends Component
                   ->orWhere('gst_number', 'like', '%' . $this->search . '%')
                   ->orWhere('contact_no', 'like', '%' . $this->search . '%')
                   ->orWhere('brand', 'like', '%' . $this->search . '%')
-                  ->orWhere('product_category', 'like', '%' . $this->search . '%');
+                  ->orWhere('product_category', 'like', '%' . $this->search . '%')
+                  ->orWhereHas('user', function($userQuery) {
+                      $userQuery->where('name', 'like', '%' . $this->search . '%')
+                               ->orWhere('email', 'like', '%' . $this->search . '%');
+                  });
             });
         }
 
@@ -132,6 +142,8 @@ new class extends Component
     public function resetForm()
     {
         $this->sellerId = null;
+        $this->username = '';
+        $this->email = '';
         $this->company_name = '';
         $this->gst_number = '';
         $this->product_category = [];
@@ -152,6 +164,9 @@ new class extends Component
         
         if ($this->editMode) {
             $rules['gst_number'] = 'required|string|max:255|unique:sellers,gst_number,' . $this->sellerId;
+            $seller = Sellers::findOrFail($this->sellerId);
+            $rules['username'] = 'required|string|max:255|unique:users,name,' . $seller->user_id;
+            $rules['email'] = 'required|email|max:255|unique:users,email,' . $seller->user_id;
         }
 
         $this->validate($rules);
@@ -163,7 +178,7 @@ new class extends Component
             $categoryNames = $categories;
         }
 
-        $data = [
+        $sellerData = [
             'company_name' => $this->company_name,
             'gst_number' => $this->gst_number,
             'product_category' => implode(',', $categoryNames), // Convert array of names to comma-separated string
@@ -173,34 +188,49 @@ new class extends Component
             'status' => $this->status,
         ];
 
-        // Only set user_id when creating a new seller, not when editing
-        if (!$this->editMode) {
-            $data['user_id'] = auth()->id();
-        }
-
         // Handle brand logo upload
         if ($this->brand_logo_file) {
             $fileName = time() . '_brand_logo_' . $this->brand_logo_file->getClientOriginalName();
             $filePath = $this->brand_logo_file->storeAs('brand_logos', $fileName, 'public');
-            $data['brand_logo'] = $filePath;
+            $sellerData['brand_logo'] = $filePath;
         } elseif (!$this->editMode) {
-            $data['brand_logo'] = null;
+            $sellerData['brand_logo'] = null;
         }
 
         // Handle brand certificate upload
         if ($this->brand_certificate_file) {
             $fileName = time() . '_brand_certificate_' . $this->brand_certificate_file->getClientOriginalName();
             $filePath = $this->brand_certificate_file->storeAs('brand_certificates', $fileName, 'public');
-            $data['brand_certificate'] = $filePath;
+            $sellerData['brand_certificate'] = $filePath;
         } elseif (!$this->editMode) {
-            $data['brand_certificate'] = null;
+            $sellerData['brand_certificate'] = null;
         }
         
         if ($this->editMode) {
-            Sellers::findOrFail($this->sellerId)->update($data);
+            $seller = Sellers::findOrFail($this->sellerId);
+            
+            // Update user data
+            $seller->user->update([
+                'name' => $this->username,
+                'email' => $this->email,
+            ]);
+            
+            // Update seller data
+            $seller->update($sellerData);
             session()->flash('message', 'Seller updated successfully!');
         } else {
-            Sellers::create($data);
+            // Create user first
+            $user = User::create([
+                'name' => $this->username,
+                'email' => $this->email,
+                'password' => Hash::make('Testseller@123'),
+                'role' => 'Seller',
+                'profile_completed' => 1,
+            ]);
+            
+            // Create seller with user_id
+            $sellerData['user_id'] = $user->id;
+            Sellers::create($sellerData);
             session()->flash('message', 'Seller created successfully!');
         }
 
@@ -209,15 +239,17 @@ new class extends Component
     
     public function edit($id)
     {
-        $seller = Sellers::findOrFail($id);
+        $seller = Sellers::with('user')->findOrFail($id);
         
         $this->sellerId = $seller->id;
+        $this->username = $seller->user->name ?? '';
+        $this->email = $seller->user->email ?? '';
         $this->company_name = $seller->company_name;
         $this->gst_number = $seller->gst_number;
         
         // Convert category names to IDs for the multiselect component
         if ($seller->product_category) {
-            $categoryNames = array_filter(array_map('trim', preg_split('/,\s*/', $seller->product_category)));
+            $categoryNames = array_filter(array_map('trim', explode(',', $seller->product_category)));
             $categories = Category::whereIn('name', $categoryNames)->pluck('id')->toArray();
             $this->product_category = array_map('strval', $categories); // Convert to strings to match component expectations
         } else {
@@ -417,6 +449,7 @@ new class extends Component
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Seller Id</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">User Info</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Company</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Brand</th>
 
@@ -468,6 +501,12 @@ new class extends Component
                                         >
                                             #S{{ $seller->id}}
                                     </button>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div>
+                                        <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $seller->user->name ?? 'N/A' }}</div>
+                                        <div class="text-sm text-gray-500 dark:text-gray-400">{{ $seller->user->email ?? 'N/A' }}</div>
+                                    </div>
                                 </td>                         
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div>
@@ -546,7 +585,7 @@ new class extends Component
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                                <td colspan="9" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
                                     No sellers found.
                                 </td>
                             </tr>
@@ -579,6 +618,45 @@ new class extends Component
                     </div>
 
                     <form wire:submit="save" class="space-y-4">
+                        <!-- Username -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Username</label>
+                            <input 
+                                type="text" 
+                                wire:model="username"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
+                                placeholder="Enter username"
+                            >
+                            @error('username') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                        </div>
+
+                        <!-- Email -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email</label>
+                            <input 
+                                type="email" 
+                                wire:model="email"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
+                                placeholder="Enter email address"
+                            >
+                            @error('email') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                        </div>
+
+                        @if(!$editMode)
+                        <!-- Password Info (only for new sellers) -->
+                        <div class="bg-blue-50 dark:bg-blue-900/50 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                            <div class="flex items-center gap-2">
+                                <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <div>
+                                    <p class="text-sm font-medium text-blue-800 dark:text-blue-300">Default Login Credentials</p>
+                                    <p class="text-xs text-blue-600 dark:text-blue-400">Default password: <strong>Testseller@123</strong></p>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+
                         <!-- Company Name -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Company Name</label>
