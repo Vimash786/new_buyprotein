@@ -79,6 +79,10 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('razorpay', [RazorpayPaymentController::class, 'index'])->name('razorpay.index');
     Route::post('/razorpay-payment', [RazorpayPaymentController::class, 'payment'])->name('razorpay.payment');
+    
+    // Invoice routes
+    Route::get('/invoice/seller/{orderItemId}', [App\Http\Controllers\InvoiceController::class, 'downloadSellerInvoice'])->name('invoice.seller.download');
+    Route::get('/invoice/order/{orderId}', [App\Http\Controllers\InvoiceController::class, 'downloadOrderInvoice'])->name('invoice.order.download');
 });
 
 require __DIR__ . '/auth.php';
