@@ -298,8 +298,11 @@ class ManageCoupons extends Component
 
         // Handle "all_products" and "all_users" assignments by updating applicable_to column
         if (in_array($this->assignmentType, ['all_products', 'all_users'])) {
+            // Map assignment types to valid ENUM values
+            $validApplicableTo = $this->assignmentType === 'all_products' ? 'products' : 'users';
+            
             $this->selectedCoupon->update([
-                'applicable_to' => $this->assignmentType,
+                'applicable_to' => $validApplicableTo,
                 'updated_by' => Auth::id()
             ]);
             
@@ -354,11 +357,8 @@ class ManageCoupons extends Component
             }
         }
 
-        // Update the coupon's applicable_to field for specific assignments
-        $this->selectedCoupon->update([
-            'applicable_to' => $this->assignmentType,
-            'updated_by' => Auth::id()
-        ]);
+        // No need to update applicable_to for specific assignments
+        // The assignments are handled through the CouponAssignment model
 
         session()->flash('message', "Coupon assigned to {$assignedCount} items successfully!");
         $this->closeAssignModal();
