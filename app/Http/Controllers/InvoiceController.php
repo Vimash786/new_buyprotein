@@ -17,7 +17,7 @@ class InvoiceController extends Controller
     {
         $user = Auth::user();
         $seller = \App\Models\Sellers::where('user_id', $user->id)->first();
-        
+
         if (!$seller) {
             abort(403, 'Access denied. Seller account required.');
         }
@@ -32,7 +32,7 @@ class InvoiceController extends Controller
         ])->where('seller_id', $seller->id)->findOrFail($orderItemId);
 
         $order = $orderItem->order;
-        
+
         // Generate PDF
         $pdf = PDF::loadView('invoices.standard-invoice', [
             'type' => 'seller',
@@ -43,7 +43,15 @@ class InvoiceController extends Controller
             'billingDetail' => $order->billingDetail,
             'shippingAddress' => $order->billingDetail->shippingAddress ?? null
         ]);
-
+        // return view('invoices.standard-invoice', [
+        //     'type' => 'seller',
+        //     'orderItem' => $orderItem,
+        //     'order' => $order,
+        //     'seller' => $seller,
+        //     'customer' => $order->user,
+        //     'billingDetail' => $order->billingDetail,
+        //     'shippingAddress' => $order->billingDetail->shippingAddress ?? null
+        // ]);
         return $pdf->download('invoice-' . $order->order_number . '-' . $orderItem->id . '.pdf');
     }
 
@@ -53,7 +61,7 @@ class InvoiceController extends Controller
     public function downloadOrderInvoice($orderId)
     {
         $user = Auth::user();
-        
+
         // Check if user is admin/super admin
         if (!in_array($user->role, ['Admin', 'Super'])) {
             abort(403, 'Access denied. Admin privileges required.');

@@ -7,6 +7,8 @@ use App\Mail\UserOrder;
 use App\Mail\WelcomeMail;
 use App\Models\BillingDetail;
 use App\Models\Cart;
+use App\Models\Coupon;
+use App\Models\CouponUsage;
 use App\Models\orders;
 use App\Models\OrderSellerProduct;
 use App\Models\products;
@@ -28,6 +30,8 @@ class RazorpayPaymentController extends Controller
         $shipping = $request->input('shipping');
         $cartProducts = $request->input('products');
         $amount = $request->input('amount');
+        $discount = $request->input('discount');
+        $coupon = $request->input('coupon');
 
         $randomPart = 'BG' . str_pad(rand(0, 9999), 4, '0', STR_PAD_LEFT);
         $orderNumber = 'ORD-' . Carbon::now()->format('Ymd') . '-' . $randomPart;
@@ -40,6 +44,21 @@ class RazorpayPaymentController extends Controller
 
         $orderId = $order->id;
         $shippingAddressid = null;
+
+        if ($coupon) {
+            $couponData = Coupon::where('code', $coupon)->first();
+            if ($couponData) {
+                $couponData->increment('used_count');
+                $couponData->save();
+            }
+
+            $couponUsage = CouponUsage::create([
+                'coupon_id' => $couponData->id,
+                'user_id' => Auth::user()->id,
+                'order_id' => $orderId,
+                'discount_amount' => $discount,
+            ]);
+        }
 
         if (isset($billing['existing_billing_id'])) {
             $existing = BillingDetail::find($billing['existing_billing_id']);
@@ -64,11 +83,11 @@ class RazorpayPaymentController extends Controller
                 'billing_postal_code' => $existing->billing_postal_code,
                 'billing_country' => $existing->billing_country,
                 'shipping_address' => $existingShippingAddress,
-                'subtotal' => $amount - 100,
+                'subtotal' => $amount,
                 'tax_amount' => 0,
-                'shipping_charge' => 100,
-                'discount_amount' => 0,
-                'total_amount' => $amount,
+                'shipping_charge' => 0,
+                'discount_amount' => $discount,
+                'total_amount' => $amount - $discount,
                 'payment_method' => 'razorpay',
                 'payment_status' => 'complete',
             ]);
@@ -93,11 +112,11 @@ class RazorpayPaymentController extends Controller
                 'billing_postal_code' => $billing['zip'],
                 'billing_country' => 'India',
                 'shipping_address' => $shippingAddress->id,
-                'subtotal' => $amount - 100,
+                'subtotal' => $amount,
                 'tax_amount' => 0,
-                'shipping_charge' => 100,
-                'discount_amount' => 0,
-                'total_amount' => $amount,
+                'shipping_charge' => 0,
+                'discount_amount' => $discount,
+                'total_amount' => $amount - $discount,
                 'payment_method' => 'razorpay',
                 'payment_status' => 'complete',
             ]);
@@ -117,9 +136,10 @@ class RazorpayPaymentController extends Controller
                 'total_amount' => $cart->quantity * $cart->price,
             ]);
 
-            $sellerData = User::find($productData->seller_id);
+            $sellerData = Sellers::find($productData->seller_id);
+            $seller = User::where('id', $sellerData->user_id)->first();
 
-            Mail::to($sellerData->email)->send(new SellerOrder(Auth::user(), $sellerData));
+            Mail::to($seller->email)->send(new SellerOrder(Auth::user(), $sellerData));
 
             $cart->delete();
         }

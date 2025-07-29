@@ -254,7 +254,7 @@
                     <div class="logo-search-category-wrapper after-md-device-header">
                         <a href="{{ route('home') }}" class="logo-area">
                             <img src="{{ asset('buy-protein.jpg') }}" alt="logo-main"
-                                style="height: 94px; width: 288px;" class="logo">
+                                style="width: 288px;" class="logo">
                         </a>
                         <div class="category-search-wrapper">
                             <div class="category-btn category-hover-header">

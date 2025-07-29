@@ -209,7 +209,8 @@
                             </div>
                             <span class="price" id="totalAmount" style="color: #009ec9;">₹{{ $shipTotal }}</span>
                         </div>
-                        <input type="hidden" name="total_pay_amount" id="total_pay_amount" value="{{ $shipTotal }}">
+                        <input type="hidden" name="total_pay_amount" id="total_pay_amount"
+                            value="{{ $shipTotal }}">
                         <div class="single-shop-list d-none" id="couponDiscount">
                             <div class="left-area">
                                 <span style="font-weight: 600; color: #2C3C28;">Coupon Discount:</span>
@@ -417,6 +418,9 @@
                 };
             }
 
+            let appliedDiscount = 0;
+            let appliedCoupon = null;
+
             let options = {
                 "key": "{{ config('services.razorpay.key') }}",
                 "amount": paymentAmount,
@@ -445,7 +449,9 @@
                             billing: billingData,
                             shipping: shippingData,
                             products: allProductData,
-                            amount: (paymentAmount / 100)
+                            amount: (paymentAmount / 100),
+                            discount: appliedDiscount,
+                            coupon: appliedCoupon
                         }),
                         success: function(data) {
                             if (data.success) {
@@ -521,6 +527,8 @@
                 },
                 success: function(data) {
                     if (data.success) {
+                        appliedDiscount = data.total_discount;
+                        appliedCoupon = coupon;
                         $("#couponDiscount").removeClass('d-none');
                         $("#dicountAmount").text("₹" + data.total_discount);
                         $("#totalAmount").text("₹" + (paymentAmount - data.total_discount));
