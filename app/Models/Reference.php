@@ -16,7 +16,8 @@ class Reference extends Model
         'name',
         'description',
         'type', // 'percentage', 'fixed'
-        'value',
+        'giver_discount',
+        'applyer_discount',
         'minimum_amount',
         'maximum_discount',
         'usage_limit',
@@ -32,7 +33,8 @@ class Reference extends Model
     ];
 
     protected $casts = [
-        'value' => 'decimal:2',
+        'giver_discount' => 'decimal:2',
+        'applyer_discount' => 'decimal:2',
         'minimum_amount' => 'decimal:2',
         'maximum_discount' => 'decimal:2',
         'usage_limit' => 'integer',
@@ -176,28 +178,50 @@ class Reference extends Model
 
     /**
      * Calculate discount amount for given total
+     * @param float $total The total amount
+     * @param string $discountType Either 'giver' or 'applyer'
      */
-    public function calculateDiscount($total)
+    public function calculateDiscount($total, $discountType = 'giver')
     {
         if ($this->minimum_amount && $total < $this->minimum_amount) {
-            return 0;
+            return [
+                'giver_discount' => 0,
+                'applyer_discount' => 0,
+                'total_discount' => 0
+            ];
         }
+
+        $giverDiscount = 0;
+        $applyerDiscount = 0;
 
         if ($this->type === 'percentage') {
-            $discount = ($total * $this->value) / 100;
+            $giverDiscount = ($total * $this->giver_discount) / 100;
+            $applyerDiscount = ($total * $this->applyer_discount) / 100;
             
             if ($this->maximum_discount) {
-                $discount = min($discount, $this->maximum_discount);
+                $totalCalculatedDiscount = $giverDiscount + $applyerDiscount;
+                if ($totalCalculatedDiscount > $this->maximum_discount) {
+                    // Proportionally reduce both discounts
+                    $ratio = $this->maximum_discount / $totalCalculatedDiscount;
+                    $giverDiscount *= $ratio;
+                    $applyerDiscount *= $ratio;
+                }
             }
-            
-            return $discount;
+        } elseif ($this->type === 'fixed') {
+            // For fixed amount, split between giver and applyer based on their percentage ratio
+            $totalPercentage = $this->giver_discount + $this->applyer_discount;
+            if ($totalPercentage > 0) {
+                $totalDiscount = min($this->giver_discount + $this->applyer_discount, $total);
+                $giverDiscount = ($this->giver_discount / $totalPercentage) * $totalDiscount;
+                $applyerDiscount = ($this->applyer_discount / $totalPercentage) * $totalDiscount;
+            }
         }
 
-        if ($this->type === 'fixed') {
-            return min($this->value, $total);
-        }
-
-        return 0;
+        return [
+            'giver_discount' => round($giverDiscount, 2),
+            'applyer_discount' => round($applyerDiscount, 2),
+            'total_discount' => round($giverDiscount + $applyerDiscount, 2)
+        ];
     }
 
     /**

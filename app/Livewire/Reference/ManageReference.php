@@ -31,7 +31,8 @@ class ManageReference extends Component
     public $name = '';
     public $description = '';
     public $type = 'percentage';
-    public $value = '';
+    public $giver_discount = '';
+    public $applyer_discount = '';
     public $minimum_amount = '';
     public $maximum_discount = '';
     public $usage_limit = '';
@@ -77,7 +78,8 @@ class ManageReference extends Component
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'type' => 'required|in:percentage,fixed',
-            'value' => 'required|numeric|min:0',
+            'giver_discount' => 'required|numeric|min:0',
+            'applyer_discount' => 'required|numeric|min:0',
             'minimum_amount' => 'nullable|numeric|min:0',
             'maximum_discount' => 'nullable|numeric|min:0',
             'usage_limit' => 'nullable|integer|min:0',
@@ -132,7 +134,8 @@ class ManageReference extends Component
         $this->name = $reference->name;
         $this->description = $reference->description;
         $this->type = $reference->type;
-        $this->value = $reference->value;
+        $this->giver_discount = $reference->giver_discount;
+        $this->applyer_discount = $reference->applyer_discount;
         $this->minimum_amount = $reference->minimum_amount;
         $this->maximum_discount = $reference->maximum_discount;
         $this->usage_limit = $reference->usage_limit;
@@ -185,7 +188,7 @@ class ManageReference extends Component
     public function resetForm()
     {
         $this->reset([
-            'ReferenceId', 'code', 'name', 'description', 'type', 'value', 
+            'ReferenceId', 'code', 'name', 'description', 'type', 'giver_discount', 'applyer_discount',
             'minimum_amount', 'maximum_discount', 'usage_limit', 'user_usage_limit',
             'starts_at', 'expires_at', 'status', 'applicable_to', 'user_types'
         ]);
@@ -363,31 +366,48 @@ class ManageReference extends Component
             'usages' => function($query) use ($dateFrom, $dateTo) {
                 $query->whereBetween('created_at', [$dateFrom, $dateTo]);
             }
-        ])->get();
+        ])->with(['usages' => function($query) use ($dateFrom, $dateTo) {
+            $query->whereBetween('created_at', [$dateFrom, $dateTo]);
+        }])->get();
         
         // Calculate totals
         $totalUsage = $references->sum('usages_count');
-        $totalDiscount = $references->sum(function($reference) {
-            return $reference->usages->sum('discount_amount') ?? 0;
+        $totalGiverEarnings = $references->sum(function($reference) {
+            return $reference->usages->sum('giver_earning_amount') ?? 0;
+        });
+        $totalApplyerDiscounts = $references->sum(function($reference) {
+            return $reference->usages->sum('applyer_discount_amount') ?? 0;
+        });
+        $totalDiscountAmount = $references->sum(function($reference) {
+            return $reference->usages->sum('total_discount_amount') ?? 0;
         });
         
         $this->reportData = [
             'total_references' => $references->count(),
             'total_usage' => $totalUsage,
-            'total_discount' => $totalDiscount,
+            'total_giver_earnings' => $totalGiverEarnings,
+            'total_applyer_discounts' => $totalApplyerDiscounts,
+            'total_discount_amount' => $totalDiscountAmount,
             'total_assignments' => $references->sum('assignments_count'),
             'references' => $references->map(function($reference) {
+                $giverEarnings = $reference->usages->sum('giver_earning_amount') ?? 0;
+                $applyerDiscounts = $reference->usages->sum('applyer_discount_amount') ?? 0;
+                $totalDiscountAmount = $reference->usages->sum('total_discount_amount') ?? 0;
+                
                 return (object)[
                     'id' => $reference->id,
                     'name' => $reference->name,
                     'code' => $reference->code,
                     'type' => $reference->type,
-                    'value' => $reference->value,
+                    'giver_discount' => $reference->giver_discount,
+                    'applyer_discount' => $reference->applyer_discount,
                     'status' => $reference->status,
                     'usage_limit' => $reference->usage_limit,
                     'used_count' => $reference->usages_count ?? 0,
                     'assignments_count' => $reference->assignments_count ?? 0,
-                    'total_discount_amount' => $reference->usages->sum('discount_amount') ?? 0,
+                    'total_giver_earnings' => $giverEarnings,
+                    'total_applyer_discounts' => $applyerDiscounts,
+                    'total_discount_amount' => $totalDiscountAmount,
                 ];
             }),
             'date_range' => [

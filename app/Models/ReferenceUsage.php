@@ -13,13 +13,18 @@ class ReferenceUsage extends Model
         'reference_id',
         'user_id',
         'order_id',
-        'discount_amount',
+        'total_discount_amount',
+        'giver_earning_amount',
+        'applyer_discount_amount',
+        'giver_user_id',
         'order_total',
         'used_at',
     ];
 
     protected $casts = [
-        'discount_amount' => 'decimal:2',
+        'total_discount_amount' => 'decimal:2',
+        'giver_earning_amount' => 'decimal:2',
+        'applyer_discount_amount' => 'decimal:2',
         'order_total' => 'decimal:2',
         'used_at' => 'datetime',
         'created_at' => 'datetime',
@@ -35,11 +40,19 @@ class ReferenceUsage extends Model
     }
 
     /**
-     * Get the user who used this reference
+     * Get the user who used this reference (applyer)
      */
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the user who gave this reference (giver)
+     */
+    public function giver()
+    {
+        return $this->belongsTo(User::class, 'giver_user_id');
     }
 
     /**
