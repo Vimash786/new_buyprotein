@@ -264,54 +264,21 @@ class ManageReference extends Component
         // Handle different assignment types
         switch ($this->assignmentType) {
             case 'all_users':
-                // Create assignment for all users
-                $existingAssignment = ReferenceAssign::where('reference_id', $this->selectedReference->id)
-                    ->where('assignable_type', 'all_users')
-                    ->first();
-
-                if (!$existingAssignment) {
-                    ReferenceAssign::create([
-                        'reference_id' => $this->selectedReference->id,
-                        'assignable_type' => 'all_users',
-                        'assignable_id' => null,
-                        'assigned_at' => now()
-                    ]);
-                    $assignedCount = 1;
-                }
+                // Update reference applicable_to field instead of creating assignment
+                $this->selectedReference->update(['applicable_to' => 'all_users']);
+                $assignedCount = 1;
                 break;
 
             case 'gym_user':
-                // Create assignment for gym users
-                $existingAssignment = ReferenceAssign::where('reference_id', $this->selectedReference->id)
-                    ->where('assignable_type', 'gym_user')
-                    ->first();
-
-                if (!$existingAssignment) {
-                    ReferenceAssign::create([
-                        'reference_id' => $this->selectedReference->id,
-                        'assignable_type' => 'gym_user',
-                        'assignable_id' => null,
-                        'assigned_at' => now()
-                    ]);
-                    $assignedCount = 1;
-                }
+                // Update reference applicable_to field for gym users
+                $this->selectedReference->update(['applicable_to' => 'all_gym']);
+                $assignedCount = 1;
                 break;
 
             case 'shop_user':
-                // Create assignment for shop users
-                $existingAssignment = ReferenceAssign::where('reference_id', $this->selectedReference->id)
-                    ->where('assignable_type', 'shop_user')
-                    ->first();
-
-                if (!$existingAssignment) {
-                    ReferenceAssign::create([
-                        'reference_id' => $this->selectedReference->id,
-                        'assignable_type' => 'shop_user',
-                        'assignable_id' => null,
-                        'assigned_at' => now()
-                    ]);
-                    $assignedCount = 1;
-                }
+                // Update reference applicable_to field for shop users
+                $this->selectedReference->update(['applicable_to' => 'all_shop']);
+                $assignedCount = 1;
                 break;
 
             case 'specific_shop_user':
