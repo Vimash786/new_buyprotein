@@ -16,7 +16,7 @@ jobs:
       run: |
         pwd
         ls -la
-      
+        
     - name: Deploy to Server
       uses: SamKirkland/FTP-Deploy-Action@v4.3.4
       with:
@@ -30,4 +30,5 @@ jobs:
           .env
           public/build
           node_modules
+
           
