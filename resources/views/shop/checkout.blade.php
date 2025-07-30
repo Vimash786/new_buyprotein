@@ -218,8 +218,8 @@
                             <span class="price" id="dicountAmount" style="color: #009ec9;"></span>
                         </div>
                         <div class="bottom-cupon-code-cart-area">
-                            <input type="text" placeholder="Cupon Code" id="coupon" class="coupon">
-                            <button type="button" class="rts-btn btn-primary apply-coupon">Apply Coupon</button>
+                            <input type="text" placeholder="Cupon/Referal Code" id="coupon" class="coupon">
+                            <button type="button" class="rts-btn btn-primary apply-coupon">Apply</button>
                         </div>
                         <div class="cottom-cart-right-area">
                             <p class="mb--20">Your personal data will be used to process your order, support your

@@ -18,6 +18,7 @@ use App\Models\Policy;
 use App\Models\products;
 use App\Models\ProductVariantCombination;
 use App\Models\ProductVariantOption;
+use App\Models\Reference;
 use App\Models\Review;
 use App\Models\Sellers;
 use App\Models\User;
@@ -593,6 +594,11 @@ class DashboardController extends Controller
     public function applyCoupon(Request $request)
     {
         $couponData = Coupon::with('assignments')->where('code', $request->coupon)->first();
+
+        if (!$couponData) {
+            $couponData = Reference::with('assignments')->where('code', $request->coupon)->first();
+        }
+        dd($couponData);
         $cartData = Cart::with(['product.seller'])->where('user_id', Auth::user()->id)->get();
         $user = Auth::user();
 

@@ -16,7 +16,7 @@
                         <button class="nav-link" id="v-pills-messages-tab" data-bs-toggle="pill"
                             data-bs-target="#v-pills-messages" type="button" role="tab"
                             aria-controls="v-pills-messages" aria-selected="false"><i
-                                class="fa-sharp fa-regular fa-tractor"></i> Track Your Order</button>
+                                class="fa-sharp fa-regular fa-dollar-sign"></i> My Earning</button>
                         <button class="nav-link" id="v-pills-settings-tab" data-bs-toggle="pill"
                             data-bs-target="#v-pills-settings" type="button" role="tab"
                             aria-controls="v-pills-settings" aria-selected="false"><i
@@ -86,24 +86,34 @@
                         <div class="tab-pane fade" id="v-pills-messages" role="tabpanel"
                             aria-labelledby="v-pills-messages-tab" tabindex="0">
                             <div class="tracing-order-account">
-                                <h2 class="title">Orders tracking</h2>
+                                <h2 class="title">My Earning</h2>
                                 <p>
-                                    To keep up with the status of your order, kindly input your OrderID in the designated
-                                    box below and click the "Track" button. This unique identifier can be found on your
-                                    receipt as well as in the confirmation email that was sent to you.
+                                    Total Earning: ₹{{ $totalEarning ?? 0 }} <br>
                                 </p>
-                                <form action="#" class="order-tracking">
-                                    <div class="single-input">
-                                        <label for="order-id">Order Id</label>
-                                        <input type="text" placeholder="Found in your order confirmation email"
-                                            required>
-                                    </div>
-                                    <div class="single-input">
-                                        <label for="order-id">Billing email</label>
-                                        <input type="text" placeholder="Email You use during checkout">
-                                    </div>
-                                    <button class="rts-btn btn-primary">Track</button>
-                                </form>
+                                <div class="table-responsive">
+                                    <table class="table">
+                                        <thead>
+                                            <tr>
+                                                <th>Reference Code</th>
+                                                <th>Earning ID</th>
+                                                <th>User</th>
+                                                <th>Total Order Amount</th>
+                                                <th>Total Earning Amount</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach ($orders as $order)
+                                                <tr>
+                                                    <td>#{{ $order->id }}</td>
+                                                    <td>{{ $order->created_at }}</td>
+                                                    <td>{{ $order->status }}</td>
+                                                    <td>₹{{ $order->total_order_amount }} for
+                                                        {{ $order->orderSellerProducts->count() }} item</td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                         <div class="tab-pane fade" id="v-pills-settings" role="tabpanel"
@@ -153,14 +163,14 @@
                                 <input type="password" placeholder="Current Password *" name="current_password">
                                 <input type="password" placeholder="New Password *" name="new_password">
                                 <input type="password" placeholder="Confirm Password *" name="confirm_new_password">
-                                @if($errors->any())
-                                <div class="alert alert-danger">
-                                    <ul class="mb-0">
-                                        @foreach ($errors->all() as $error)
-                                            <li>{{ $error }}</li>
-                                        @endforeach
-                                    </ul>
-                                </div>
+                                @if ($errors->any())
+                                    <div class="alert alert-danger">
+                                        <ul class="mb-0">
+                                            @foreach ($errors->all() as $error)
+                                                <li>{{ $error }}</li>
+                                            @endforeach
+                                        </ul>
+                                    </div>
                                 @endif
                                 <button type="submit" class="rts-btn btn-primary" id="updateUserData">Save
                                     Change</button>

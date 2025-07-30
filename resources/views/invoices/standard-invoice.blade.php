@@ -91,8 +91,8 @@
             <div style="float: left; width: 32%;">
                 <strong>Sold By :</strong><br>
                 {{ $seller->company_name ?? 'Seller Name' }}<br>
-                {{ $seller->business_address }}<br>
-                @if ($seller->city || $seller->state || $seller->pincode)
+                {{ $seller->business_address ?? '' }}<br>
+                @if (isset($seller->city) || isset($seller->state) || isset($seller->pincode))
                     {{ $seller->city }}, {{ $seller->state }} - {{ $seller->pincode }}<br>
                 @endif
                 {{ $seller->country ?? 'India' }}
@@ -127,9 +127,10 @@
                 <thead style="background: #2dc2fa; color: white;">
                     <tr>
                         <th>Product</th>
-                        <th>Variant</th>
                         <th>Qty</th>
                         <th>Unit Price</th>
+                        <th>Tax</th>
+                        <th>Tax Amount</th>
                         <th>Total</th>
                     </tr>
                 </thead>
@@ -137,9 +138,10 @@
                     @foreach ($order->orderSellerProducts as $item)
                         <tr>
                             <td>{{ $item->product->name }}</td>
-                            <td>{{ $item->variantCombination->variant_options ?? 'Standard' }}</td>
                             <td>{{ $item->quantity }}</td>
                             <td>&#8377;{{ number_format($item->unit_price, 2) }}</td>
+                            <td>GST (18%)</td>
+                            <td>&#8377;{{ number_format($item->total_amount * 0.18, 2) }}</td>
                             <td>&#8377;{{ number_format($item->total_amount, 2) }}</td>
                         </tr>
                     @endforeach
