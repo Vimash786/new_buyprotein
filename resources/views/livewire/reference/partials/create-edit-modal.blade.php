@@ -74,19 +74,36 @@
                             @error('type') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                         </div>
 
-                        <!-- Value -->
+                        <!-- Giver Discount -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Discount Value {{ $type === 'percentage' ? '(%)' : '(₹)' }}
+                                Giver Discount {{ $type === 'percentage' ? '(%)' : '(₹)' }}
                             </label>
                             <input 
                                 type="number" 
                                 step="0.01"
-                                wire:model="value"
+                                wire:model="giver_discount"
                                 class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
                                 placeholder="0.00"
                             >
-                            @error('value') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Amount/percentage earned by the person who refers</p>
+                            @error('giver_discount') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                        </div>
+
+                        <!-- Applyer Discount -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Applyer Discount {{ $type === 'percentage' ? '(%)' : '(₹)' }}
+                            </label>
+                            <input 
+                                type="number" 
+                                step="0.01"
+                                wire:model="applyer_discount"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
+                                placeholder="0.00"
+                            >
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Amount/percentage discount for the person who applies the code</p>
+                            @error('applyer_discount') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                         </div>
 
                         <!-- Minimum Amount -->

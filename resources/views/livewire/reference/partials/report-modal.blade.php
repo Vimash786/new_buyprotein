@@ -88,7 +88,7 @@
 
             <!-- Report Stats -->
             @if($reportData)
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
                     <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
                         <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">
                             {{ $reportData['total_references'] ?? 0 }}
@@ -101,11 +101,17 @@
                         </div>
                         <div class="text-sm text-gray-600 dark:text-gray-400">Total Usage</div>
                     </div>
+                    <div class="bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-lg">
+                        <div class="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                            ₹{{ number_format($reportData['total_giver_earnings'] ?? 0, 2) }}
+                        </div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">Total Giver Earnings</div>
+                    </div>
                     <div class="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg">
                         <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                            ${{ number_format($reportData['total_discount'] ?? 0, 2) }}
+                            ₹{{ number_format($reportData['total_applyer_discounts'] ?? 0, 2) }}
                         </div>
-                        <div class="text-sm text-gray-600 dark:text-gray-400">Total Discount</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">Total Applyer Discounts</div>
                     </div>
                     <div class="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg">
                         <div class="text-2xl font-bold text-orange-600 dark:text-orange-400">
@@ -123,10 +129,12 @@
                         <tr>
                             <th class="px-6 py-3">Reference</th>
                             <th class="px-6 py-3">Type</th>
-                            <th class="px-6 py-3">Value</th>
+                            <th class="px-6 py-3">Giver Discount</th>
+                            <th class="px-6 py-3">Applyer Discount</th>
                             <th class="px-6 py-3">Usage</th>
                             <th class="px-6 py-3">Assignments</th>
-                            <th class="px-6 py-3">Total Discount</th>
+                            <th class="px-6 py-3">Giver Earnings</th>
+                            <th class="px-6 py-3">Applyer Discounts</th>
                             <th class="px-6 py-3">Status</th>
                         </tr>
                     </thead>
@@ -143,8 +151,11 @@
                                             {{ ucfirst($reference->type) }}
                                         </span>
                                     </td>
-                                    <td class="px-6 py-4">
-                                        {{ $reference->type === 'percentage' ? $reference->value . '%' : '$' . number_format($reference->value, 2) }}
+                                    <td class="px-6 py-4 text-green-600 dark:text-green-400">
+                                        {{ $reference->type === 'percentage' ? $reference->giver_discount . '%' : '$' . number_format($reference->giver_discount, 2) }}
+                                    </td>
+                                    <td class="px-6 py-4 text-blue-600 dark:text-blue-400">
+                                        {{ $reference->type === 'percentage' ? $reference->applyer_discount . '%' : '$' . number_format($reference->applyer_discount, 2) }}
                                     </td>
                                     <td class="px-6 py-4">
                                         {{ $reference->used_count ?? 0 }} / {{ $reference->usage_limit ?? '∞' }}
@@ -154,8 +165,11 @@
                                             {{ $reference->assignments_count ?? 0 }}
                                         </span>
                                     </td>
-                                    <td class="px-6 py-4">
-                                        ${{ number_format($reference->total_discount_amount ?? 0, 2) }}
+                                    <td class="px-6 py-4 text-emerald-600 dark:text-emerald-400 font-medium">
+                                        ₹{{ number_format($reference->total_giver_earnings ?? 0, 2) }}
+                                    </td>
+                                    <td class="px-6 py-4 text-purple-600 dark:text-purple-400 font-medium">
+                                        ₹{{ number_format($reference->total_applyer_discounts ?? 0, 2) }}
                                     </td>
                                     <td class="px-6 py-4">
                                         <span class="px-2 py-1 text-xs font-medium rounded-full {{ $reference->status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' }}">
@@ -166,7 +180,7 @@
                             @endforeach
                         @else
                             <tr>
-                                <td colspan="7" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                                <td colspan="9" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
                                     @if($reportData === null)
                                         Click "Generate Report" to view reference data
                                     @else

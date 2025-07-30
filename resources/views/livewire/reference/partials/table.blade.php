@@ -7,7 +7,7 @@
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Code</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Name</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Type</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Value</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Discounts</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Usage</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Validity</th>
@@ -33,9 +33,18 @@
                             </span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                            {{ $reference->type === 'percentage' ? $reference->value . '%' : '₹' . number_format($reference->value, 2) }}
+                            <div class="space-y-1">
+                                <div class="text-green-600 dark:text-green-400">
+                                    <span class="text-xs font-medium">Giver:</span>
+                                    {{ $reference->type === 'percentage' ? $reference->giver_discount . '%' : '₹' . number_format($reference->giver_discount, 2) }}
+                                </div>
+                                <div class="text-blue-600 dark:text-blue-400">
+                                    <span class="text-xs font-medium">Applyer:</span>
+                                    {{ $reference->type === 'percentage' ? $reference->applyer_discount . '%' : '₹' . number_format($reference->applyer_discount, 2) }}
+                                </div>
+                            </div>
                             @if($reference->minimum_amount)
-                                <div class="text-xs text-gray-500 dark:text-gray-400">Min: ₹{{ number_format($reference->minimum_amount, 2) }}</div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Min: ₹{{ number_format($reference->minimum_amount, 2) }}</div>
                             @endif
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">

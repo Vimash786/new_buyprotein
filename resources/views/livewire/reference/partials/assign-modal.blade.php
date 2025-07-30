@@ -75,7 +75,7 @@
                                     <label class="flex items-center p-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer border-b border-gray-100 dark:border-gray-600 last:border-b-0">
                                         <input 
                                             type="checkbox" 
-                                            wire:model="selectedItems" 
+                                            wire:model.live="selectedItems" 
                                             value="{{ $item->id }}" 
                                             class="mr-3 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                                         >
