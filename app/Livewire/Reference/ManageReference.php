@@ -43,7 +43,7 @@ class ManageReference extends Component
     public $user_types = [];
 
     // Assignment fields
-    public $assignmentType = 'all_users'; // 'users', 'products', 'sellers'
+    public $assignmentType = 'all'; // 'users', 'products', 'sellers'
     public $selectedItems = [];
     public $searchItems = '';
 
@@ -85,7 +85,7 @@ class ManageReference extends Component
             'starts_at' => 'required|date',
             'expires_at' => 'required|date|after:starts_at',
             'status' => 'required|in:active,inactive,expired',
-            'applicable_to' => 'required|in:all,users,products,sellers',
+            'applicable_to' => 'required|in:all,all_users,all_gym,all_shop', //Not for specific users,specific gym or shop
             'user_types' => 'nullable|array',
         ];
     }
@@ -229,7 +229,7 @@ class ManageReference extends Component
         
         switch ($this->assignmentType) {
             case 'specific_shop_user':
-                $query = User::where('role', 'Seller');
+                $query = User::where('role', 'Shop Owner');
                 if ($this->searchItems) {
                     $query->where(function($q) {
                         $q->where('name', 'like', '%' . $this->searchItems . '%')
@@ -239,7 +239,7 @@ class ManageReference extends Component
                 break;
                 
             case 'specific_gym':
-                $query = User::whereIn('role', ['Gym Owner', 'Trainer', 'Influencer', 'Dietitian']);
+                $query = User::whereIn('role', ['Gym Owner/Trainer/Influencer/Dietitian']);
                 if ($this->searchItems) {
                     $query->where(function($q) {
                         $q->where('name', 'like', '%' . $this->searchItems . '%')

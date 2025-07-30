@@ -239,7 +239,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
             <!-- Industry Selection -->
             <flux:select wire:model.live="role" placeholder="Choose your category..." label="I am a...">
             <flux:select.option value="User">Regular User</flux:select.option>
-            <flux:select.option value="Gym Owner/Trainer/Influencer/Dietitian/">Gym Owner/Trainer/Influencer/Dietitian</flux:select.option>
+            <flux:select.option value="Gym Owner/Trainer/Influencer/Dietitian">Gym Owner/Trainer/Influencer/Dietitian</flux:select.option>
             <flux:select.option value="Shop Owner">Shop Owner</flux:select.option>
             </flux:select>
             
