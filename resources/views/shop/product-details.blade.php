@@ -191,8 +191,8 @@
                                             </p>
                                             <span class="product-price mb--15 d-block"
                                                 style="color: #DC2626; font-weight: 600;" id="product-price">
-                                                {{ format_price($product->id, 'actual') }}<span
-                                                    class="old-price ml--15">$69.35</span></span>
+                                                {{ format_price($product->id) }}<span
+                                                    class="old-price ml--15">{{ format_price($product->id, 'actual') }}</span></span>
                                             @if (Auth::user() && Auth::user()->role == 'Gym Owner/Trainer/Influencer/Dietitian')
                                                 <a class="mb-4" data-bs-toggle="modal" data-bs-target="#exampleModal">
                                                     Bulk Order
@@ -693,7 +693,7 @@
                                                 <span class="availability">500g Pack</span>
                                                 <div class="price-area">
                                                     <span class="current">{{ format_price($product->id) }}</span>
-                                                    <div class="previous">{{ format_price($product->id) }}</div>
+                                                    <div class="previous">{{ format_price($product->id, 'actual') }}</div>
                                                 </div>
                                                 <div class="cart-counter-action">
                                                     <div class="quantity-edit">
@@ -1286,3 +1286,4 @@
         });
     });
 </script>
+

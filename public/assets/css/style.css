@@ -30495,3 +30495,19 @@ header.header-three .sub-dropdown .submenu.third-lvl.base {
         font-size: 11px;
     }
 }
+
+@media (max-width: 1024px) {
+    .filters {
+        display: none;
+    }
+}
+
+.filter-toggle-button {
+    display: none;
+}
+
+@media (max-width: 1024px) {
+    .filter-toggle-button {
+        display: block;
+    }
+}
