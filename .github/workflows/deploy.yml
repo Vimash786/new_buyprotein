@@ -26,7 +26,8 @@ jobs:
         protocol: ftps
         server-dir: ./
         dangerous-clean-slate: false
-        excludes: |
+        exclude: |
           .env
           public/build
           node_modules
+          
