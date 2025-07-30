@@ -11,9 +11,9 @@
                             </p>
                         </div>
                         <div class="contact-number-area">
-                            <p>Need help? Call Us:
+                            {{-- <p>Need help? Call Us:
                                 <a href="tel:+4733378901">+258 3268 21485</a>
-                            </p>
+                            </p> --}}
                         </div>
                     </div>
                 </div>

@@ -8,11 +8,10 @@ if (!function_exists('format_price')) {
     function format_price($productId, $type = '')
     {
         $product = products::find($productId);
-
+        $variant = ProductVariantCombination::where('product_id', $product->id)->first();
         if (Auth::user()) {
             $userRole = Auth::user()->role;
-
-            $variant = ProductVariantCombination::where('product_id', $product->id)->first();
+            
             if ($variant) {
                 if ($userRole == 'User') {
                     if ($type == 'actual' && $variant->regular_user_discount > 0) {
@@ -55,7 +54,6 @@ if (!function_exists('format_price')) {
                 }
             }
         } else {
-            $variant = ProductVariantCombination::where('product_id', $product->id)->first();
             if ($variant) {
                 if ($type == 'actual' && $variant->regular_user_discount > 0) {
                     return '₹' . number_format($variant->regular_user_price, 2);

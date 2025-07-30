@@ -2,10 +2,18 @@
 
 @section('content')
     <!-- shop[ grid sidebar wrapper -->
+
     <div class="shop-grid-sidebar-area rts-section-gap">
         <div class="container">
+            <div class="row">
+                <div class="col text-end filter-toggle-button">
+                    <button class="filter-toggle border border-info rounded p-2 me-4 mt-2 mb-2 w-auto">
+                        <i class="fa-solid fa-filter" style="color: #009ec9;"></i>
+                    </button>
+                </div>
+            </div>
             <div class="row g-0">
-                <div class="col-xl-3 col-lg-12 pr--70 pr_lg--10 pr_sm--10 pr_md--5 rts-sticky-column-item">
+                <div class="col-xl-3 col-lg-12 pr--70 pr_lg--10 pr_sm--10 pr_md--5 rts-sticky-column-item filters">
                     <div class="sidebar-filter-main theiaStickySidebar">
                         <div class="single-filter-box">
                             <h5 class="title">Price Filter</h5>
@@ -75,58 +83,52 @@
                             <div class="row g-4">
                                 @if (isset($products))
                                     @foreach ($products as $product)
-                                        @if (isset($product->seller) && $product->seller->status == 'approved')
-                                            <div class="col-md-3">
+                                        @if ($product && isset($product->seller) && $product->seller->status === 'approved')
+                                            <div class="col-6 col-md-4 col-lg-3 col-xxl-2">
                                                 <div class="single-shopping-card-one">
+                                                    <!-- Image -->
                                                     <div class="image-and-action-area-wrapper">
                                                         <a href="{{ route('product.details', Crypt::encrypt($product->id)) }}"
                                                             class="thumbnail-preview">
                                                             @if ($product->discount_percentage > 0)
                                                                 <div class="badge">
-                                                                    <span>{{ $product->discount_percentage }}% <br>
-                                                                        Off
-                                                                    </span>
+                                                                    <span>{{ $product->discount_percentage }}%
+                                                                        <br>Off</span>
                                                                     <i class="fa-solid fa-bookmark"></i>
                                                                 </div>
                                                             @endif
+
                                                             @php
-                                                                $variantThumbnail = $product->images->first(function (
-                                                                    $img,
-                                                                ) {
-                                                                    return $img->image_type === 'variant_thumbnail';
-                                                                });
+                                                                $variantThumbnail = $product->images->first(
+                                                                    fn($img) => $img->image_type ===
+                                                                        'variant_thumbnail',
+                                                                );
                                                             @endphp
 
-                                                            @if ($product->variants->count() > 0)
-                                                                @if ($variantThumbnail)
-                                                                    <img src="{{ asset('storage/' . $variantThumbnail->image_path) }}"
-                                                                        alt="product">
-                                                                @endif
-                                                            @else
-                                                                <img src="{{ asset('storage/' . $product->thumbnail_image) }}"
-                                                                    alt="product">
-                                                            @endif
-                                                            {{-- <img src="{{ asset('storage/' . $product->thumbnail_image) }}"
-                                                            alt="product"> --}}
+                                                            <img src="{{ asset('storage/' . ($variantThumbnail->image_path ?? $product->thumbnail_image)) }}"
+                                                                alt="{{ $product->name }}" loading="lazy">
                                                         </a>
                                                     </div>
 
+                                                    <!-- Content -->
                                                     <div class="body-content">
-
                                                         <a
                                                             href="{{ route('product.details', Crypt::encrypt($product->id)) }}">
                                                             <h4 class="title">{{ $product->name }}</h4>
                                                         </a>
-                                                        <span class="availability">500g Pack</span>
+                                                        <span
+                                                            class="availability">{{ $product->unit ?? '500g Pack' }}</span>
                                                         <div class="price-area">
                                                             <span class="current">{{ format_price($product->id) }}</span>
                                                             <div class="previous">
                                                                 {{ format_price($product->id, 'actual') }}</div>
                                                         </div>
+
+                                                        <!-- Cart -->
                                                         <div class="cart-counter-action">
                                                             <div class="quantity-edit">
-                                                                <input type="text" class="input quantity-input"
-                                                                    value="1">
+                                                                <input type="number" class="input quantity-input"
+                                                                    value="1" min="1">
                                                                 <div class="button-wrapper-action">
                                                                     <button class="button"><i
                                                                             class="fa-regular fa-chevron-down"></i></button>
@@ -137,12 +139,7 @@
                                                             <a href="#"
                                                                 class="rts-btn btn-primary radious-sm with-icon add-to-cart-btn"
                                                                 data-product-id="{{ $product->id }}">
-                                                                <div class="btn-text">
-                                                                    Add To Cart
-                                                                </div>
-                                                                <div class="arrow-icon">
-                                                                    <i class="fa-regular fa-cart-shopping"></i>
-                                                                </div>
+                                                                <div class="btn-text">Add To Cart</div>
                                                                 <div class="arrow-icon">
                                                                     <i class="fa-regular fa-cart-shopping"></i>
                                                                 </div>
@@ -157,6 +154,7 @@
                             </div>
                         </div>
                     </div>
+
 
                     @if (isset($products))
                         <div class="d-flex justify-content-center">
@@ -223,6 +221,12 @@
                     }
                 }
             });
+        });
+
+        $('.filter-toggle').click(function() {
+            if (window.innerWidth <= 1024) {
+                $('.filters').slideToggle(200);
+            }
         });
     });
 </script>

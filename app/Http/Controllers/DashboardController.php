@@ -39,8 +39,8 @@ class DashboardController extends Controller
         // $productCounts = orders::select('product_id', DB::raw('count(*) as total'))->groupBy('product_id')->orderBy('product_id')->get();
         // $productIds = $productCounts->pluck('product_id');
         // $products = products::with(['subCategory', 'category'])->whereIn('id', $productIds)->get();
-        $everyDayEssentials = products::with(['subCategory', 'category', 'images', 'variants', 'seller'])->where('section_category', 'LIKE', '%"everyday_essential"%')->where('super_status', 'approved')->limit(10)->get();
-        $populerProducts = products::with(['images', 'variants', 'seller'])->where('section_category', 'LIKE', '%"popular_pick"%')->where('super_status', 'approved')->limit(6)->get();
+        $everyDayEssentials = products::with(['subCategory', 'category', 'images', 'variants', 'seller'])->whereJsonContains('section_category', 'everyday_essential')->where('super_status', 'approved')->limit(10)->get();
+        $populerProducts = products::with(['images', 'variants', 'seller'])->whereJsonContains('section_category', 'popular_pick')->where('super_status', 'approved')->limit(6)->get();
         $latestProducts = products::with(['images', 'variants', 'seller'])->orderBy('created_at', 'desc')->where('super_status', 'approved')->take(12)->get();
         $offers = products::with(['images', 'variants', 'seller'])->where('section_category', 'LIKE', '%"exclusive_deal"%')->where('super_status', 'approved')->limit(8)->get();
         $banners = Banner::where('status', 'active')->orderBy('created_at', 'desc')->get();
@@ -66,17 +66,73 @@ class DashboardController extends Controller
                 $productsQuery->orderBy('created_at', 'desc');
             }
 
-            if ($request->filled('min_price') && $request->filled('max_price')) {
+            $allProducts = $productsQuery->get();
+
+            $filteredProducts = $allProducts->filter(function ($product) use ($request) {
                 $min = $request->input('min_price');
                 $max = $request->input('max_price');
-                $productsQuery->whereBetween('price', [$min, $max]);
-            }
 
-            $products = $productsQuery->paginate(10);
+                $finalPrice = $this->getFinalPriceValue($product);
 
-            return view('shop.shop', compact('categories', 'products', 'brands'));
+                return (!$min || $finalPrice >= $min) && (!$max || $finalPrice <= $max);
+            });
+
+            $page = request()->get('page', 1);
+            $perPage = 10;
+            $paginated = new \Illuminate\Pagination\LengthAwarePaginator(
+                $filteredProducts->forPage($page, $perPage),
+                $filteredProducts->count(),
+                $perPage,
+                $page,
+                ['path' => request()->url(), 'query' => request()->query()]
+            );
+
+            // if ($request->filled('min_price') && $request->filled('max_price')) {
+            //     $min = $request->input('min_price');
+            //     $max = $request->input('max_price');
+            //     $productsQuery->whereBetween('price', [$min, $max]);
+            // }
+
+            return view('shop.shop', [
+                'categories' => $categories,
+                'brands' => $brands,
+                'products' => $paginated
+            ]);
         } catch (Exception $e) {
             return redirect()->back()->with('error', 'Invalid category or brand ID.');
+        }
+    }
+
+    protected function getFinalPriceValue($product)
+    {
+        $user = Auth::user();
+        $type = 'final';
+
+        $variant = $product->variantCombinations->first();
+
+        if ($user) {
+            $role = $user->role;
+
+            if ($variant) {
+                return match ($role) {
+                    'User' => $variant->regular_user_final_price,
+                    'Gym Owner/Trainer/Influencer/Dietitian' => $variant->gym_owner_final_price,
+                    'Shop Owner' => $variant->shop_owner_final_price,
+                    default => $variant->regular_user_final_price
+                };
+            } else {
+                return match ($role) {
+                    'User' => $product->regular_user_final_price,
+                    'Gym Owner/Trainer/Influencer/Dietitian' => $product->gym_owner_final_price,
+                    'Shop Owner' => $product->shop_owner_final_price,
+                    default => $product->regular_user_final_price
+                };
+            }
+        } else {
+            // guest
+            return $variant
+                ? $variant->regular_user_final_price
+                : $product->regular_user_final_price;
         }
     }
 

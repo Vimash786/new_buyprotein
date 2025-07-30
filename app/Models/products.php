@@ -43,7 +43,7 @@ class products extends Model
         'seller_id' => 'integer',
         'category_id' => 'integer',
         'sub_category_id' => 'integer',
-        
+
         'gym_owner_price' => 'decimal:2',
         'regular_user_price' => 'decimal:2',
         'shop_owner_price' => 'decimal:2',
@@ -168,16 +168,16 @@ class products extends Model
     public function getSectionCategoryDisplayAttribute()
     {
         $categories = is_array($this->section_category) ? $this->section_category : [$this->section_category];
-        
-        $displayNames = array_map(function($category) {
-            return match($category) {
+
+        $displayNames = array_map(function ($category) {
+            return match ($category) {
                 'everyday_essential' => 'Everyday Essential',
                 'popular_pick' => 'Popular Pick',
                 'exclusive_deal' => 'Exclusive Deal & Offers',
                 default => 'Everyday Essential'
             };
         }, $categories);
-        
+
         return implode(', ', $displayNames);
     }
 
