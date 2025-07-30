@@ -1,75 +1,32 @@
-name: Deploy Laravel App to Server
-
+name: Deploy to cPanel
 on:
   push:
     branches:
       - main
 
-permissions:
-  contents: write
-
 jobs:
-  deploy:
+  web-deploy:
+    name: Deploy
     runs-on: ubuntu-latest
-
     steps:
-      # Checkout the code
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      # Setup Node.js (for Volt + Tailwind)
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-
-      # Cache Composer dependencies
-      - name: Cache Composer dependencies
-        uses: actions/cache@v3
-        with:
-          path: vendor
-          key: composer-${{ hashFiles('composer.lock') }}
-          restore-keys: composer-
-
-      # Install backend and frontend dependencies, build assets
-      - name: Install Dependencies
-        run: |
-          composer install --no-dev --optimize-autoloader --no-scripts --prefer-dist
-          npm ci --production
-          npm run build
-
-      # Setup environment for deployment
-      - name: Setup Environment
-        run: |
-          # Create minimal .env for build process
-          echo "DB_CONNECTION=mysql" > .env
-          echo "DB_HOST=127.0.0.1" >> .env
-          echo "DB_PORT=3306" >> .env
-          echo "DB_DATABASE=temp_db" >> .env
-          echo "DB_USERNAME=root" >> .env
-          echo "DB_PASSWORD=" >> .env
-          echo "CACHE_STORE=file" >> .env
-          echo "SESSION_DRIVER=file" >> .env
-          echo "APP_ENV=production" >> .env
-          echo "APP_DEBUG=false" >> .env
-          echo "APP_KEY=base64:$(openssl rand -base64 32)" >> .env
-
-      # Laravel optimizations (needs PHP installed on GitHub runner)
-      - name: Laravel Optimizations
-        run: |
-          php artisan config:cache
-          php artisan route:cache
-          php artisan view:cache
-          php artisan optimize:clear
-
-      # Deploy via SFTP
-      - name: Deploy via SFTP
-        uses: easingthemes/ssh-deploy@main
-        with:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          ARGS: "-rlgoDzvc -i --delete"
-          SOURCE: "./"
-          REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
-          REMOTE_USER: ${{ secrets.REMOTE_USER }}
-          TARGET: ${{ secrets.REMOTE_TARGET }}
-          EXCLUDE: "/node_modules/, /.git/, /.github/, .env"
+    - name: Get latest code
+      uses: actions/checkout@v3
+    
+    - name: List files
+      run: |
+        pwd
+        ls -la
+      
+    - name: Deploy to Server
+      uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+      with:
+        server: ${{ secrets.FTP_SERVER }}
+        username: ${{ secrets.FTP_USERNAME }}
+        password: ${{ secrets.FTP_PASSWORD }}
+        protocol: ftps
+        server-dir: ./
+        dangerous-clean-slate: false
+        excludes: |
+          .env
+          public/build
+          node_modules
