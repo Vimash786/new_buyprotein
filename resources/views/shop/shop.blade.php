@@ -116,8 +116,6 @@
                                                             href="{{ route('product.details', Crypt::encrypt($product->id)) }}">
                                                             <h4 class="title">{{ $product->name }}</h4>
                                                         </a>
-                                                        <span
-                                                            class="availability">{{ $product->unit ?? '500g Pack' }}</span>
                                                         <div class="price-area">
                                                             <span class="current">{{ format_price($product->id) }}</span>
                                                             <div class="previous">

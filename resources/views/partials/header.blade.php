@@ -48,19 +48,15 @@
                                     @endforeach
                                 </ul>
                             </div>
-                            <form action="#" class="search-header">
-                                <input type="text" placeholder="Search for products, categories or brands" required>
-                                <a href="#" class="rts-btn btn-primary radious-sm with-icon">
-                                    <div class="btn-text">
-                                        Search
-                                    </div>
+                            <form action="{{ route('shop') }}" method="GET" class="search-header">
+                                <input type="text" name="search"
+                                    placeholder="Search for products, categories or brands" required>
+                                <button type="submit" class="rts-btn btn-primary radious-sm with-icon">
+                                    <div class="btn-text">Search</div>
                                     <div class="arrow-icon">
                                         <i class="fa-light fa-magnifying-glass"></i>
                                     </div>
-                                    <div class="arrow-icon">
-                                        <i class="fa-light fa-magnifying-glass"></i>
-                                    </div>
-                                </a>
+                                </button>
                             </form>
                         </div>
                         <div class="actions-area">
@@ -128,8 +124,15 @@
                             <div class="btn-border-only cart category-hover-header">
                                 <i class="fa-sharp fa-regular fa-cart-shopping"></i>
                                 <span class="text">My Cart</span>
+                                @php
+                                    $cartCount = 0;
+                                    if (!Auth::user()) {
+                                        $cart = session('cart', []);
+                                        $cartCount = count($cart);
+                                    }
+                                @endphp
                                 <span class="number"><span
-                                        class="cartCount">{{ isset($cartData) ? $cartData->count() : 0 }}</span></span>
+                                        class="cartCount">{{ isset($cartData) ? $cartData->count() : $cartCount }}</span></span>
                                 {{-- <div class="category-sub-menu card-number-show">
                                     <h5 class="shopping-cart-number">Shopping Cart
                                         ({{ isset($cartData) ? $cartData->count() : 0 }})</h5>
@@ -214,28 +217,17 @@
                                         <a class="nav-link" href="{{ route('home') }}">Home</a>
                                     </li>
                                     <li class="parent with-megamenu">
-                                        <a href="{{ route('shop') }}">Shop</a>
+                                        <a href="{{ route('shop') }}">Explore</a>
                                     </li>
                                     <li class="parent has-dropdown">
-                                        <a class="nav-link" href="{{ route('user.blogs') }}">Blog</a>
+                                        <a class="nav-link"
+                                            href="{{ route('shop', ['type' => 'category']) }}">Categories</a>
                                     </li>
                                     <li class="parent has-dropdown">
-                                        <a class="nav-link" href="{{ route('term.condition') }}">Terms &
-                                            Condition</a>
+                                        <a class="nav-link" href="{{ route('shop', ['type' => 'offer']) }}">Offers</a>
                                     </li>
-                                    <li class="parent"><a href="{{ route('about.us') }}">About</a></li>
-                                    <li class="parent"><a href="{{ route('contact') }}">Contact</a></li>
-                                    <li class="parent has-dropdown">
-                                        <a class="nav-link" href="{{ route('privacy.policy') }}">Policies</a>
-                                        <ul class="submenu">
-                                            <li><a class="sub-b" href="{{ route('privacy.policy') }}">Privacy
-                                                    Policy</a></li>
-                                            <li><a class="sub-b" href="{{ route('shipping.policy') }}">Shipping
-                                                    Policy</a></li>
-                                            <li><a class="sub-b" href="{{ route('return.policy') }}">Return
-                                                    Policy</a></li>
-                                        </ul>
-                                    </li>
+                                    <li class="parent"><a href="{{ route('about.us') }}">About Us</a></li>
+                                    <li class="parent"><a href="{{ route('contact') }}">Contact Us</a></li>
                                 </ul>
                             </nav>
                         </div>
@@ -253,8 +245,8 @@
                 <div class="col-lg-12">
                     <div class="logo-search-category-wrapper after-md-device-header">
                         <a href="{{ route('home') }}" class="logo-area">
-                            <img src="{{ asset('buy-protein.jpg') }}" alt="logo-main"
-                                style="width: 288px;" class="logo">
+                            <img src="{{ asset('buy-protein.jpg') }}" alt="logo-main" style="width: 288px;"
+                                class="logo">
                         </a>
                         <div class="category-search-wrapper">
                             <div class="category-btn category-hover-header">
@@ -357,79 +349,7 @@
                                 <div class="btn-border-only cart category-hover-header">
                                     <i class="fa-sharp fa-regular fa-cart-shopping"></i>
                                     <span class="text">My Cart</span>
-                                    <div class="category-sub-menu card-number-show">
-                                        <h5 class="shopping-cart-number">Shopping Cart
-                                            ({{ isset($cartData) ? $cartData->count() : '' }})</h5>
-                                        <div class="cart-items-scroll-vertical">
-                                            @php
-                                                $totalPrice = 0;
-                                            @endphp
-                                            @if (isset($cartData))
-                                                @foreach ($cartData as $cartItem)
-                                                    @php
-                                                        $product = $products
-                                                            ->where('id', $cartItem->product_id)
-                                                            ->first();
-                                                        if ($product) {
-                                                            $itemTotal = $cartItem->price * $cartItem->quantity;
-                                                            $totalPrice += $itemTotal;
-                                                        }
-                                                    @endphp
-                                                    @if ($product)
-                                                        <div class="cart-item-1 border-top">
-                                                            <div class="img-name">
-                                                                <div class="thumbanil">
-                                                                    <img src="{{ asset('storage/' . $product->thumbnail_image) }}"
-                                                                        alt="">
-                                                                </div>
-                                                                <div class="details">
-                                                                    <a
-                                                                        href="{{ route('product.details', Crypt::encrypt($product->id)) }}">
-                                                                        <h5 class="title">{{ $product->name }}</h5>
-                                                                    </a>
-                                                                    <div class="number">
-                                                                        {{ $cartItem->quantity }} <i
-                                                                            class="fa-regular fa-x"></i>
-                                                                        <span>₹{{ number_format($itemTotal, 2) }}</span>
-                                                                    </div>
-                                                                </div>
-                                                                <div class="close-c1">
-                                                                    <button class="delete-cart-item"
-                                                                        data-id="{{ $cartItem->id }}"
-                                                                        style="border: none; background: none;">
-                                                                        <i class="fa-regular fa-x"></i>
-                                                                    </button>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    @endif
-                                                @endforeach
-                                            @endif
-                                        </div>
 
-                                        <div class="sub-total-cart-balance">
-                                            <div class="bottom-content-deals mt--10">
-                                                <div class="top">
-                                                    <span>Sub Total:</span>
-                                                    <span class="number-c">₹{{ $totalPrice }}</span>
-                                                </div>
-                                                <div class="single-progress-area-incard">
-                                                    <div class="progress">
-                                                        <div class="progress-bar wow fadeInLeft" role="progressbar"
-                                                            style="width: 80%" aria-valuenow="25" aria-valuemin="0"
-                                                            aria-valuemax="100"></div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div
-                                                class="button-wrapper d-flex align-items-center justify-content-between">
-                                                <a href="{{ route('user.cart') }}" class="rts-btn btn-primary ">View
-                                                    Cart</a>
-                                                <a href="checkout.html"
-                                                    class="rts-btn btn-primary border-only">CheckOut</a>
-                                            </div>
-                                        </div>
-                                    </div>
                                     <a href="{{ route('user.cart') }}" class="over_link"></a>
                                 </div>
                             </div>

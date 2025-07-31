@@ -23,6 +23,11 @@ Route::get('/our-blogs', [DashboardController::class, 'blogs'])->name('user.blog
 Route::get('/our-blogs/{id}', [DashboardController::class, 'blogDetails'])->name('blog.details');
 Route::post('/submit-commet/{id}', [DashboardController::class, 'blogComment'])->name('blog.comment');
 
+// Add to cart
+Route::post('/add-to-cart', [DashboardController::class, 'addToCart'])->name('cart.add');
+Route::get('/cart', [DashboardController::class, 'cart'])->name('user.cart');
+Route::get('/checkout', [DashboardController::class, 'checkout'])->name('user.checkout');
+
 
 // Route::get('/', function () {
 //     return view('dashboard');
@@ -62,8 +67,8 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/user-account', [DashboardController::class, 'userAccount'])->name('user.account');
     Route::post('/update-user-details', [DashboardController::class, 'updateUserDetails'])->name('update.user.details');
-    Route::get('/cart', [DashboardController::class, 'cart'])->name('user.cart');
-    Route::post('/add-to-cart', [DashboardController::class, 'addToCart'])->name('cart.add');
+    
+    
     Route::delete('/remove-cart/{id}', [DashboardController::class, 'removeCart'])->name('cart.remove');
     Route::get('/wishlist', [DashboardController::class, 'wishList'])->name('user.wishlist');
     Route::post('/add-to-wishlist', [DashboardController::class, 'addToWishList'])->name('wishlist.add');
@@ -75,7 +80,7 @@ Route::middleware(['auth'])->group(function () {
 
     Route::post('/apply-coupon', [DashboardController::class, 'applyCoupon'])->name('apply.coupon');
 
-    Route::get('/checkout', [DashboardController::class, 'checkout'])->name('user.checkout');
+    
 
     Route::get('razorpay', [RazorpayPaymentController::class, 'index'])->name('razorpay.index');
     Route::post('/razorpay-payment', [RazorpayPaymentController::class, 'payment'])->name('razorpay.payment');

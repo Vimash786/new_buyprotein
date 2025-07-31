@@ -66,7 +66,19 @@ class DashboardController extends Controller
             } elseif ($type == 'new-arrivals') {
                 $productsQuery->orderBy('created_at', 'desc');
             }
-
+            if ($request->filled('search')) {
+                $search = $request->input('search');
+                $productsQuery->where(function ($query) use ($search) {
+                    $query->where('name', 'like', '%' . $search . '%')
+                        ->orWhereHas('category', function ($q) use ($search) {
+                            $q->where('name', 'like', '%' . $search . '%');
+                        })
+                        ->orWhereHas('seller', function ($q) use ($search) {
+                            $q->where('name', 'like', '%' . $search . '%');
+                        });
+                });
+            }
+            
             $allProducts = $productsQuery->get();
 
             $filteredProducts = $allProducts->filter(function ($product) use ($request) {
@@ -237,18 +249,36 @@ class DashboardController extends Controller
 
         $price = $this->calculatePrice($product, $variantOptionIds, $request->variant_option_ids);
 
-        $userId = Auth::id();
+        if (Auth::check()) {
+            $userId = Auth::id();
 
-        Cart::create([
-            'user_id' => $userId,
-            'product_id' => $product->id,
-            'variant_option_ids' => $variantOptionIds,
-            'quantity' => $request->quantity,
-            'price' => $price
-        ]);
+            Cart::create([
+                'user_id' => $userId,
+                'product_id' => $product->id,
+                'variant_option_ids' => $variantOptionIds,
+                'quantity' => $request->quantity,
+                'price' => $price
+            ]);
 
-        $cartData = Cart::where('user_id', Auth::user()->id)->get();
-        $countCart = $cartData->count();
+            $cartData = Cart::where('user_id', Auth::user()->id)->get();
+            $countCart = $cartData->count();
+        } else {
+            $cart = session()->get('cart', []);
+
+            $itemKey = $product->id . '_' . implode('_', $variantOptionIds);
+
+            $cart[$itemKey] = [
+                'product_id' => $product->id,
+                'variant_option_ids' => $variantOptionIds,
+                'quantity' => $request->quantity,
+                'price' => $price,
+                'name' => $product->name,
+            ];
+
+            session()->put('cart', $cart);
+
+            $countCart = count($cart);
+        }
 
         return response()->json(['status' => 'success', 'cartCount' => $countCart]);
     }
@@ -414,8 +444,28 @@ class DashboardController extends Controller
 
     public function cart()
     {
-        $cartData = Cart::with(['product', 'product.images'])->where('user_id', Auth::user()->id)->get();
+        if (Auth::check()) {
+            $cartData = Cart::with(['product', 'product.images'])->where('user_id', Auth::user()->id)->get();
+        } else {
+            $sessionCart = session('cart', []);
+            $cartData = [];
 
+            foreach ($sessionCart as $item) {
+                $product = products::with('images')->find($item['product_id']);
+
+                if ($product) {
+                    $cartData[] = (object)[
+                        'id' => $item['product_id'] . '_' . implode('_', $item['variant_option_ids']),
+                        'product' => $product,
+                        'variant_option_ids' => $item['variant_option_ids'],
+                        'quantity' => $item['quantity'],
+                        'price' => $item['price'],
+                    ];
+                }
+            }
+
+            $cartData = collect($cartData);
+        }
         return view('shop.cart', compact('cartData'));
     }
 
@@ -423,13 +473,34 @@ class DashboardController extends Controller
     {
         try {
 
-            $cartData = Cart::with('product')->where('user_id', Auth::user()->id)->get();
-            $order = orders::where('user_id', Auth::user()->id)->orderBy('created_at', 'desc')->first();
-
+            $cartData = collect(); // initialize empty collection
             $billingAddress = [];
-            if ($order) {
-                $orderId = $order->id;
-                $billingAddress = BillingDetail::where('order_id', $orderId)->get();
+
+            if (Auth::check()) {
+                $cartData = Cart::with('product')->where('user_id', Auth::user()->id)->get();
+                $order = orders::where('user_id', Auth::user()->id)->orderBy('created_at', 'desc')->first();
+
+                $billingAddress = [];
+                if ($order) {
+                    $orderId = $order->id;
+                    $billingAddress = BillingDetail::where('order_id', $orderId)->get();
+                }
+            } else {
+                $sessionCart = session('cart', []);
+
+                foreach ($sessionCart as $item) {
+                    $product = Products::find($item['product_id']);
+
+                    if ($product) {
+                        $cartData->push((object)[
+                            'id' => $item['product_id'] . '_' . implode('_', $item['variant_option_ids']),
+                            'product' => $product,
+                            'variant_option_ids' => $item['variant_option_ids'],
+                            'quantity' => $item['quantity'],
+                            'price' => $item['price'],
+                        ]);
+                    }
+                }
             }
 
             return view('shop.checkout', compact('cartData', 'billingAddress'));
@@ -594,11 +665,13 @@ class DashboardController extends Controller
     public function applyCoupon(Request $request)
     {
         $couponData = Coupon::with('assignments')->where('code', $request->coupon)->first();
+        $couponType = '';
 
         if (!$couponData) {
             $couponData = Reference::with('assignments')->where('code', $request->coupon)->first();
+            $couponType = 'reference';
         }
-        dd($couponData);
+
         $cartData = Cart::with(['product.seller'])->where('user_id', Auth::user()->id)->get();
         $user = Auth::user();
 
@@ -609,22 +682,28 @@ class DashboardController extends Controller
 
                         $assignedUserIds = [];
 
-                        if ($couponData->applicable_to != 'all_users' && $couponData->applicable_to != 'all_products') {
-
+                        if ($couponType == 'reference') {
                             $assignedUserIds = $couponData->assignments->where('assignable_type', 'user')->pluck('assignable_id')->toArray();
 
-                            $productIds = $couponData->assignments->pluck('assignable_id')->toArray();
-                            $cartProductIds = $cartData->pluck('product_id')->toArray();
-
-                            $matchedProductIds = array_intersect($cartProductIds, $productIds);
-
-                            // working fine for products
-                            $matchingCartItems = $cartData->whereIn('product_id', $matchedProductIds);
-
-                            // working fine for user
-                            $matchingCartItems = $cartData->whereIn('user_id', Auth::user()->id);
-                        } else {
                             $matchingCartItems = $cartData;
+                        } else {
+                            if ($couponData->applicable_to != 'all_users' && $couponData->applicable_to != 'all_products') {
+
+                                $assignedUserIds = $couponData->assignments->where('assignable_type', 'user')->pluck('assignable_id')->toArray();
+
+                                $productIds = $couponData->assignments->pluck('assignable_id')->toArray();
+                                $cartProductIds = $cartData->pluck('product_id')->toArray();
+
+                                $matchedProductIds = array_intersect($cartProductIds, $productIds);
+
+                                // working fine for products
+                                $matchingCartItems = $cartData->whereIn('product_id', $matchedProductIds);
+
+                                // working fine for user
+                                $matchingCartItems = $cartData->whereIn('user_id', Auth::user()->id);
+                            } else {
+                                $matchingCartItems = $cartData;
+                            }
                         }
 
                         $matchedSubtotal = $matchingCartItems->sum(function ($item) {
@@ -634,12 +713,96 @@ class DashboardController extends Controller
                         $perItemDiscounts = [];
                         $totalDiscount = 0;
 
-                        if (in_array(Auth::id(), $assignedUserIds) || $matchingCartItems->isNotEmpty() || $couponData->applicable_to == 'all_users' || $couponData->applicable_to == 'all_products') {
-                            if ($couponData->type == 'percentage') {
-                                foreach ($matchingCartItems as $item) {
-                                    if ($item->product->seller->user_id == $couponData->created_by) {
+                        if ($couponType == 'reference') {
+                            if (in_array(Auth::id(), $assignedUserIds) || in_array('all_shop', $couponData->applicable_to) || in_array('all_gym', $couponData->applicable_to)) {
+                                if ($couponData->type == 'percentage') {
+
+                                    foreach ($matchingCartItems as $item) {
                                         $itemSubtotal = $item->price * $item->quantity;
-                                        $itemDiscount = $itemSubtotal * ($couponData->value / 100);
+                                        $itemDiscount = $itemSubtotal * ($couponData->applyer_discount / 100);
+
+                                        $perItemDiscounts[] = [
+                                            'cart_item_id' => $item->id,
+                                            'product_id' => $item->product_id,
+                                            'quantity' => $item->quantity,
+                                            'item_subtotal' => $itemSubtotal,
+                                            'discount' => round($itemDiscount, 2),
+                                            'reference' => 'yes',
+                                        ];
+
+                                        $totalDiscount += $itemDiscount;
+                                    }
+                                    if (isset($couponData->maximum_discount) && $totalDiscount > $couponData->maximum_discount) {
+                                        $totalDiscount = $couponData->maximum_discount;
+
+                                        $perItemDiscounts = array_map(function ($item) use ($matchedSubtotal, $totalDiscount) {
+                                            $proportional = ($item['item_subtotal'] / $matchedSubtotal) * $totalDiscount;
+                                            $item['discount'] = round($proportional, 2);
+                                            return $item;
+                                        }, $perItemDiscounts);
+                                    }
+                                } else {
+                                    $flat = $couponData->value;
+                                    if ($flat > $matchedSubtotal) {
+                                        $flat = $matchedSubtotal;
+                                    }
+
+                                    foreach ($matchingCartItems as $item) {
+                                        $itemSubtotal = $item->price * $item->quantity;
+                                        $itemDiscount = ($itemSubtotal / $matchedSubtotal) * $flat;
+
+                                        $perItemDiscounts[] = [
+                                            'cart_item_id' => $item->id,
+                                            'product_id' => $item->product_id,
+                                            'quantity' => $item->quantity,
+                                            'item_subtotal' => $itemSubtotal,
+                                            'discount' => round($itemDiscount, 2),
+                                            'reference' => 'yes',
+                                        ];
+
+                                        $totalDiscount += $itemDiscount;
+                                    }
+
+                                    $totalDiscount = $flat;
+                                }
+                            }
+                        } else {
+                            if (in_array(Auth::id(), $assignedUserIds) || $matchingCartItems->isNotEmpty() || $couponData->applicable_to == 'all_users' || $couponData->applicable_to == 'all_products') {
+                                if ($couponData->type == 'percentage') {
+                                    foreach ($matchingCartItems as $item) {
+                                        if ($item->product->seller->user_id == $couponData->created_by) {
+                                            $itemSubtotal = $item->price * $item->quantity;
+                                            $itemDiscount = $itemSubtotal * ($couponData->value / 100);
+
+                                            $perItemDiscounts[] = [
+                                                'cart_item_id' => $item->id,
+                                                'product_id' => $item->product_id,
+                                                'quantity' => $item->quantity,
+                                                'item_subtotal' => $itemSubtotal,
+                                                'discount' => round($itemDiscount, 2),
+                                            ];
+
+                                            $totalDiscount += $itemDiscount;
+                                        }
+                                    }
+                                    if (isset($couponData->max_discount) && $totalDiscount > $couponData->max_discount) {
+                                        $totalDiscount = $couponData->max_discount;
+
+                                        $perItemDiscounts = array_map(function ($item) use ($matchedSubtotal, $totalDiscount) {
+                                            $proportional = ($item['item_subtotal'] / $matchedSubtotal) * $totalDiscount;
+                                            $item['discount'] = round($proportional, 2);
+                                            return $item;
+                                        }, $perItemDiscounts);
+                                    }
+                                } else {
+                                    $flat = $couponData->value;
+                                    if ($flat > $matchedSubtotal) {
+                                        $flat = $matchedSubtotal;
+                                    }
+
+                                    foreach ($matchingCartItems as $item) {
+                                        $itemSubtotal = $item->price * $item->quantity;
+                                        $itemDiscount = ($itemSubtotal / $matchedSubtotal) * $flat;
 
                                         $perItemDiscounts[] = [
                                             'cart_item_id' => $item->id,
@@ -651,42 +814,11 @@ class DashboardController extends Controller
 
                                         $totalDiscount += $itemDiscount;
                                     }
+
+                                    $totalDiscount = $flat;
                                 }
-                                if (isset($couponData->max_discount) && $totalDiscount > $couponData->max_discount) {
-                                    $totalDiscount = $couponData->max_discount;
-
-                                    $perItemDiscounts = array_map(function ($item) use ($matchedSubtotal, $totalDiscount) {
-                                        $proportional = ($item['item_subtotal'] / $matchedSubtotal) * $totalDiscount;
-                                        $item['discount'] = round($proportional, 2);
-                                        return $item;
-                                    }, $perItemDiscounts);
-                                }
-                            } else {
-                                $flat = $couponData->value;
-                                if ($flat > $matchedSubtotal) {
-                                    $flat = $matchedSubtotal;
-                                }
-
-                                foreach ($matchingCartItems as $item) {
-                                    $itemSubtotal = $item->price * $item->quantity;
-                                    $itemDiscount = ($itemSubtotal / $matchedSubtotal) * $flat;
-
-                                    $perItemDiscounts[] = [
-                                        'cart_item_id' => $item->id,
-                                        'product_id' => $item->product_id,
-                                        'quantity' => $item->quantity,
-                                        'item_subtotal' => $itemSubtotal,
-                                        'discount' => round($itemDiscount, 2),
-                                    ];
-
-                                    $totalDiscount += $itemDiscount;
-                                }
-
-                                $totalDiscount = $flat;
                             }
                         }
-
-
 
                         return response()->json([
                             'success' => true,

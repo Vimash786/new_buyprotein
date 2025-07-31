@@ -425,7 +425,7 @@
                 "key": "{{ config('services.razorpay.key') }}",
                 "amount": paymentAmount,
                 "currency": "INR",
-                "name": "My Laravel Shop",
+                "name": "Buy Protein",
                 "description": "Order Payment",
                 "image": "https://yourdomain.com/logo.png",
                 "handler": function(response) {

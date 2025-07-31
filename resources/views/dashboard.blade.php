@@ -240,7 +240,6 @@
                                                         href="{{ route('product.details', Crypt::encrypt($everyDayProduct->id)) }}">
                                                         <h4 class="title">{{ $everyDayProduct->name }}</h4>
                                                     </a>
-                                                    <span class="availability">500g Pack</span>
                                                     <div class="price-area">
                                                         {{-- <span class="current">₹{{ $everyDayProduct->regular_user_price }}</span> --}}
                                                         <div class="current">{{ format_price($everyDayProduct->id) }}</div>
@@ -358,9 +357,6 @@
                                                         href="{{ route('product.details', Crypt::encrypt($populerProduct->id)) }}">
                                                         <h4 class="title">{{ $populerProduct->name }}</h4>
                                                     </a>
-                                                    <span
-                                                        class="availability">{{ $populerProduct->unit ?? '500g Pack' }}</span>
-
                                                     <div class="price-area">
                                                         <span
                                                             class="current">{{ format_price($populerProduct->id) }}</span>
@@ -496,7 +492,6 @@
                                                                     href="{{ route('product.details', Crypt::encrypt($lat_pro->id)) }}">
                                                                     <h4 class="title">{{ $lat_pro->name }}</h4>
                                                                 </a>
-                                                                <span class="availability">500g Pack</span>
                                                                 <div class="price-area">
                                                                     <span
                                                                         class="current">{{ format_price($lat_pro->id) }}</span>
@@ -687,7 +682,6 @@
                                                     <a href="{{ route('product.details', Crypt::encrypt($offer->id)) }}">
                                                         <h4 class="title">{{ $offer->name }}</h4>
                                                     </a>
-                                                    <span class="availability">500g Pack</span>
                                                     <div class="price-area">
                                                         <span class="current">{{ format_price($offer->id) }}</span>
                                                         <div class="previous">
@@ -873,6 +867,9 @@
                     url: '{{ route('cart.add') }}',
                     type: 'POST',
                     dataType: 'json',
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
                     data: {
                         product_id: productId,
                         quantity: quantity,

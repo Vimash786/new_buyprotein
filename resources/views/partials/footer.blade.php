@@ -12,59 +12,46 @@
                                 <i class="fa-solid fa-phone-rotary"></i>
                             </div>
                             <div class="info">
-                                <span>Have Question? Call Us 24/7</span>
-                                <a href="#" class="number">+258 3692 2569</a>
+                                <span>Have Question? Call Us</span>
+                                <a href="#" class="number">+91 97240 86537</a>
                             </div>
                         </div>
                         <div class="opening-hour">
                             <div class="single">
-                                <p>Monday - Friday: <span>8:00am - 6:00pm</span></p>
-                            </div>
-                            <div class="single">
-                                <p>Saturday: <span>8:00am - 6:00pm</span></p>
-                            </div>
-                            <div class="single">
-                                <p>Sunday: <span>Service Close</span></p>
+                                <p>Monday - Friday: <span>10:00am - 6:00pm</span></p>
                             </div>
                         </div>
                     </div>
                     <!-- single footer area wrapper -->
-                    <!-- single footer area wrapper -->
-                    <div class="single-footer-wized">
-                        <h3 class="footer-title">Our Stores</h3>
-                        <div class="footer-nav">
-                            <ul>
-                                <li><a href="#">Delivery Information</a></li>
-                                <li><a href="{{ route('privacy.policy') }}">Privacy Policy</a></li>
-                                <li><a href="{{ route('term.condition') }}">Terms & Conditions</a></li>
-                                <li><a href="#">Support Center</a></li>
-                                <li><a href="#">Careers</a></li>
-                            </ul>
-                        </div>
-                    </div>
-                    <!-- single footer area wrapper -->
+  
                     <!-- single footer area wrapper -->
                     <div class="single-footer-wized">
                         <h3 class="footer-title">Shop Categories</h3>
+                        @php
+                            $allCat = \App\Models\Category::where('is_active', 1)->limit(5)->get();
+                        @endphp
                         <div class="footer-nav">
                             <ul>
-                                <li><a href="{{ route('contact') }}">Contact Us</a></li>
-                                <li><a href="#">Information</a></li>
-                                <li><a href="{{ route('about.us') }}">About Us</a></li>
-                                <li><a href="#">Careers</a></li>
-                                <li><a href="#">Nest Stories</a></li>
+                                @foreach ($allCat as $cat)
+                                    <li><a
+                                            href="{{ route('shop', ['type' => 'category', 'id' => Crypt::encrypt($cat->id)]) }}">{{ $cat->name }}</a>
+                                    </li>
+                                @endforeach
                             </ul>
                         </div>
                     </div>
                     <!-- single footer area wrapper -->
+
                     <!-- single footer area wrapper -->
                     <div class="single-footer-wized">
                         <h3 class="footer-title">Useful Links</h3>
                         <div class="footer-nav">
                             <ul>
+                                <li><a href="{{ route('about.us') }}">About Us</a></li>
+                                <li><a href="{{ route('contact') }}">Contact Us</a></li>
                                 <li><a href="{{ route('term.condition') }}">Terms & Conditions</a></li>
-                                <li><a href="{{ route('shipping.policy') }}">Shipping Policy</a></li>
                                 <li><a href="{{ route('privacy.policy') }}">Privacy Policy</a></li>
+                                <li><a href="{{ route('shipping.policy') }}">Shipping Policy</a></li>
                                 <li><a href="{{ route('return.policy') }}">Return Policy</a></li>
                             </ul>
                         </div>
@@ -74,7 +61,8 @@
                     <div class="single-footer-wized">
                         <h3 class="footer-title">Our Newsletter</h3>
                         <p class="disc-news-letter">
-                            Subscribe to the mailing list to receive updates one <br> the new arrivals and other discounts
+                            Subscribe to the mailing list to receive updates one <br> the new arrivals and other
+                            discounts
                         </p>
                         <form class="footersubscribe-form" action="#">
                             <input type="email" placeholder="Your email address" required>
@@ -91,16 +79,13 @@
                     <div class="social-one-wrapper">
                         <span>Follow Us:</span>
                         <ul>
-                            <li><a href="#"><i class="fa-brands fa-facebook-f"></i></a></li>
-                            <li><a href="#"><i class="fa-brands fa-twitter"></i></a></li>
-                            <li><a href="#"><i class="fa-brands fa-youtube"></i></a></li>
-                            <li><a href="#"><i class="fa-brands fa-whatsapp"></i></a></li>
-                            <li><a href="#"><i class="fa-brands fa-instagram"></i></a></li>
+                            <li><a href="https://www.facebook.com/share/16YivBxrm4/"><i
+                                        class="fa-brands fa-facebook-f"></i></a></li>
+                            <li><a href="https://www.instagram.com/buyproteins?igsh=bGowMXp2cW5ybWM4"><i
+                                        class="fa-brands fa-instagram"></i></a></li>
+                            <li><a href="https://youtube.com/@buyproteins?si=AnzFjw8hA3XZvcdC"><i
+                                        class="fa-brands fa-youtube"></i></a></li>
                         </ul>
-                    </div>
-                    <div class="payment-access">
-                        <span>Payment Accepts:</span>
-                        <img src="{{ asset('assets/images/payment/01.png') }}" alt="">
                     </div>
                 </div>
             </div>
@@ -118,11 +103,6 @@
                     <p class="disc">
                         Copyright 2025 <a href="#">©BuyProtein</a>. All rights reserved.
                     </p>
-                    <a href="#" class="playstore-app-area">
-                        <span>Download App</span>
-                        <img src="{{ asset('assets/images/payment/02.png') }}" alt="">
-                        <img src="{{ asset('assets/images/payment/03.png') }}" alt="">
-                    </a>
                 </div>
             </div>
         </div>
