@@ -192,6 +192,27 @@
                             </select>
                             @error('status') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                         </div>
+
+                        <!-- Applicable To -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Applicable To (Select Multiple)</label>
+                            <div class="space-y-2">
+                                <label class="flex items-center">
+                                    <input type="checkbox" wire:model.live="applicable_to" value="all" class="mr-3 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                    <span class="text-sm text-gray-700 dark:text-gray-300">All Users</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" wire:model.live="applicable_to" value="all_gym" class="mr-3 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                    <span class="text-sm text-gray-700 dark:text-gray-300">All Gym Owner/Trainer/Influencer/Dietitian</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" wire:model.live="applicable_to" value="all_shop" class="mr-3 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                    <span class="text-sm text-gray-700 dark:text-gray-300">All Shop Owner</span>
+                                </label>
+                            </div>
+                            @error('applicable_to') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                        </div>
+
                         <!-- User Types (when applicable_to is users) -->
                     </div>
 

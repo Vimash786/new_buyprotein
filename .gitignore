@@ -21,6 +21,5 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
-
 # GitHub workflows can now be pushed with updated PAT
 # /.github/

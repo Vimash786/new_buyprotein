@@ -40,13 +40,14 @@ class ManageReference extends Component
     public $starts_at = '';
     public $expires_at = '';
     public $status = 'active';
-    public $applicable_to = 'all';
+    public $applicable_to = [];
     public $user_types = [];
 
     // Assignment fields
-    public $assignmentType = 'all'; // 'users', 'products', 'sellers'
+    public $assignmentType = [];
     public $selectedItems = [];
     public $searchItems = '';
+    public $assignmentError = '';
 
     // Report functionality
     public $reportData = null;
@@ -87,7 +88,8 @@ class ManageReference extends Component
             'starts_at' => 'required|date',
             'expires_at' => 'required|date|after:starts_at',
             'status' => 'required|in:active,inactive,expired',
-            'applicable_to' => 'required|in:all,all_users,all_gym,all_shop', //Not for specific users,specific gym or shop
+            'applicable_to' => 'required|array|min:1', // Changed to array validation
+            'applicable_to.*' => 'in:all,all_users,all_gym,all_shop', // Validate each item in array
             'user_types' => 'nullable|array',
         ];
     }
@@ -143,7 +145,7 @@ class ManageReference extends Component
         $this->starts_at = $reference->starts_at->format('Y-m-d\TH:i');
         $this->expires_at = $reference->expires_at->format('Y-m-d\TH:i');
         $this->status = $reference->status;
-        $this->applicable_to = $reference->applicable_to;
+        $this->applicable_to = is_array($reference->applicable_to) ? $reference->applicable_to : [$reference->applicable_to];
         $this->user_types = $reference->user_types ?? [];
         
         $this->editMode = true;
@@ -195,7 +197,8 @@ class ManageReference extends Component
         $this->editMode = false;
         $this->type = 'percentage';
         $this->status = 'active';
-        $this->applicable_to = 'all';
+        $this->applicable_to = [];
+        $this->assignmentType = [];
         $this->starts_at = now()->format('Y-m-d\TH:i');
         $this->expires_at = now()->addDays(30)->format('Y-m-d\TH:i');
     }
@@ -219,40 +222,87 @@ class ManageReference extends Component
         $this->showAssignModal = false;
         $this->selectedReference = null;
         $this->selectedItems = [];
+        $this->assignmentType = [];
         $this->searchItems = '';
+        $this->assignmentError = '';
     }
 
     public function getAssignableItems()
     {
-        if (!$this->assignmentType) {
+        if (empty($this->assignmentType)) {
             return collect();
         }
 
         $query = null;
         
-        switch ($this->assignmentType) {
-            case 'specific_shop_user':
-                $query = User::where('role', 'Shop Owner');
-                if ($this->searchItems) {
-                    $query->where(function($q) {
-                        $q->where('name', 'like', '%' . $this->searchItems . '%')
-                          ->orWhere('email', 'like', '%' . $this->searchItems . '%');
-                    });
-                }
-                break;
-                
-            case 'specific_gym':
-                $query = User::whereIn('role', ['Gym Owner/Trainer/Influencer/Dietitian']);
-                if ($this->searchItems) {
-                    $query->where(function($q) {
-                        $q->where('name', 'like', '%' . $this->searchItems . '%')
-                          ->orWhere('email', 'like', '%' . $this->searchItems . '%');
-                    });
-                }
-                break;
+        // Check if specific user assignment types are selected
+        if (in_array('specific_shop_user', $this->assignmentType)) {
+            $query = User::where('role', 'Shop Owner');
+            if ($this->searchItems) {
+                $query->where(function($q) {
+                    $q->where('name', 'like', '%' . $this->searchItems . '%')
+                      ->orWhere('email', 'like', '%' . $this->searchItems . '%');
+                });
+            }
+        } elseif (in_array('specific_gym', $this->assignmentType)) {
+            $query = User::whereIn('role', ['Gym Owner/Trainer/Influencer/Dietitian']);
+            if ($this->searchItems) {
+                $query->where(function($q) {
+                    $q->where('name', 'like', '%' . $this->searchItems . '%')
+                      ->orWhere('email', 'like', '%' . $this->searchItems . '%');
+                });
+            }
         }
 
         return $query ? $query->limit(20)->get() : collect();
+    }
+
+    public function validateSpecificSelection()
+    {
+        // Clear any previous error
+        $this->assignmentError = '';
+        
+        // Check if both specific checkboxes are selected
+        if (in_array('specific_shop_user', $this->assignmentType) && in_array('specific_gym', $this->assignmentType)) {
+            $this->assignmentError = 'Cannot select both specific shop users and specific gym users at the same time. Please choose only one specific assignment type.';
+            
+            // Remove the last selected to prevent both being selected
+            $lastIndex = array_search('specific_gym', $this->assignmentType);
+            if ($lastIndex !== false) {
+                unset($this->assignmentType[$lastIndex]);
+                $this->assignmentType = array_values($this->assignmentType); // Reindex array
+            }
+        }
+    }
+
+    public function updated($property)
+    {
+        // Clear assignment error when assignment type changes
+        if ($property === 'assignmentType') {
+            $this->assignmentError = '';
+            $this->validateGlobalSpecificConflict();
+            $this->validateSpecificSelection();
+        }
+    }
+
+    public function validateGlobalSpecificConflict()
+    {
+        $hasGlobal = in_array('all_gym', $this->assignmentType) || in_array('all_shop', $this->assignmentType);
+        $hasSpecific = in_array('specific_shop_user', $this->assignmentType) || in_array('specific_gym', $this->assignmentType);
+        
+        // If both global and specific are selected, clear the conflicting ones
+        if ($hasGlobal && $hasSpecific) {
+            // Remove specific assignments if global ones are selected
+            $this->assignmentType = array_filter($this->assignmentType, function($type) {
+                return !in_array($type, ['specific_shop_user', 'specific_gym']);
+            });
+            $this->assignmentType = array_values($this->assignmentType); // Reindex array
+            
+            // Clear selected items since specific assignments were removed
+            $this->selectedItems = [];
+            
+            $this->assignmentError = 'Global assignments selected. Specific assignments have been cleared to avoid conflicts.';
+        }
     }
 
     public function assignReference()
@@ -262,64 +312,47 @@ class ManageReference extends Component
             return;
         }
 
-        $assignedCount = 0;
-
-        // Handle different assignment types
-        switch ($this->assignmentType) {
-            case 'all_users':
-                // Update reference applicable_to field instead of creating assignment
-                $this->selectedReference->update(['applicable_to' => 'all_users']);
-                $assignedCount = 1;
-                break;
-
-            case 'gym_user':
-                // Update reference applicable_to field for gym users
-                $this->selectedReference->update(['applicable_to' => 'all_gym']);
-                $assignedCount = 1;
-                break;
-
-            case 'shop_user':
-                // Update reference applicable_to field for shop users
-                $this->selectedReference->update(['applicable_to' => 'all_shop']);
-                $assignedCount = 1;
-                break;
-
-            case 'specific_shop_user':
-            case 'specific_gym':
-                // Handle specific user assignments
-                if (empty($this->selectedItems)) {
-                    session()->flash('error', 'Please select items to assign the Reference to.');
-                    return;
-                }
-
-                foreach ($this->selectedItems as $itemId) {
-                    // Check if assignment already exists
-                    $existingAssignment = ReferenceAssign::where('reference_id', $this->selectedReference->id)
-                        ->where('assignable_type', 'user')
-                        ->where('assignable_id', $itemId)
-                        ->first();
-
-                    if (!$existingAssignment) {
-                        ReferenceAssign::create([
-                            'reference_id' => $this->selectedReference->id,
-                            'assignable_type' => 'user',
-                            'assignable_id' => $itemId,
-                            'assigned_at' => now()
-                        ]);
-                        $assignedCount++;
-                    }
-                }
-                break;
-
-            default:
-                session()->flash('error', 'Invalid assignment type selected.');
-                return;
+        if (empty($this->assignmentType)) {
+            session()->flash('error', 'Please select at least one assignment type.');
+            return;
         }
 
-        if ($assignedCount > 0) {
-            session()->flash('message', "Reference assigned successfully! ({$assignedCount} assignment(s) created)");
+        // Update reference applicable_to field with multiple values
+        $this->selectedReference->update(['applicable_to' => $this->assignmentType]);
+
+        // Handle specific user assignments if needed
+        if (in_array('specific_shop_user', $this->assignmentType) || in_array('specific_gym', $this->assignmentType)) {
+            if (empty($this->selectedItems)) {
+                session()->flash('error', 'Please select specific users for individual assignments.');
+                return;
+            }
+
+            $assignedCount = 0;
+            foreach ($this->selectedItems as $itemId) {
+                // Check if assignment already exists
+                $existingAssignment = ReferenceAssign::where('reference_id', $this->selectedReference->id)
+                    ->where('assignable_type', 'user')
+                    ->where('assignable_id', $itemId)
+                    ->first();
+
+                if (!$existingAssignment) {
+                    ReferenceAssign::create([
+                        'reference_id' => $this->selectedReference->id,
+                        'assignable_type' => 'user',
+                        'assignable_id' => $itemId,
+                        'assigned_at' => now()
+                    ]);
+                    $assignedCount++;
+                }
+            }
+
+            if ($assignedCount > 0) {
+                session()->flash('message', "Reference assigned successfully! ({$assignedCount} specific assignment(s) created)");
+            } else {
+                session()->flash('message', "Reference assignment already exists.");
+            }
         } else {
-            session()->flash('message', "Reference assignment already exists.");
+            session()->flash('message', "Reference assigned successfully to selected user groups!");
         }
         
         $this->closeAssignModal();
@@ -335,6 +368,31 @@ class ManageReference extends Component
         } else {
             session()->flash('error', 'Assignment not found!');
         }
+    }
+
+    public function removeGlobalAssignment($applicableType)
+    {
+        if (!$this->selectedReference) {
+            session()->flash('error', 'No reference selected.');
+            return;
+        }
+
+        $currentApplicableTo = is_array($this->selectedReference->applicable_to) 
+            ? $this->selectedReference->applicable_to 
+            : [$this->selectedReference->applicable_to];
+
+        // Remove the specific type from the array
+        $newApplicableTo = array_filter($currentApplicableTo, function($type) use ($applicableType) {
+            return $type !== $applicableType;
+        });
+
+        // Update the reference
+        $this->selectedReference->update(['applicable_to' => array_values($newApplicableTo)]);
+        
+        // Refresh to show updated assignments
+        $this->selectedReference = $this->selectedReference->fresh();
+        
+        session()->flash('message', 'Global assignment removed successfully!');
     }
 
     public function openReportModal()
