@@ -44,12 +44,75 @@ class Reference extends Model
         'expires_at' => 'datetime',
         'user_types' => 'array',
         'status' => 'string',
-        'applicable_to' => 'string',
+        'applicable_to' => 'array', // Changed from 'string' to 'array' for JSON support
         'type' => 'string',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'deleted_at' => 'datetime',
     ];
+
+    /**
+     * Check if reference is applicable to a specific type
+     */
+    public function isApplicableTo($type)
+    {
+        $applicableTypes = is_array($this->applicable_to) ? $this->applicable_to : [$this->applicable_to];
+        return in_array($type, $applicableTypes) || in_array('all', $applicableTypes);
+    }
+
+    /**
+     * Check if reference is applicable to gym users
+     */
+    public function isApplicableToGym()
+    {
+        return $this->isApplicableTo('all_gym');
+    }
+
+    /**
+     * Check if reference is applicable to shop users
+     */
+    public function isApplicableToShop()
+    {
+        return $this->isApplicableTo('all_shop');
+    }
+
+    /**
+     * Check if reference is applicable to all users
+     */
+    public function isApplicableToAllUsers()
+    {
+        return $this->isApplicableTo('all_users');
+    }
+
+    /**
+     * Get human readable applicable types
+     */
+    public function getApplicableTypesDisplayAttribute()
+    {
+        $applicableTypes = is_array($this->applicable_to) ? $this->applicable_to : [$this->applicable_to];
+        $display = [];
+        
+        foreach ($applicableTypes as $type) {
+            switch ($type) {
+                case 'all':
+                    $display[] = 'All Users';
+                    break;
+                case 'all_users':
+                    $display[] = 'All Users';
+                    break;
+                case 'all_gym':
+                    $display[] = 'All Gym Owner/Trainer/Influencer/Dietitian';
+                    break;
+                case 'all_shop':
+                    $display[] = 'All Shop Owner';
+                    break;
+                default:
+                    $display[] = ucfirst(str_replace('_', ' ', $type));
+            }
+        }
+        
+        return implode(', ', $display);
+    }
 
     /**
      * Scope to get only active references
