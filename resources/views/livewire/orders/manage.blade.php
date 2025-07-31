@@ -35,7 +35,7 @@ new class extends Component
         'user_id' => 'required|exists:users,id',
         'selectedProducts' => 'required|array|min:1',
         'selectedProducts.*' => 'required|exists:products,id',
-        'overall_status' => 'required|in:pending,confirmed,shipped,delivered,cancelled',
+        'overall_status' => 'required|in:pending,processing,partially_shipped,completed,cancelled',
         'orderItems' => 'required|array|min:1',
         'orderItems.*.product_id' => 'required|exists:products,id',
         'orderItems.*.quantity' => 'required|integer|min:1',
@@ -427,7 +427,7 @@ new class extends Component
                     'quantity' => $this->orderItems[0]['quantity'],
                     'unit_price' => $this->orderItems[0]['unit_price'],
                     'total_amount' => $this->orderItems[0]['total_amount'],
-                    'status' => $this->overall_status,
+                    'status' => $this->mapOverallStatusToItemStatus($this->overall_status),
                     'notes' => $this->notes,
                     'variant_combination_id' => $this->orderItems[0]['variant_combination_id'] ?? null,
                     'variant' => $this->getVariantOptions($this->orderItems[0]['variant_combination_id'] ?? null),
@@ -448,7 +448,7 @@ new class extends Component
                     'user_id' => $this->user_id,
                     'overall_status' => $this->overall_status,
                     'total_order_amount' => collect($this->orderItems)->sum('total_amount'),
-                    'status' => $this->overall_status,
+                    'status' => $this->mapOverallStatusToOrderStatus($this->overall_status),
                 ]);
 
                 // Remove existing order items
@@ -463,7 +463,7 @@ new class extends Component
                         'quantity' => $item['quantity'],
                         'unit_price' => $item['unit_price'],
                         'total_amount' => $item['total_amount'],
-                        'status' => $this->overall_status,
+                        'status' => $this->mapOverallStatusToItemStatus($this->overall_status),
                         'notes' => $this->notes,
                         'variant_combination_id' => $item['variant_combination_id'] ?? null,
                         'variant' => $this->getVariantOptions($item['variant_combination_id'] ?? null),
@@ -479,7 +479,7 @@ new class extends Component
                 'order_number' => 'ORD-' . date('Ymd') . '-' . strtoupper(\Illuminate\Support\Str::random(6)),
                 'overall_status' => $this->overall_status,
                 'total_order_amount' => collect($this->orderItems)->sum('total_amount'),
-                'status' => $this->overall_status,
+                'status' => $this->mapOverallStatusToOrderStatus($this->overall_status),
             ]);
 
             // Create order items
@@ -491,7 +491,7 @@ new class extends Component
                     'quantity' => $item['quantity'],
                     'unit_price' => $item['unit_price'],
                     'total_amount' => $item['total_amount'],
-                    'status' => $this->overall_status,
+                    'status' => $this->mapOverallStatusToItemStatus($this->overall_status),
                     'notes' => $this->notes,
                     'variant_combination_id' => $item['variant_combination_id'] ?? null,
                     'variant' => $this->getVariantOptions($item['variant_combination_id'] ?? null),
@@ -595,24 +595,39 @@ new class extends Component
             if ($allItemsStatus->count() === 1) {
                 // All items have the same status, map to appropriate overall_status
                 $itemStatus = $allItemsStatus->first();
+                $overallStatus = '';
+                
                 if ($itemStatus === 'delivered') {
-                    $order->update(['overall_status' => 'completed']);
+                    $overallStatus = 'completed';
                 } elseif ($itemStatus === 'shipped') {
-                    $order->update(['overall_status' => 'partially_shipped']);
+                    $overallStatus = 'partially_shipped';
                 } elseif ($itemStatus === 'confirmed') {
-                    $order->update(['overall_status' => 'processing']);
+                    $overallStatus = 'processing';
                 } else {
                     // For pending, cancelled, etc. - map to valid overall_status values
                     $allowedStatuses = ['pending', 'processing', 'partially_shipped', 'completed', 'cancelled'];
-                    $mappedStatus = in_array($itemStatus, $allowedStatuses) ? $itemStatus : 'processing';
-                    $order->update(['overall_status' => $mappedStatus]);
+                    $overallStatus = in_array($itemStatus, $allowedStatuses) ? $itemStatus : 'processing';
                 }
+                
+                // Map overall_status to appropriate status value for orders table
+                $orderStatus = $this->mapOverallStatusToOrderStatus($overallStatus);
+                
+                $order->update([
+                    'overall_status' => $overallStatus,
+                    'status' => $orderStatus
+                ]);
             } else {
                 // Mixed statuses, set order to processing or partially_shipped
                 if ($allItemsStatus->contains('shipped') || $allItemsStatus->contains('delivered')) {
-                    $order->update(['overall_status' => 'partially_shipped']);
+                    $order->update([
+                        'overall_status' => 'partially_shipped',
+                        'status' => 'shipped'
+                    ]);
                 } else {
-                    $order->update(['overall_status' => 'processing']);
+                    $order->update([
+                        'overall_status' => 'processing',
+                        'status' => 'confirmed'
+                    ]);
                 }
             }
         } else {
@@ -620,14 +635,20 @@ new class extends Component
             $order = $item ?? orders::findOrFail($id);
             $oldStatus = $order->overall_status;
             
+            // Map overall_status to appropriate status value for the orders table
+            $orderStatus = $this->mapOverallStatusToOrderStatus($status);
+            
             // Update order status
             $order->update([
                 'overall_status' => $status,
-                'status' => $status
+                'status' => $orderStatus
             ]);
             
+            // Map status for order items
+            $itemStatus = $this->mapOverallStatusToItemStatus($status);
+            
             // Update all order items status
-            $order->orderSellerProducts()->update(['status' => $status]);
+            $order->orderSellerProducts()->update(['status' => $itemStatus]);
             
             // Send email notifications for admin status changes
             $customer = $order->user;
@@ -686,6 +707,38 @@ new class extends Component
 
         $variant = \App\Models\ProductVariantCombination::find($variantCombinationId);
         return $variant ? $variant->variant_options : null;
+    }
+
+    /**
+     * Map overall_status values to valid status values for orders table
+     */
+    private function mapOverallStatusToOrderStatus($overallStatus)
+    {
+        $mapping = [
+            'pending' => 'pending',
+            'processing' => 'confirmed',
+            'partially_shipped' => 'shipped',
+            'completed' => 'delivered',
+            'cancelled' => 'cancelled',
+        ];
+
+        return $mapping[$overallStatus] ?? 'pending';
+    }
+
+    /**
+     * Map overall_status values to valid status values for order_seller_products table
+     */
+    private function mapOverallStatusToItemStatus($overallStatus)
+    {
+        $mapping = [
+            'pending' => 'pending',
+            'processing' => 'confirmed',
+            'partially_shipped' => 'shipped',
+            'completed' => 'delivered',
+            'cancelled' => 'cancelled',
+        ];
+
+        return $mapping[$overallStatus] ?? 'pending';
     }
 }; ?>
 
@@ -766,9 +819,9 @@ new class extends Component
                         <select wire:model.live="statusFilter" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white">
                             <option value="">All Status</option>
                             <option value="pending">Pending</option>
-                            <option value="confirmed">Confirmed</option>
-                            <option value="shipped">Shipped</option>
-                            <option value="delivered">Delivered</option>
+                            <option value="processing">Processing</option>
+                            <option value="partially_shipped">Partially Shipped</option>
+                            <option value="completed">Completed</option>
                             <option value="cancelled">Cancelled</option>
                         </select>
                     </div>
@@ -1244,9 +1297,9 @@ new class extends Component
                                 class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
                             >
                                 <option value="pending">Pending</option>
-                                <option value="confirmed">Confirmed</option>
-                                <option value="shipped">Shipped</option>
-                                <option value="delivered">Delivered</option>
+                                <option value="processing">Processing</option>
+                                <option value="partially_shipped">Partially Shipped</option>
+                                <option value="completed">Completed</option>
                                 <option value="cancelled">Cancelled</option>
                             </select>
                             @error('overall_status') <span class="text-red-500 text-sm">{{ $errors->first('overall_status') }}</span> @enderror
