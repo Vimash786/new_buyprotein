@@ -1,6 +1,24 @@
 @extends('layouts.app')
 
 @section('content')
+    <style>
+        @media (max-width: 1024px) {
+            .filters {
+                display: none;
+            }
+        }
+        
+        .filter-toggle-button {
+            display: none;
+        }
+        
+        @media (max-width: 1024px) {
+            .filter-toggle-button {
+                display: block;
+            }
+            
+        }
+    </style>
     <!-- shop[ grid sidebar wrapper -->
 
     <div class="shop-grid-sidebar-area rts-section-gap">
@@ -229,5 +247,4 @@
             }
         });
     });
-    
 </script>
