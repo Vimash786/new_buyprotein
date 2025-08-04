@@ -330,7 +330,31 @@ class DashboardController extends Controller
 
     public function wishList()
     {
-        $wishlistData = Wishlist::with(['product', 'product.images'])->where('user_id', Auth::user()->id)->get();
+        $wishlistData = collect();
+
+        if (Auth::check()) {
+            // Authenticated user - get from database
+            $wishlistData = Wishlist::with(['product', 'product.images'])->where('user_id', Auth::user()->id)->get();
+        } else {
+            // Guest user - get from session
+            $sessionWishlist = session()->get('wishlist', []);
+            
+            foreach ($sessionWishlist as $key => $item) {
+                $product = products::with('images')->find($item['product_id']);
+                if ($product) {
+                    $wishlistItem = (object) [
+                        'id' => $key,
+                        'product_id' => $item['product_id'],
+                        'variant_option_ids' => $item['variant_option_ids'],
+                        'quantity' => $item['quantity'],
+                        'price' => $item['price'],
+                        'product' => $product,
+                        'created_at' => $item['created_at'] ?? now()->toDateTimeString()
+                    ];
+                    $wishlistData->push($wishlistItem);
+                }
+            }
+        }
 
         return view('shop.wishlist', compact('wishlistData'));
     }
@@ -345,44 +369,118 @@ class DashboardController extends Controller
         $product = products::findOrFail($request->product_id);
         $variantOptionIds = $request->variant_option_ids ? array_map('intval', $request->variant_option_ids) : [];
 
-        $price = $this->calculatePrice($product, $variantOptionIds, $request->variant_option_ids);
+        $price = $this->calculatePrice($product, $request->variant_option_ids);
 
-        $userId = Auth::id();
+        if (Auth::check()) {
+            // Authenticated user - store in database
+            $userId = Auth::id();
 
-        $wishlistData = Wishlist::where('user_id', Auth::user()->id)->get();
-        $wishlistCount = $wishlistData->count();
+            // Check if item already exists in wishlist
+            $existingWishlist = Wishlist::where('user_id', $userId)
+                ->where('product_id', $product->id)
+                ->where('variant_option_ids', json_encode($variantOptionIds))
+                ->first();
 
-        Wishlist::create([
-            'user_id' => $userId,
-            'product_id' => $product->id,
-            'variant_option_ids' => $variantOptionIds,
-            'quantity' => $request->quantity,
-            'price' => $price,
+            if ($existingWishlist) {
+                return response()->json([
+                    'status' => 'info',
+                    'message' => 'Product already in wishlist!',
+                    'wishlistCount' => Wishlist::where('user_id', $userId)->count()
+                ]);
+            }
+
+            Wishlist::create([
+                'user_id' => $userId,
+                'product_id' => $product->id,
+                'variant_option_ids' => $variantOptionIds,
+                'quantity' => $request->quantity ?? 1,
+                'price' => $price,
+            ]);
+
+            $wishlistCount = Wishlist::where('user_id', $userId)->count();
+        } else {
+            // Guest user - store in session
+            $wishlist = session()->get('wishlist', []);
+
+            $itemKey = $product->id . '_' . implode('_', $variantOptionIds);
+
+            // Check if item already exists in session wishlist
+            if (isset($wishlist[$itemKey])) {
+                return response()->json([
+                    'status' => 'info',
+                    'message' => 'Product already in wishlist!',
+                    'wishlistCount' => count($wishlist)
+                ]);
+            }
+
+            $wishlist[$itemKey] = [
+                'product_id' => $product->id,
+                'variant_option_ids' => $variantOptionIds,
+                'quantity' => $request->quantity ?? 1,
+                'price' => $price,
+                'created_at' => now()->toDateTimeString()
+            ];
+
+            session()->put('wishlist', $wishlist);
+            $wishlistCount = count($wishlist);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Product added to wishlist!',
+            'wishlistCount' => $wishlistCount
         ]);
-
-        return response()->json(['status' => 'success', 'wishlistCount' => $wishlistCount]);
     }
 
     public function updateQuantity(Request $request)
     {
-        if ($request->has('cart')) {
-            $wishlist = Cart::findOrFail($request->id);
-        } else {
-            $wishlist = Wishlist::findOrFail($request->id);
-        }
-
         $newQuantity = max(1, (int) $request->quantity);
-
-        $wishlist->quantity = $newQuantity;
-        $wishlist->save();
-
-        $subtotal = $wishlist->price * $newQuantity;
         $totalAmount = 0;
+        $subtotal = 0;
+        $itemId = $request->id;
 
-        if ($request->has('cart')) {
-            $alltotal = Cart::where('user_id', Auth::user()->id)->get();
-            foreach ($alltotal as $sum) {
-                $totalAmount += $sum->price * $sum->quantity;
+        if (Auth::check()) {
+            // Authenticated user - update database
+            if ($request->has('cart')) {
+                $wishlist = Cart::findOrFail($request->id);
+            } else {
+                $wishlist = Wishlist::findOrFail($request->id);
+            }
+
+            $wishlist->quantity = $newQuantity;
+            $wishlist->save();
+
+            $subtotal = $wishlist->price * $newQuantity;
+
+            if ($request->has('cart')) {
+                $alltotal = Cart::where('user_id', Auth::user()->id)->get();
+                foreach ($alltotal as $sum) {
+                    $totalAmount += $sum->price * $sum->quantity;
+                }
+            }
+            
+            $itemId = $wishlist->id;
+        } else {
+            // Guest user - update session
+            if ($request->has('cart')) {
+                $cart = session()->get('cart', []);
+                if (isset($cart[$request->id])) {
+                    $cart[$request->id]['quantity'] = $newQuantity;
+                    $subtotal = $cart[$request->id]['price'] * $newQuantity;
+                    session()->put('cart', $cart);
+                    
+                    // Calculate total for all cart items
+                    foreach ($cart as $item) {
+                        $totalAmount += $item['price'] * $item['quantity'];
+                    }
+                }
+            } else {
+                $wishlist = session()->get('wishlist', []);
+                if (isset($wishlist[$request->id])) {
+                    $wishlist[$request->id]['quantity'] = $newQuantity;
+                    $subtotal = $wishlist[$request->id]['price'] * $newQuantity;
+                    session()->put('wishlist', $wishlist);
+                }
             }
         }
 
@@ -391,53 +489,110 @@ class DashboardController extends Controller
             'quantity' => $newQuantity,
             'subtotal' => $subtotal,
             'total' => $totalAmount,
-            'item_id' => $wishlist->id
+            'item_id' => $itemId
         ]);
     }
 
     public function removeWishlist(Request $request)
     {
-        if ($request->has('cart')) {
-            $wishlist = Cart::findOrFail($request->id);
+        if (Auth::check()) {
+            // Authenticated user - remove from database
+            if ($request->has('cart')) {
+                $wishlist = Cart::findOrFail($request->id);
+            } else {
+                $wishlist = Wishlist::findOrFail($request->id);
+            }
+
+            if ($wishlist->user_id !== Auth::user()->id) {
+                return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+            }
+
+            $wishlist->delete();
+
+            $wishlistCounter = Wishlist::where('user_id', Auth::user()->id)->get()->count();
+            $cartItems = Cart::where('user_id', Auth::id())->get();
+            $cartCounter = $cartItems->count();
+
+            $totalPrice = $cartItems->sum(function ($item) {
+                return $item->price * $item->quantity;
+            });
         } else {
-            $wishlist = Wishlist::findOrFail($request->id);
+            // Guest user - remove from session
+            $wishlist = session()->get('wishlist', []);
+            
+            if (isset($wishlist[$request->id])) {
+                unset($wishlist[$request->id]);
+                session()->put('wishlist', $wishlist);
+            }
+
+            $wishlistCounter = count($wishlist);
+            
+            // Get cart data for guest user
+            $cart = session()->get('cart', []);
+            $cartCounter = count($cart);
+            
+            $totalPrice = array_sum(array_map(function($item) {
+                return $item['price'] * $item['quantity'];
+            }, $cart));
         }
 
-        if ($wishlist->user_id !== Auth::user()->id) {
-            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
-        }
-
-        $wishlist->delete();
-
-        $wishlistCounter = Wishlist::where('user_id', Auth::user()->id)->get()->count();
-        $cartItems = Cart::where('user_id', Auth::id())->get();
-        $cartCounter = $cartItems->count();
-
-        $totalPrice = $cartItems->sum(function ($item) {
-            return $item->price * $item->quantity;
-        });
-
-        return response()->json(['success' => true, 'id' => $request->id, 'wishlistCount' => $wishlistCounter, 'cartCounter' => $cartCounter, 'totalPrice' => $totalPrice]);
+        return response()->json([
+            'success' => true, 
+            'id' => $request->id, 
+            'wishlistCount' => $wishlistCounter, 
+            'cartCounter' => $cartCounter, 
+            'totalPrice' => $totalPrice
+        ]);
     }
 
     public function wishToCart(Request $request)
     {
         $itemId = $request->input('item_id');
-        $wishlistItem = Wishlist::where('id', $itemId)->where('user_id', Auth::user()->id)->first();
+        
+        if (Auth::check()) {
+            // Authenticated user - get from database
+            $wishlistItem = Wishlist::where('id', $itemId)->where('user_id', Auth::user()->id)->first();
 
-        if (!$wishlistItem) {
-            return response()->json(['success' => false, 'message' => 'Item not found in wishlist.']);
+            if (!$wishlistItem) {
+                return response()->json(['success' => false, 'message' => 'Item not found in wishlist.']);
+            }
+
+            $cartItem = Cart::create([
+                'user_id' => Auth::user()->id,
+                'product_id' => $wishlistItem->product_id,
+                'variant_option_ids' => $wishlistItem->variant_option_ids,
+                'quantity' => $wishlistItem->quantity,
+                'price' => $wishlistItem->price
+            ]);
+
+            $wishlistItem->delete();
+        } else {
+            // Guest user - handle session data
+            $wishlist = session()->get('wishlist', []);
+            
+            if (!isset($wishlist[$itemId])) {
+                return response()->json(['success' => false, 'message' => 'Item not found in wishlist.']);
+            }
+            
+            $wishlistItem = $wishlist[$itemId];
+            
+            // Add to cart session
+            $cart = session()->get('cart', []);
+            $cartItemKey = $wishlistItem['product_id'] . '_' . implode('_', $wishlistItem['variant_option_ids']);
+            
+            $cart[$cartItemKey] = [
+                'product_id' => $wishlistItem['product_id'],
+                'variant_option_ids' => $wishlistItem['variant_option_ids'],
+                'quantity' => $wishlistItem['quantity'],
+                'price' => $wishlistItem['price']
+            ];
+            
+            session()->put('cart', $cart);
+            
+            // Remove from wishlist session
+            unset($wishlist[$itemId]);
+            session()->put('wishlist', $wishlist);
         }
-
-        $cartItem = Cart::create([
-            'user_id' => Auth::user()->id,
-            'product_id' => $wishlistItem->product_id,
-            'variant_option_ids' => $wishlistItem->variant_option_ids,
-            'quantity' => $wishlistItem->quantity,
-            'price' => $wishlistItem->price
-        ]);
-
-        $wishlistItem->delete();
 
         return response()->json(['success' => true, 'message' => 'Item moved to cart.']);
     }

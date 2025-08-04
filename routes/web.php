@@ -28,6 +28,13 @@ Route::post('/add-to-cart', [DashboardController::class, 'addToCart'])->name('ca
 Route::get('/cart', [DashboardController::class, 'cart'])->name('user.cart');
 Route::get('/checkout', [DashboardController::class, 'checkout'])->name('user.checkout');
 
+// Wishlist routes (accessible to both guest and authenticated users)
+Route::get('/wishlist', [DashboardController::class, 'wishList'])->name('user.wishlist');
+Route::post('/add-to-wishlist', [DashboardController::class, 'addToWishList'])->name('wishlist.add');
+Route::post('/wishlist/update-quantity', [DashboardController::class, 'updateQuantity'])->name('wishlist.updateQuantity');
+Route::delete('/wishlist/remove', [DashboardController::class, 'removeWishlist'])->name('wishlist.remove');
+Route::post('/wish-to-cart', [DashboardController::class, 'wishToCart'])->name('wishlist.to.cart');
+
 
 // Route::get('/', function () {
 //     return view('dashboard');
@@ -70,11 +77,6 @@ Route::middleware(['auth'])->group(function () {
     
     
     Route::delete('/remove-cart/{id}', [DashboardController::class, 'removeCart'])->name('cart.remove');
-    Route::get('/wishlist', [DashboardController::class, 'wishList'])->name('user.wishlist');
-    Route::post('/add-to-wishlist', [DashboardController::class, 'addToWishList'])->name('wishlist.add');
-    Route::post('/wishlist/update-quantity', [DashboardController::class, 'updateQuantity'])->name('wishlist.updateQuantity');
-    Route::delete('/wishlist/remove', [DashboardController::class, 'removeWishlist'])->name('wishlist.remove');
-    Route::post('/wish-to-cart', [DashboardController::class, 'wishToCart'])->name('wishlist.to.cart');
     Route::post('/bulk-order', [DashboardController::class, 'bulkOrder'])->name('bulk.order');
     Route::post('/review-store', [DashboardController::class, 'reviewStore'])->name('review.store');
 

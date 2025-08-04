@@ -1198,19 +1198,34 @@
                     variant_option_ids: selectedVariants
                 },
                 success: function(response) {
+                    let message = response.message || "Product added to wishlist!";
+                    let backgroundColor = "#009ec9";
+                    
+                    if (response.status === 'info') {
+                        backgroundColor = "#ffc107";
+                    }
+                    
                     Toastify({
-                        text: "Product added to wishlist!",
+                        text: message,
                         duration: 3000,
                         gravity: "top",
                         position: "right",
-                        backgroundColor: "#009ec9",
+                        backgroundColor: backgroundColor,
                     }).showToast();
                     
                     $(".wishlistCount").text(response.wishlistCount);
                 },
                 error: function(xhr) {
+                    let errorMessage = "Failed to add product to wishlist. Please try again.";
+                    
+                    if (xhr.status === 401) {
+                        errorMessage = "Please login to add items to wishlist, or continue as guest.";
+                    } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMessage = xhr.responseJSON.message;
+                    }
+                    
                     Toastify({
-                        text: "Failed to add product to wishlist. Please try again.",
+                        text: errorMessage,
                         duration: 3000,
                         gravity: "top",
                         position: "right",

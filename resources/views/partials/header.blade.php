@@ -88,15 +88,20 @@
                             </a>
                             @php
                                 use App\Models\Wishlist;
+                                $wishlistCount = 0;
                                 if (Auth::user()) {
                                     $wishlistItem = Wishlist::where('user_id', Auth::user()->id)->get();
+                                    $wishlistCount = $wishlistItem->count();
+                                } else {
+                                    $sessionWishlist = session()->get('wishlist', []);
+                                    $wishlistCount = count($sessionWishlist);
                                 }
                             @endphp
                             <a href="{{ route('user.wishlist') }}" class="btn-border-only wishlist">
                                 <i class="fa-regular fa-heart"></i>
                                 <span class="text">Wishlist</span>
                                 <span class="number"><span
-                                        class="wishlistCount">{{ isset($wishlistItem) ? $wishlistItem->count() : 0 }}</span></span>
+                                        class="wishlistCount">{{ $wishlistCount }}</span></span>
                             </a>
                             @php
                                 use App\Models\Cart;
