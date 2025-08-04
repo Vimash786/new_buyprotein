@@ -258,12 +258,15 @@
             const itemId = $wrapper.data('id');
             const $input = $wrapper.find('.quantity-input');
             let currentQty = parseInt($input.val());
+            const $button = $(this);
 
             // Determine if increment or decrement
             if ($(this).hasClass('increment')) {
                 currentQty += 1;
             } else if (currentQty > 1) {
                 currentQty -= 1;
+            } else {
+                return; // Don't allow quantity less than 1
             }
 
             // AJAX update
@@ -276,24 +279,36 @@
                     quantity: currentQty,
                     cart: 'cart'
                 },
+                beforeSend: function() {
+                    $button.prop('disabled', true);
+                },
                 success: function(res) {
+                    console.log('Update response:', res); // Debug log
                     if (res.success) {
                         $input.val(res.quantity);
                         $(`p[data-subtotal-id="${res.item_id}"]`).text(
-                            `₹${res.subtotal.toFixed(2)}`);
-                        $('.total .price').text(
-                            `₹${res.total.toFixed(2)}`);
+                            `₹${res.subtotal}`);
+                        $('.totalPrice').text(`₹${res.total}`);
 
                         Toastify({
-                            text: "Quantity is updated successfully.",
+                            text: "Quantity updated successfully.",
                             duration: 3000,
                             gravity: "top",
                             position: "right",
                             backgroundColor: "#009ec9",
                         }).showToast();
+                    } else {
+                        Toastify({
+                            text: res.message || "Failed to update quantity.",
+                            duration: 3000,
+                            gravity: "top",
+                            position: "right",
+                            backgroundColor: "#dc3545",
+                        }).showToast();
                     }
                 },
-                error: function() {
+                error: function(xhr, status, error) {
+                    console.log('AJAX Error:', xhr.responseText); // Debug log
                     Toastify({
                         text: "Failed to update quantity. Try again.",
                         duration: 3000,
@@ -301,17 +316,33 @@
                         position: "right",
                         backgroundColor: "#dc3545",
                     }).showToast();
+                },
+                complete: function() {
+                    $button.prop('disabled', false);
                 }
             });
         });
 
-        $('.remove-wishlist-item').click(function() {
+        $('.remove-wishlist-item').click(function(e) {
+            e.preventDefault();
             const $btn = $(this);
             const $item = $btn.closest('.item-parent');
             const id = $(this).data('id');
             const price = parseFloat($btn.data('price'));
             const quantity = parseInt($btn.data('quantity'), 10);
             const itemTotal = price * quantity;
+
+            console.log('Removing item with ID:', id); // Debug log
+            console.log('Button data:', {
+                id: id,
+                price: price,
+                quantity: quantity
+            });
+
+            // Show confirmation before removing
+            if (!confirm('Are you sure you want to remove this item from cart?')) {
+                return;
+            }
 
             $.ajax({
                 url: '{{ route('wishlist.remove') }}',
@@ -321,23 +352,24 @@
                     id: id,
                     cart: 'cart'
                 },
+                beforeSend: function() {
+                    $btn.prop('disabled', true);
+                    console.log('Sending AJAX request to remove item');
+                },
                 success: function(res) {
+                    console.log('Remove response:', res); // Debug log
                     if (res.success) {
-                        $item.remove();
+                        $item.fadeOut(300, function() {
+                            $(this).remove();
+                            
+                            // Check if cart is empty
+                            if ($('.single-cart-area-list.main').length === 0) {
+                                $('.rts-cart-list-area').html('<p class="text-center">Your cart is empty</p>');
+                            }
+                        });
 
-                        // Update subtotal
-                        const $subtotalElem = $('.subtotal .price');
-                        const $totalElem = $('.total .price');
-
-                        let currentSubtotal = parseFloat($subtotalElem.text().replace(
-                            /[₹,]/g, ''));
-                        let newSubtotal = currentSubtotal - itemTotal;
-                        if (newSubtotal < 0) newSubtotal = 0;
-
-                        $(".totalPrice").text('₹' + res.totalPrice);
-
-                        // Format currency
-                        // $subtotalElem.text('₹' + totalCart.toFixed(2));
+                        // Update total price
+                        $(".totalPrice").text('₹' + (res.totalPrice || 0));
 
                         Toastify({
                             text: "Item removed from Cart.",
@@ -347,18 +379,39 @@
                             backgroundColor: "#e74c3c"
                         }).showToast();
 
-                        $(".cartCount").text(res.cartCounter);
-                        $(".wishlistCount").text(res.wishlistCount);
+                        // Update counters if elements exist
+                        if ($(".cartCount").length) {
+                            $(".cartCount").text(res.cartCounter || 0);
+                        }
+                        if ($(".wishlistCount").length) {
+                            $(".wishlistCount").text(res.wishlistCount || 0);
+                        }
+                    } else {
+                        Toastify({
+                            text: res.message || "Failed to remove item.",
+                            duration: 3000,
+                            gravity: "top",
+                            position: "right",
+                            backgroundColor: "#dc3545",
+                        }).showToast();
                     }
                 },
-                error: function() {
+                error: function(xhr, status, error) {
+                    console.log('AJAX Error:', {
+                        status: status,
+                        error: error,
+                        response: xhr.responseText
+                    });
                     Toastify({
-                        text: "Please try again.",
-                        duration: 2000,
+                        text: "Please try again. Error: " + error,
+                        duration: 3000,
                         gravity: "top",
                         position: "right",
                         backgroundColor: "#dc3545",
                     }).showToast();
+                },
+                complete: function() {
+                    $btn.prop('disabled', false);
                 }
             });
         });

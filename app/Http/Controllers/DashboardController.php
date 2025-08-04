@@ -9,6 +9,7 @@ use App\Models\Blog;
 use App\Models\BlogComment;
 use App\Models\BulkOrder;
 use App\Models\Cart;
+use Illuminate\Support\Facades\Log;
 use App\Models\Category;
 use App\Models\Contact;
 use App\Models\Coupon;
@@ -495,6 +496,14 @@ class DashboardController extends Controller
 
     public function removeWishlist(Request $request)
     {
+        Log::info('removeWishlist called with:', [
+            'id' => $request->id,
+            'cart' => $request->cart,
+            'has_cart' => $request->has('cart'),
+            'auth_check' => Auth::check(),
+            'all_data' => $request->all()
+        ]);
+
         if (Auth::check()) {
             // Authenticated user - remove from database
             if ($request->has('cart')) {
@@ -518,22 +527,37 @@ class DashboardController extends Controller
             });
         } else {
             // Guest user - remove from session
-            $wishlist = session()->get('wishlist', []);
-            
-            if (isset($wishlist[$request->id])) {
-                unset($wishlist[$request->id]);
-                session()->put('wishlist', $wishlist);
+            if ($request->has('cart')) {
+                // Remove from cart session
+                $cart = session()->get('cart', []);
+                if (isset($cart[$request->id])) {
+                    unset($cart[$request->id]);
+                    session()->put('cart', $cart);
+                }
+                $cartCounter = count($cart);
+                $totalPrice = array_sum(array_map(function($item) {
+                    return $item['price'] * $item['quantity'];
+                }, $cart));
+                
+                // Get wishlist data for counter
+                $wishlist = session()->get('wishlist', []);
+                $wishlistCounter = count($wishlist);
+            } else {
+                // Remove from wishlist session
+                $wishlist = session()->get('wishlist', []);
+                if (isset($wishlist[$request->id])) {
+                    unset($wishlist[$request->id]);
+                    session()->put('wishlist', $wishlist);
+                }
+                $wishlistCounter = count($wishlist);
+                
+                // Get cart data for counter
+                $cart = session()->get('cart', []);
+                $cartCounter = count($cart);
+                $totalPrice = array_sum(array_map(function($item) {
+                    return $item['price'] * $item['quantity'];
+                }, $cart));
             }
-
-            $wishlistCounter = count($wishlist);
-            
-            // Get cart data for guest user
-            $cart = session()->get('cart', []);
-            $cartCounter = count($cart);
-            
-            $totalPrice = array_sum(array_map(function($item) {
-                return $item['price'] * $item['quantity'];
-            }, $cart));
         }
 
         return response()->json([
@@ -1006,6 +1030,5 @@ class DashboardController extends Controller
                 'message' => 'Invalid coupon code.'
             ]);
         }
-        dd($request->all());
     }
 }
