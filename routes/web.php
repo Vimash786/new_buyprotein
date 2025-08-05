@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\RazorpayPaymentController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Livewire\Volt\Volt;
 
@@ -27,6 +29,15 @@ Route::post('/submit-commet/{id}', [DashboardController::class, 'blogComment'])-
 Route::post('/add-to-cart', [DashboardController::class, 'addToCart'])->name('cart.add');
 Route::get('/cart', [DashboardController::class, 'cart'])->name('user.cart');
 Route::get('/checkout', [DashboardController::class, 'checkout'])->name('user.checkout');
+
+// Payment routes (accessible to both guest and authenticated users)
+Route::get('razorpay', [RazorpayPaymentController::class, 'index'])->name('razorpay.index');
+Route::post('/razorpay-payment', [RazorpayPaymentController::class, 'payment'])->name('razorpay.payment');
+Route::post('/test-payment', function(Request $request) {
+    Log::info('Test payment route hit', ['method' => $request->method(), 'data' => $request->all()]);
+    return response()->json(['success' => true, 'message' => 'Test route working']);
+})->name('test.payment');
+Route::post('/apply-coupon', [DashboardController::class, 'applyCoupon'])->name('apply.coupon');
 
 // Wishlist routes (accessible to both guest and authenticated users)
 Route::get('/wishlist', [DashboardController::class, 'wishList'])->name('user.wishlist');
@@ -80,13 +91,6 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/bulk-order', [DashboardController::class, 'bulkOrder'])->name('bulk.order');
     Route::post('/review-store', [DashboardController::class, 'reviewStore'])->name('review.store');
 
-    Route::post('/apply-coupon', [DashboardController::class, 'applyCoupon'])->name('apply.coupon');
-
-    
-
-    Route::get('razorpay', [RazorpayPaymentController::class, 'index'])->name('razorpay.index');
-    Route::post('/razorpay-payment', [RazorpayPaymentController::class, 'payment'])->name('razorpay.payment');
-    
     // Invoice routes
     Route::get('/invoice/seller/{orderItemId}', [App\Http\Controllers\InvoiceController::class, 'downloadSellerInvoice'])->name('invoice.seller.download');
     Route::get('/invoice/order/{orderId}', [App\Http\Controllers\InvoiceController::class, 'downloadOrderInvoice'])->name('invoice.order.download');

@@ -934,8 +934,12 @@ new class extends Component
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div>
-                                            <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $order->user->name ?? 'N/A' }}</div>
-                                            <div class="text-sm text-gray-500 dark:text-gray-400">{{ $order->user->email ?? 'N/A' }}</div>
+                                            <div class="text-sm font-medium text-gray-900 dark:text-white">
+                                                {{ $order->user->name ?? ($order->guest_email ? 'Guest (' . $order->guest_email . ')' : 'N/A') }}
+                                            </div>
+                                            <div class="text-sm text-gray-500 dark:text-gray-400">
+                                                {{ $order->user->email ?? ($order->guest_email ?? 'N/A') }}
+                                            </div>
                                         </div>
                                     </td>
                                     <td class="px-6 py-4">
@@ -1042,7 +1046,7 @@ new class extends Component
                                         {{ $order->product->name ?? 'Product not found' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                                        {{ $order->order->user->name ?? 'User not found' }}
+                                        {{ $order->order->user->name ?? ($order->order->guest_email ? 'Guest (' . $order->order->guest_email . ')' : 'User not found') }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600">
                                         ₹{{ number_format($order->total_amount, 2) }}
@@ -1600,11 +1604,13 @@ new class extends Component
                                     <div class="space-y-2 text-sm">
                                         <div>
                                             <span class="text-gray-600 dark:text-gray-400">Name:</span>
-                                            <span class="ml-2 font-medium">{{ $viewOrder->user->name }}</span>
+                                            <span class="ml-2 font-medium">
+                                                {{ $viewOrder->user->name ?? ($viewOrder->guest_email ? 'Guest Customer' : 'N/A') }}
+                                            </span>
                                         </div>
                                         <div>
                                             <span class="text-gray-600 dark:text-gray-400">Email:</span>
-                                            <span class="ml-2">{{ $viewOrder->user->email }}</span>
+                                            <span class="ml-2">{{ $viewOrder->user->email ?? ($viewOrder->guest_email ?? 'N/A') }}</span>
                                         </div>
                                         @if($viewOrder->billingDetail)
                                             <div>

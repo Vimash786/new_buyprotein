@@ -651,7 +651,6 @@ class DashboardController extends Controller
     public function checkout()
     {
         try {
-
             $cartData = collect(); // initialize empty collection
             $billingAddress = [];
 
@@ -659,12 +658,13 @@ class DashboardController extends Controller
                 $cartData = Cart::with('product')->where('user_id', Auth::user()->id)->get();
                 $order = orders::where('user_id', Auth::user()->id)->orderBy('created_at', 'desc')->first();
 
-                $billingAddress = [];
                 if ($order) {
                     $orderId = $order->id;
                     $billingAddress = BillingDetail::where('order_id', $orderId)->get();
                 }
             } else {
+                // For guest users, ensure billingAddress is empty array
+                $billingAddress = [];
                 $sessionCart = session('cart', []);
 
                 foreach ($sessionCart as $item) {
@@ -684,7 +684,8 @@ class DashboardController extends Controller
 
             return view('shop.checkout', compact('cartData', 'billingAddress'));
         } catch (Exception $e) {
-            return redirect()->back()->with('something wrong!');
+            Log::error('Checkout error: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Something went wrong: ' . $e->getMessage());
         }
     }
 
@@ -851,10 +852,63 @@ class DashboardController extends Controller
             $couponType = 'reference';
         }
 
-        $cartData = Cart::with(['product.seller'])->where('user_id', Auth::user()->id)->get();
-        $user = Auth::user();
+        // Handle cart data for both authenticated and guest users
+        if (Auth::check()) {
+            $cartData = Cart::with(['product.seller'])->where('user_id', Auth::user()->id)->get();
+            $user = Auth::user();
+        } else {
+            // For guest users, create a simpler cart structure from session
+            $sessionCart = session('cart', []);
+            $cartData = collect();
+            
+            foreach ($sessionCart as $item) {
+                $product = Products::find($item['product_id']);
+                if ($product) {
+                    $cartData->push((object)[
+                        'id' => $item['product_id'] . '_' . implode('_', $item['variant_option_ids']),
+                        'product_id' => $item['product_id'],
+                        'price' => $item['price'],
+                        'quantity' => $item['quantity'],
+                        'product' => $product
+                    ]);
+                }
+            }
+            $user = null;
+        }
 
         if ($couponData) {
+            // For guest users, provide basic coupon support
+            if (!Auth::check()) {
+                if ($couponData->status == 'active' && Carbon::now()->between($couponData->starts_at, $couponData->expires_at) && $couponData->used_count <= $couponData->usage_limit) {
+                    $subtotal = $cartData->sum(function ($item) {
+                        return $item->price * $item->quantity;
+                    });
+
+                    $totalDiscount = 0;
+                    if ($couponData->type == 'percentage') {
+                        $totalDiscount = $subtotal * ($couponData->value / 100);
+                        if (isset($couponData->maximum_discount) && $totalDiscount > $couponData->maximum_discount) {
+                            $totalDiscount = $couponData->maximum_discount;
+                        }
+                    } else {
+                        $totalDiscount = min($couponData->value, $subtotal);
+                    }
+
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Coupon applied successfully!',
+                        'total_discount' => round($totalDiscount, 2),
+                        'matched_subtotal' => round($subtotal, 2),
+                    ]);
+                } else {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Coupon is expired or invalid.'
+                    ]);
+                }
+            }
+
+            // Existing logic for authenticated users follows...
             if ($couponData->status == 'active') {
                 if (Carbon::now()->between($couponData->starts_at, $couponData->expires_at)) {
                     if ($couponData->used_count <= $couponData->usage_limit) {
@@ -879,7 +933,9 @@ class DashboardController extends Controller
                                 $matchingCartItems = $cartData->whereIn('product_id', $matchedProductIds);
 
                                 // working fine for user
-                                $matchingCartItems = $cartData->whereIn('user_id', Auth::user()->id);
+                                if (Auth::check()) {
+                                    $matchingCartItems = $cartData->whereIn('user_id', Auth::user()->id);
+                                }
                             } else {
                                 $matchingCartItems = $cartData;
                             }
@@ -893,7 +949,7 @@ class DashboardController extends Controller
                         $totalDiscount = 0;
 
                         if ($couponType == 'reference') {
-                            if (in_array(Auth::id(), $assignedUserIds) || in_array('all_shop', $couponData->applicable_to) || in_array('all_gym', $couponData->applicable_to)) {
+                            if (Auth::check() && (in_array(Auth::id(), $assignedUserIds) || in_array('all_shop', $couponData->applicable_to) || in_array('all_gym', $couponData->applicable_to))) {
                                 if ($couponData->type == 'percentage') {
 
                                     foreach ($matchingCartItems as $item) {

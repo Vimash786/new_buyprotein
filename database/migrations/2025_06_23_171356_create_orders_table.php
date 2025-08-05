@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('product_id')->constrained('products')->onDelete('cascade');
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->string('guest_email')->nullable();
             $table->integer('quantity');
             $table->decimal('unit_price', 10, 2);
             $table->decimal('total_amount', 10, 2);

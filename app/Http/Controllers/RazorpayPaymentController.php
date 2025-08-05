@@ -19,26 +19,47 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 use Razorpay\Api\Api;
 
 class RazorpayPaymentController extends Controller
 {
     public function payment(Request $request)
     {
-        $api = new Api(config('services.razorpay.key'), config('services.razorpay.secret'));
+        try {
+            Log::info('Payment request received', [
+                'method' => $request->method(),
+                'content_type' => $request->header('Content-Type'),
+                'data' => $request->all()
+            ]);
+            
+            $api = new Api(config('services.razorpay.key'), config('services.razorpay.secret'));
         $billing = $request->input('billing');
         $shipping = $request->input('shipping');
         $cartProducts = $request->input('products');
         $amount = $request->input('amount');
         $discount = $request->input('discount');
         $coupon = $request->input('coupon');
+        $isGuest = $request->input('is_guest', false);
 
         $randomPart = 'BG' . str_pad(rand(0, 9999), 4, '0', STR_PAD_LEFT);
         $orderNumber = 'ORD-' . Carbon::now()->format('Ymd') . '-' . $randomPart;
 
+        // Handle both authenticated and guest users
+        $userId = null;
+        $guestEmail = null;
+        
+        if (Auth::check()) {
+            $userId = Auth::user()->id;
+        } else {
+            // For guest users, we'll store the email from billing data
+            $guestEmail = $billing['email'] ?? null;
+        }
+
         $order = orders::create([
             'order_number' => $orderNumber,
-            'user_id' => Auth::user()->id,
+            'user_id' => $userId,
+            'guest_email' => $guestEmail,
             'total_order_amount' => $amount,
         ]);
 
@@ -54,7 +75,7 @@ class RazorpayPaymentController extends Controller
 
             $couponUsage = CouponUsage::create([
                 'coupon_id' => $couponData->id,
-                'user_id' => Auth::user()->id,
+                'user_id' => $userId,
                 'order_id' => $orderId,
                 'discount_amount' => $discount,
             ]);
@@ -64,7 +85,7 @@ class RazorpayPaymentController extends Controller
             $existing = BillingDetail::find($billing['existing_billing_id']);
 
             $shippingAddress = ShippingAddress::create([
-                'user_id' => Auth::user()->id,
+                'user_id' => $userId,
                 'recipient_phone' => $existing->billing_phone,
                 'address_line_1' => $existing->billing_address,
                 'city' => $existing->billing_city,
@@ -94,7 +115,7 @@ class RazorpayPaymentController extends Controller
         } else {
 
             $shippingAddress = ShippingAddress::create([
-                'user_id' => Auth::user()->id,
+                'user_id' => $userId,
                 'recipient_phone' => $shipping['phone'],
                 'address_line_1' => $shipping['street'],
                 'city' => $shipping['city'],
@@ -122,31 +143,80 @@ class RazorpayPaymentController extends Controller
             ]);
         }
 
-        foreach ($cartProducts as $product) {
-            $cart = Cart::find($product);
-            $productData = products::find($cart->product_id);
+        // Process cart items - handle both authenticated users and guests
+        if (!$isGuest && Auth::check()) {
+            // For authenticated users, use database cart
+            foreach ($cartProducts as $product) {
+                $cart = Cart::find($product);
+                $productData = products::find($cart->product_id);
 
-            $sellerOrder = OrderSellerProduct::create([
-                'order_id' => $orderId,
-                'seller_id' => $productData->seller_id,
-                'product_id' => $productData->id,
-                'variant' => $cart->variant_option_ids,
-                'quantity' => $cart->quantity,
-                'unit_price' => $cart->price,
-                'total_amount' => $cart->quantity * $cart->price,
-            ]);
+                $sellerOrder = OrderSellerProduct::create([
+                    'order_id' => $orderId,
+                    'seller_id' => $productData->seller_id,
+                    'product_id' => $productData->id,
+                    'variant' => $cart->variant_option_ids,
+                    'quantity' => $cart->quantity,
+                    'unit_price' => $cart->price,
+                    'total_amount' => $cart->quantity * $cart->price,
+                ]);
 
-            $sellerData = Sellers::find($productData->seller_id);
-            $seller = User::where('id', $sellerData->user_id)->first();
+                $sellerData = Sellers::find($productData->seller_id);
+                $seller = User::where('id', $sellerData->user_id)->first();
 
-            Mail::to($seller->email)->send(new SellerOrder(Auth::user(), $sellerData));
+                Mail::to($seller->email)->send(new SellerOrder(Auth::user(), $sellerData));
 
-            $cart->delete();
+                $cart->delete();
+            }
+        } else {
+            // For guest users, use session cart
+            $sessionCart = session('cart', []);
+            foreach ($cartProducts as $productKey) {
+                if (isset($sessionCart[$productKey])) {
+                    $item = $sessionCart[$productKey];
+                    $productData = products::find($item['product_id']);
+
+                    $sellerOrder = OrderSellerProduct::create([
+                        'order_id' => $orderId,
+                        'seller_id' => $productData->seller_id,
+                        'product_id' => $productData->id,
+                        'variant' => $item['variant_option_ids'],
+                        'quantity' => $item['quantity'],
+                        'unit_price' => $item['price'],
+                        'total_amount' => $item['quantity'] * $item['price'],
+                    ]);
+
+                    $sellerData = Sellers::find($productData->seller_id);
+                    $seller = User::where('id', $sellerData->user_id)->first();
+
+                    // Create a guest user object for email
+                    $guestUser = (object) [
+                        'name' => 'Guest Customer',
+                        'email' => $guestEmail
+                    ];
+
+                    Mail::to($seller->email)->send(new SellerOrder($guestUser, $sellerData));
+
+                    // Remove item from session cart
+                    unset($sessionCart[$productKey]);
+                }
+            }
+            // Update session cart
+            session(['cart' => $sessionCart]);
         }
 
         $allOrderItems = OrderSellerProduct::with(['product', 'order'])->where('order_id', $orderId)->get();
 
-        Mail::to(Auth::user()->email)->send(new UserOrder(Auth::user(), $allOrderItems, $amount));
+        // Send confirmation email to customer
+        if (!$isGuest && Auth::check()) {
+            Mail::to(Auth::user()->email)->send(new UserOrder(Auth::user(), $allOrderItems, $amount));
+        } else {
+            // For guest users
+            $guestUser = (object) [
+                'name' => 'Guest Customer',
+                'email' => $guestEmail
+            ];
+            Mail::to($guestEmail)->send(new UserOrder($guestUser, $allOrderItems, $amount));
+        }
 
         $payment = $api->payment->fetch($request->razorpay_payment_id);
 
@@ -155,5 +225,16 @@ class RazorpayPaymentController extends Controller
         }
 
         return response()->json(['success' => false]);
+    } catch (\Exception $e) {
+        Log::error('Payment processing error', [
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+        
+        return response()->json([
+            'success' => false,
+            'message' => 'Payment processing failed: ' . $e->getMessage()
+        ], 500);
     }
+}
 }

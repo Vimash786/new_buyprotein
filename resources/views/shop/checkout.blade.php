@@ -31,32 +31,45 @@
 
                     <div class="rts-billing-details-area">
                         <h3 class="title">Billing Details</h3>
-                        @if (!empty($billingAddress) && count($billingAddress) > 0)
-                            <div class="d-flex justify-content-between mb-3">
-                                <p class="m-2">Existing Address:</p>
-                                <button type="button" class="btn btn-outline-primary w-auto" id="showNewAddressForm">
-                                    + Add New Billing Address
-                                </button>
+                        @guest
+                            <div class="alert alert-info mb-3">
+                                <small><i class="fa fa-info-circle"></i> You can checkout as a guest. No account required!</small>
                             </div>
-                            <div class="row">
-                                @foreach ($billingAddress as $billAdd)
-                                    <label class="card card-body mb-4 billAddress" style="border-radius: 15px;">
-                                        <input type="radio" name="billAdd" class="d-none" value="{{ $billAdd->id }}" />
-                                        <div class="p-3 address-content">
-                                            {{ $billAdd->billing_address }},
-                                            {{ $billAdd->billing_city }},
-                                            {{ $billAdd->billing_state }},
-                                            {{ $billAdd->billing_postal_code }},
-                                            {{ $billAdd->billing_country }}
-                                        </div>
-                                    </label>
-                                @endforeach
-                            </div>
+                        @endguest
+                        @auth
+                            @if (!empty($billingAddress) && count($billingAddress) > 0)
+                                <div class="d-flex justify-content-between mb-3">
+                                    <p class="m-2">Existing Address:</p>
+                                    <button type="button" class="btn btn-outline-primary w-auto" id="showNewAddressForm">
+                                        + Add New Billing Address
+                                    </button>
+                                </div>
+                                <div class="row">
+                                    @foreach ($billingAddress as $billAdd)
+                                        <label class="card card-body mb-4 billAddress" style="border-radius: 15px;">
+                                            <input type="radio" name="billAdd" class="d-none" value="{{ $billAdd->id }}" />
+                                            <div class="p-3 address-content">
+                                                {{ $billAdd->billing_address }},
+                                                {{ $billAdd->billing_city }},
+                                                {{ $billAdd->billing_state }},
+                                                {{ $billAdd->billing_postal_code }},
+                                                {{ $billAdd->billing_country }}
+                                            </div>
+                                        </label>
+                                    @endforeach
+                                </div>
 
-                            <!-- Button to show new address form -->
-                        @endif
+                                <!-- Button to show new address form -->
+                            @endif
+                        @endauth
                         <form action="#">
-                            <div id="newAddressForm" style="display: {{ count($billingAddress) > 0 ? 'none' : 'block' }};">
+                            <div id="newAddressForm" style="display: {{ (Auth::check() && count($billingAddress) > 0) ? 'none' : 'block' }};">
+                                @guest
+                                    <div class="single-input">
+                                        <label for="email">Email Address*</label>
+                                        <input id="billingEmail" type="email" name="billingEmail" required>
+                                    </div>
+                                @endguest
                                 <div class="single-input">
                                     <label for="phone">Phone*</label>
                                     <input id="billingPhone" type="text" name="billingPhone" required>
@@ -395,6 +408,15 @@
                     zip: $('#billingZip').val().trim()
                 };
 
+                // Add email for guest users
+                @guest
+                    billingData.email = $('#billingEmail').val().trim();
+                    if (!billingData.email) {
+                        alert("Please provide your email address.");
+                        return;
+                    }
+                @endguest
+
                 // Validate manual input
                 if (!billingData.phone || !billingData.street || !billingData.city || !billingData
                     .state || !billingData.zip) {
@@ -429,6 +451,7 @@
                 "description": "Order Payment",
                 "image": "https://yourdomain.com/logo.png",
                 "handler": function(response) {
+                    console.log('Razorpay Response:', response);
                     Swal.fire({
                         title: 'Processing Payment...',
                         text: 'Please wait while we complete your order.',
@@ -437,52 +460,101 @@
                             Swal.showLoading();
                         }
                     });
+                    
+                    const paymentData = {
+                        razorpay_payment_id: response.razorpay_payment_id,
+                        billing: billingData,
+                        shipping: shippingData,
+                        products: allProductData,
+                        amount: (paymentAmount / 100),
+                        discount: appliedDiscount,
+                        coupon: appliedCoupon,
+                        @guest
+                        is_guest: true
+                        @else
+                        is_guest: false
+                        @endguest
+                    };
+                    
+                    console.log('Payment Data being sent:', paymentData);
+                    
+                    // First test with test route
                     $.ajax({
-                        url: "{{ route('razorpay.payment') }}",
+                        url: "{{ route('test.payment') }}",
                         type: "POST",
-                        contentType: "application/json",
                         headers: {
                             "X-CSRF-TOKEN": "{{ csrf_token() }}"
                         },
-                        data: JSON.stringify({
-                            razorpay_payment_id: response.razorpay_payment_id,
-                            billing: billingData,
-                            shipping: shippingData,
-                            products: allProductData,
-                            amount: (paymentAmount / 100),
-                            discount: appliedDiscount,
-                            coupon: appliedCoupon
-                        }),
-                        success: function(data) {
-                            if (data.success) {
-                                Swal.fire({
-                                    title: 'Payment Successful!',
-                                    text: 'Thank you for your purchase.',
-                                    icon: 'success',
-                                    confirmButtonText: 'Keep Shopping'
-                                }).then((result) => {
-                                    if (result.isConfirmed) {
-                                        window.location.href = "/";
+                        data: paymentData,
+                        success: function(testData) {
+                            console.log('Test route success:', testData);
+                            
+                            // Now try the actual payment route
+                            $.ajax({
+                                url: "{{ route('razorpay.payment') }}",
+                                type: "POST",
+                                headers: {
+                                    "X-CSRF-TOKEN": "{{ csrf_token() }}"
+                                },
+                                data: paymentData,
+                                success: function(data) {
+                                    if (data.success) {
+                                        Swal.fire({
+                                            title: 'Payment Successful!',
+                                            text: 'Thank you for your purchase.',
+                                            icon: 'success',
+                                            confirmButtonText: 'Keep Shopping'
+                                        }).then((result) => {
+                                            if (result.isConfirmed) {
+                                                window.location.href = "/";
+                                            }
+                                        });
+                                    } else {
+                                        Swal.fire({
+                                            title: 'Payment Failed',
+                                            text: 'Something went wrong. Please try again.',
+                                            icon: 'error',
+                                            confirmButtonText: 'OK'
+                                        });
                                     }
-                                });
-                            } else {
-                                Swal.fire({
-                                    title: 'Payment Failed',
-                                    text: 'Something went wrong. Please try again.',
-                                    icon: 'error',
-                                    confirmButtonText: 'OK'
-                                });
-                            }
+                                },
+                                error: function(xhr, status, error) {
+                                    console.log('Payment AJAX Error:', xhr.responseText);
+                                    console.log('Status:', status);
+                                    console.log('Error:', error);
+                                    
+                                    Swal.fire({
+                                        title: 'Payment Failed',
+                                        text: 'Server error: ' + (xhr.responseJSON?.message || 'Please try again.'),
+                                        icon: 'error',
+                                        confirmButtonText: 'OK'
+                                    });
+                                }
+                            });
                         },
-                        error: function() {
-                            alert("Server error. Please try again.");
+                        error: function(xhr, status, error) {
+                            console.log('Test route AJAX Error:', xhr.responseText);
+                            console.log('Status:', status);
+                            console.log('Error:', error);
+                            
+                            Swal.fire({
+                                title: 'Connection Test Failed',
+                                text: 'Unable to connect to server: ' + (xhr.responseJSON?.message || 'Please try again.'),
+                                icon: 'error',
+                                confirmButtonText: 'OK'
+                            });
                         }
                     });
 
                 },
                 "prefill": {
-                    "name": "Test User",
-                    "email": "test@example.com"
+                    @auth
+                        "name": "{{ Auth::user()->name }}",
+                        "email": "{{ Auth::user()->email }}"
+                    @else
+                        "name": "Guest User",
+                        "email": ""
+                    @endauth
                 },
                 "theme": {
                     "color": "#528FF0"

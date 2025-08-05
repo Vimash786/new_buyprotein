@@ -13,7 +13,11 @@ return new class extends Migration
     {
         Schema::create('shipping_addresses', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->unsignedBigInteger('user_id')->nullable();
+            
+            // Add the foreign key constraint allowing null values
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->tinyInteger('order_id')->nullable();
             $table->string('recipient_phone');
             $table->text('address_line_1');
             $table->string('city');
