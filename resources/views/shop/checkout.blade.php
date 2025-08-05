@@ -64,12 +64,11 @@
                         @endauth
                         <form action="#">
                             <div id="newAddressForm" style="display: {{ (Auth::check() && count($billingAddress) > 0) ? 'none' : 'block' }};">
-                                @guest
-                                    <div class="single-input">
-                                        <label for="email">Email Address*</label>
-                                        <input id="billingEmail" type="email" name="billingEmail" required>
-                                    </div>
-                                @endguest
+                                <div class="single-input">
+                                    <label for="email">Email Address*</label>
+                                    <input id="billingEmail" type="email" name="billingEmail" 
+                                           value="{{ Auth::check() ? Auth::user()->email : '' }}" required>
+                                </div>
                                 <div class="single-input">
                                     <label for="phone">Phone*</label>
                                     <input id="billingPhone" type="text" name="billingPhone" required>
@@ -394,13 +393,15 @@
             let shippingData = {};
 
             if (useExisting) {
-                // Just send the existing address ID
+                // Just send the existing address ID, but still need email
                 billingData = {
-                    existing_billing_id: selectedAddressId
+                    existing_billing_id: selectedAddressId,
+                    email: "{{ Auth::check() ? Auth::user()->email : '' }}"
                 };
             } else {
                 // Get data from form fields
                 billingData = {
+                    email: $('#billingEmail').val().trim(),
                     phone: $('#billingPhone').val().trim(),
                     street: $('#billingStreet').val().trim(),
                     city: $('#billingCity').val().trim(),
@@ -408,19 +409,10 @@
                     zip: $('#billingZip').val().trim()
                 };
 
-                // Add email for guest users
-                @guest
-                    billingData.email = $('#billingEmail').val().trim();
-                    if (!billingData.email) {
-                        alert("Please provide your email address.");
-                        return;
-                    }
-                @endguest
-
                 // Validate manual input
-                if (!billingData.phone || !billingData.street || !billingData.city || !billingData
+                if (!billingData.email || !billingData.phone || !billingData.street || !billingData.city || !billingData
                     .state || !billingData.zip) {
-                    alert("Please fill all required billing fields.");
+                    alert("Please fill all required billing fields including email address.");
                     return;
                 }
             }
@@ -472,11 +464,22 @@
                         @guest
                         is_guest: true
                         @else
-                        is_guest: false
+                        is_guest: false,
+                        user_email: "{{ Auth::user()->email ?? 'N/A' }}"
                         @endguest
                     };
                     
                     console.log('Payment Data being sent:', paymentData);
+                    console.log('User authentication status:', {
+                        @auth
+                        is_authenticated: true,
+                        user_id: {{ Auth::user()->id }},
+                        user_email: "{{ Auth::user()->email ?? 'N/A' }}",
+                        user_name: "{{ Auth::user()->name ?? 'N/A' }}"
+                        @else
+                        is_authenticated: false
+                        @endauth
+                    });
                     
                     // First test with test route
                     $.ajax({

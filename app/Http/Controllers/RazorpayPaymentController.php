@@ -48,12 +48,16 @@ class RazorpayPaymentController extends Controller
         // Handle both authenticated and guest users
         $userId = null;
         $guestEmail = null;
+        $userEmail = null; // Email to use for sending confirmation
         
         if (Auth::check()) {
             $userId = Auth::user()->id;
+            // Use email from billing data or fall back to user's stored email
+            $userEmail = $billing['email'] ?? Auth::user()->email;
         } else {
             // For guest users, we'll store the email from billing data
             $guestEmail = $billing['email'] ?? null;
+            $userEmail = $guestEmail;
         }
 
         $order = orders::create([
@@ -165,7 +169,15 @@ class RazorpayPaymentController extends Controller
                 $sellerData = Sellers::find($productData->seller_id);
                 $seller = User::where('id', $sellerData->user_id)->first();
 
-                Mail::to($seller->email)->send(new SellerOrder(Auth::user(), $sellerData));
+                if ($seller && !empty($seller->email)) {
+                    Mail::to($seller->email)->send(new SellerOrder(Auth::user(), $sellerData));
+                } else {
+                    Log::error('Seller email is empty or seller not found', [
+                        'seller_id' => $productData->seller_id,
+                        'seller_user_id' => $sellerData->user_id ?? 'N/A',
+                        'seller_email' => $seller->email ?? 'N/A'
+                    ]);
+                }
 
                 $cart->delete();
             }
@@ -193,10 +205,18 @@ class RazorpayPaymentController extends Controller
                     // Create a guest user object for email
                     $guestUser = (object) [
                         'name' => 'Guest Customer',
-                        'email' => $guestEmail
+                        'email' => $userEmail
                     ];
 
-                    Mail::to($seller->email)->send(new SellerOrder($guestUser, $sellerData));
+                    if ($seller && !empty($seller->email)) {
+                        Mail::to($seller->email)->send(new SellerOrder($guestUser, $sellerData));
+                    } else {
+                        Log::error('Seller email is empty or seller not found for guest order', [
+                            'seller_id' => $productData->seller_id,
+                            'seller_user_id' => $sellerData->user_id ?? 'N/A',
+                            'seller_email' => $seller->email ?? 'N/A'
+                        ]);
+                    }
 
                     // Remove item from session cart
                     unset($sessionCart[$productKey]);
@@ -210,14 +230,37 @@ class RazorpayPaymentController extends Controller
 
         // Send confirmation email to customer
         if (!$isGuest && Auth::check()) {
-            Mail::to(Auth::user()->email)->send(new UserOrder(Auth::user(), $allOrderItems, $amount));
+            $user = Auth::user();
+            
+            Log::info('Attempting to send user order email', [
+                'user_id' => $user->id,
+                'user_email' => $userEmail,
+                'email_length' => strlen($userEmail ?? ''),
+                'is_empty' => empty($userEmail)
+            ]);
+            
+            if (!empty($userEmail)) {
+                Mail::to($userEmail)->send(new UserOrder($user, $allOrderItems, $amount));
+            } else {
+                Log::error('User email is empty for authenticated user', [
+                    'user_id' => $user->id,
+                    'user_name' => $user->name
+                ]);
+                // Continue without sending email rather than failing the whole transaction
+                Log::warning('Skipping user order email due to missing email address');
+            }
         } else {
             // For guest users
+            if (empty($userEmail)) {
+                Log::error('Guest email is empty');
+                throw new \Exception('Guest email is required but not provided');
+            }
+            
             $guestUser = (object) [
                 'name' => 'Guest Customer',
-                'email' => $guestEmail
+                'email' => $userEmail
             ];
-            Mail::to($guestEmail)->send(new UserOrder($guestUser, $allOrderItems, $amount));
+            Mail::to($userEmail)->send(new UserOrder($guestUser, $allOrderItems, $amount));
         }
 
         $payment = $api->payment->fetch($request->razorpay_payment_id);
