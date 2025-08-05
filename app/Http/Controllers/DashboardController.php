@@ -41,10 +41,64 @@ class DashboardController extends Controller
         // $productCounts = orders::select('product_id', DB::raw('count(*) as total'))->groupBy('product_id')->orderBy('product_id')->get();
         // $productIds = $productCounts->pluck('product_id');
         // $products = products::with(['subCategory', 'category'])->whereIn('id', $productIds)->get();
-        $everyDayEssentials = products::with(['subCategory', 'category', 'images', 'variants', 'seller'])->whereJsonContains('section_category', 'everyday_essential')->where('super_status', 'approved')->limit(10)->get();
-        $populerProducts = products::with(['images', 'variants', 'seller'])->whereJsonContains('section_category', 'popular_pick')->where('super_status', 'approved')->limit(6)->get();
-        $latestProducts = products::with(['images', 'variants', 'seller'])->orderBy('created_at', 'desc')->where('super_status', 'approved')->take(12)->get();
-        $offers = products::with(['images', 'variants', 'seller'])->where('section_category', 'LIKE', '%"exclusive_deal"%')->where('super_status', 'approved')->limit(8)->get();
+        
+        // Get unique products for each section to prevent duplicates
+        $everyDayEssentials = products::with(['subCategory', 'category', 'images', 'variants', 'seller'])
+            ->whereJsonContains('section_category', 'everyday_essential')
+            ->where('super_status', 'approved')
+            ->distinct()
+            ->limit(12) // Increased from 10 to 12 for better display
+            ->get();
+            
+        $populerProducts = products::with(['images', 'variants', 'seller'])
+            ->whereJsonContains('section_category', 'popular_pick')
+            ->where('super_status', 'approved')
+            ->distinct()
+            ->limit(8) // Increased from 6 to 8 for better display
+            ->get();
+            
+        // If no popular picks found, get products with high sales/views as fallback
+        if ($populerProducts->isEmpty()) {
+            $populerProducts = products::with(['images', 'variants', 'seller'])
+                ->where('super_status', 'approved')
+                ->whereNotIn('id', $everyDayEssentials->pluck('id'))
+                ->orderBy('created_at', 'desc') // or order by sales if available
+                ->distinct()
+                ->limit(8)
+                ->get();
+        }
+            
+        $latestProducts = products::with(['images', 'variants', 'seller'])
+            ->orderBy('created_at', 'desc')
+            ->where('super_status', 'approved')
+            ->distinct()
+            ->take(10) // Changed from 12 to 10
+            ->get();
+            
+        // If no exclusive deals found with exclusions, try without exclusions
+        $offers = products::with(['images', 'variants', 'seller'])
+            ->whereJsonContains('section_category', 'exclusive_deal')
+            ->where('super_status', 'approved')
+            ->distinct()
+            ->limit(8)
+            ->get();
+            
+        // If still no results, get products with high discount percentage as fallback
+        if ($offers->isEmpty()) {
+            $offers = products::with(['images', 'variants', 'seller'])
+                ->where('super_status', 'approved')
+                ->where('discount_percentage', '>', 10) // Products with more than 10% discount
+                ->whereNotIn('id', $everyDayEssentials->pluck('id'))
+                ->whereNotIn('id', $populerProducts->pluck('id'))
+                ->whereNotIn('id', $latestProducts->pluck('id'))
+                ->distinct()
+                ->limit(8)
+                ->get();
+        }
+        
+        // Debug: Log the offers count for troubleshooting
+        Log::info('Exclusive Deals Query Result: ' . $offers->count() . ' products found');
+            
         $banners = Banner::where('status', 'active')->orderBy('created_at', 'desc')->get();
         $sellers = Sellers::where('status', 'approved')->limit(4)->get();
 

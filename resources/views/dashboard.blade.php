@@ -161,11 +161,11 @@
             <div class="row">
                 <div class="col-lg-12">
                     <div class="category-area-main-wrapper-one">
-                        <div class="swiper mySwiper-category-1 swiper-data"
+                        <div class="swiper mySwiper-everyday-essentials swiper-data"
                             data-swiper='{
                             "spaceBetween":16,
                             "slidesPerView":6,
-                            "loop": true,
+                            "loop": false,
                             "speed": 700,
                             "navigation":{
                                 "nextEl":".swiper-button-next",
@@ -196,6 +196,15 @@
                             }
                         }'>
                             <div class="swiper-wrapper">
+                                {{-- Debug: Show everyday essentials count --}}
+                                @if($everyDayEssentials->isEmpty())
+                                    <div class="swiper-slide">
+                                        <div class="alert alert-info">
+                                            No everyday essentials available at the moment.
+                                        </div>
+                                    </div>
+                                @endif
+                                
                                 @foreach ($everyDayEssentials as $everyDayProduct)
                                     @if (isset($everyDayProduct->seller) && $everyDayProduct->seller->status == 'approved')
                                         <div class="swiper-slide">
@@ -305,11 +314,11 @@
             <div class="row">
                 <div class="col-lg-12">
                     <div class="category-area-main-wrapper-one">
-                        <div class="swiper mySwiper-category-1 swiper-data"
+                        <div class="swiper mySwiper-popular-picks swiper-data"
                             data-swiper='{
                                 "spaceBetween": 16,
                                 "slidesPerView": 6,
-                                "loop": true,
+                                "loop": false,
                                 "speed": 700,
                                 "navigation": {
                                     "nextEl": ".swiper-button-next",
@@ -325,6 +334,15 @@
                                 }
                             }'>
                             <div class="swiper-wrapper">
+                                {{-- Debug: Show popular picks count --}}
+                                @if($populerProducts->isEmpty())
+                                    <div class="swiper-slide">
+                                        <div class="alert alert-info">
+                                            No popular picks available at the moment.
+                                        </div>
+                                    </div>
+                                @endif
+                                
                                 @foreach ($populerProducts as $populerProduct)
                                     @if (isset($populerProduct->seller) && $populerProduct->seller->status == 'approved')
                                         <div class="swiper-slide">
@@ -342,12 +360,21 @@
 
                                                         @php
                                                             $variantThumbnail = $populerProduct->images->first(
-                                                                fn($img) => $img->image_type === 'variant_thumbnail',
+                                                                function ($img) {
+                                                                    return $img->image_type === 'variant_thumbnail';
+                                                                },
                                                             );
                                                         @endphp
 
-                                                        <img src="{{ asset('storage/' . ($variantThumbnail->image_path ?? $populerProduct->thumbnail_image)) }}"
-                                                            alt="{{ $populerProduct->name }}" loading="lazy">
+                                                        @if ($populerProduct->variants->count() > 0)
+                                                            @if ($variantThumbnail)
+                                                                <img src="{{ asset('storage/' . $variantThumbnail->image_path) }}"
+                                                                    alt="product">
+                                                            @endif
+                                                        @else
+                                                            <img src="{{ asset('storage/' . $populerProduct->thumbnail_image) }}"
+                                                                alt="product">
+                                                        @endif
                                                     </a>
                                                 </div>
 
@@ -358,19 +385,17 @@
                                                         <h4 class="title">{{ $populerProduct->name }}</h4>
                                                     </a>
                                                     <div class="price-area">
-                                                        <span
-                                                            class="current">{{ format_price($populerProduct->id) }}</span>
-                                                        @if ($populerProduct->previous_price > $populerProduct->price)
-                                                            <div class="previous">
-                                                                {{ format_price($populerProduct->id, 'actual') }}</div>
-                                                        @endif
+                                                        <div class="current">{{ format_price($populerProduct->id) }}</div>
+                                                        <div class="previous">
+                                                            {{ format_price($populerProduct->id, 'actual') }}
+                                                        </div>
                                                     </div>
 
                                                     <!-- Quantity & Cart -->
                                                     <div class="cart-counter-action">
                                                         <div class="quantity-edit">
-                                                            <input type="number" class="input quantity-input"
-                                                                value="1" min="1">
+                                                            <input type="text" class="input quantity-input"
+                                                                value="1">
                                                             <div class="button-wrapper-action">
                                                                 <button class="button"><i
                                                                         class="fa-regular fa-chevron-down"></i></button>
@@ -381,7 +406,12 @@
                                                         <a href="#"
                                                             class="rts-btn btn-primary radious-sm with-icon add-to-cart-btn"
                                                             data-product-id="{{ $populerProduct->id }}">
-                                                            <div class="btn-text">Add To Cart</div>
+                                                            <div class="btn-text">
+                                                                Add
+                                                            </div>
+                                                            <div class="arrow-icon">
+                                                                <i class="fa-regular fa-cart-shopping"></i>
+                                                            </div>
                                                             <div class="arrow-icon">
                                                                 <i class="fa-regular fa-cart-shopping"></i>
                                                             </div>
@@ -427,11 +457,11 @@
                             aria-labelledby="home-tab">
                             <div class="row g-4">
                                 <div class="category-area-main-wrapper-one">
-                                    <div class="swiper mySwiper-category-1 swiper-data"
+                                    <div class="swiper mySwiper-new-arrivals swiper-data"
                                         data-swiper='{
                                             "spaceBetween": 16,
                                             "slidesPerView": 6,
-                                            "loop": true,
+                                            "loop": false,
                                             "speed": 700,
                                             "navigation": {
                                                 "nextEl": ".swiper-button-next",
@@ -447,6 +477,15 @@
                                             }
                                         }'>
                                         <div class="swiper-wrapper">
+                                            {{-- Debug: Show new arrivals count --}}
+                                            @if($latestProducts->isEmpty())
+                                                <div class="swiper-slide">
+                                                    <div class="alert alert-info">
+                                                        No new arrivals available at the moment.
+                                                    </div>
+                                                </div>
+                                            @endif
+                                            
                                             @foreach ($latestProducts as $lat_pro)
                                                 @if (isset($lat_pro->seller) && $lat_pro->seller->status == 'approved')
                                                     <div class="swiper-slide">
@@ -555,11 +594,11 @@
                 </div>
                 <div class="row g-4">
                     <div class="category-area-main-wrapper-one">
-                        <div class="swiper mySwiper-category-1 swiper-data"
+                        <div class="swiper mySwiper-shop-by-brand swiper-data"
                             data-swiper='{
                                 "spaceBetween": 16,
                                 "slidesPerView": 6,
-                                "loop": true,
+                                "loop": false,
                                 "speed": 700,
                                 "navigation": {
                                     "nextEl": ".swiper-button-next",
@@ -622,11 +661,11 @@
                 <div class="row">
                     <div class="col-lg-12">
                         <div class="category-area-main-wrapper-one">
-                            <div class="swiper mySwiper-category-1 swiper-data"
+                            <div class="swiper mySwiper-exclusive-deals swiper-data"
                                 data-swiper='{
                                     "spaceBetween": 16,
                                     "slidesPerView": 6,
-                                    "loop": true,
+                                    "loop": false,
                                     "speed": 700,
                                     "navigation": {
                                         "nextEl": ".swiper-button-next",
@@ -642,6 +681,15 @@
                                     }
                                 }'>
                                 <div class="swiper-wrapper">
+                                    {{-- Debug: Show offers count --}}
+                                    @if($offers->isEmpty())
+                                        <div class="swiper-slide">
+                                            <div class="alert alert-info">
+                                                No exclusive deals available at the moment.
+                                            </div>
+                                        </div>
+                                    @endif
+                                    
                                     @foreach ($offers as $offer)
                                         <div class="swiper-slide">
                                             <div class="single-shopping-card-one">
@@ -687,6 +735,31 @@
                                                         <div class="previous">
                                                             {{ format_price($offer->id, 'actual') }}
                                                         </div>
+                                                    </div>
+                                                    <div class="cart-counter-action">
+                                                        <div class="quantity-edit">
+                                                            <input type="text" class="input quantity-input"
+                                                                value="1">
+                                                            <div class="button-wrapper-action">
+                                                                <button class="button"><i
+                                                                        class="fa-regular fa-chevron-down"></i></button>
+                                                                <button class="button plus">+<i
+                                                                        class="fa-regular fa-chevron-up"></i></button>
+                                                            </div>
+                                                        </div>
+                                                        <a href="#"
+                                                            class="rts-btn btn-primary radious-sm with-icon add-to-cart-btn"
+                                                            data-product-id="{{ $offer->id }}">
+                                                            <div class="btn-text">
+                                                                Add
+                                                            </div>
+                                                            <div class="arrow-icon">
+                                                                <i class="fa-regular fa-cart-shopping"></i>
+                                                            </div>
+                                                            <div class="arrow-icon">
+                                                                <i class="fa-regular fa-cart-shopping"></i>
+                                                            </div>
+                                                        </a>
                                                     </div>
                                                 </div>
                                             </div>
