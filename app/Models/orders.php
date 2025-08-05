@@ -53,6 +53,14 @@ class orders extends Model
     }
 
     /**
+     * Get the shipping address for this order.
+     */
+    public function shippingAddress(): HasOne
+    {
+        return $this->hasOne(ShippingAddress::class, 'order_id');
+    }
+
+    /**
      * Get all sellers associated with this order.
      */
     public function sellers()

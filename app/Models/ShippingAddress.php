@@ -16,6 +16,7 @@ class ShippingAddress extends Model
      */
     protected $fillable = [
         'user_id',
+        'order_id',
         'address_type',
         'recipient_name',
         'recipient_phone',
@@ -46,6 +47,14 @@ class ShippingAddress extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the order that this shipping address belongs to.
+     */
+    public function order(): BelongsTo
+    {
+        return $this->belongsTo(orders::class, 'order_id');
     }
 
     /**

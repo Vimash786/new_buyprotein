@@ -17,7 +17,9 @@ return new class extends Migration
             
             // Add the foreign key constraint allowing null values
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
-            $table->tinyInteger('order_id')->nullable();
+            $table->unsignedBigInteger('order_id')->nullable();
+            $table->foreign('order_id')->references('id')->on('orders')->nullOnDelete();
+            $table->index('order_id');
             $table->string('recipient_phone');
             $table->text('address_line_1');
             $table->string('city');

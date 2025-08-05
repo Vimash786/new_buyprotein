@@ -110,7 +110,7 @@
                             <td style="padding: 10px;">{{ $item->product->name }}</td>
                             <td style="padding: 10px;">{{ $item->quantity }}</td>
                             <td style="padding: 10px;">₹{{ number_format($item->unit_price, 2) }}</td>
-                            <td style="padding: 10px;">₹{{ number_format($item->price * $item->quantity, 2) }}</td>
+                            <td style="padding: 10px;">₹{{ number_format($item->unit_price * $item->quantity, 2) }}</td>
                         </tr>
                     @endforeach
                 </tbody>

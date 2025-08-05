@@ -86,6 +86,7 @@ class RazorpayPaymentController extends Controller
 
             $shippingAddress = ShippingAddress::create([
                 'user_id' => $userId,
+                'order_id' => $orderId,
                 'recipient_phone' => $existing->billing_phone,
                 'address_line_1' => $existing->billing_address,
                 'city' => $existing->billing_city,
@@ -116,6 +117,7 @@ class RazorpayPaymentController extends Controller
 
             $shippingAddress = ShippingAddress::create([
                 'user_id' => $userId,
+                'order_id' => $orderId,
                 'recipient_phone' => $shipping['phone'],
                 'address_line_1' => $shipping['street'],
                 'city' => $shipping['city'],
