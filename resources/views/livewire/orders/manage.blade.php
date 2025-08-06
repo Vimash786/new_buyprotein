@@ -180,7 +180,28 @@ new class extends Component
                     'order.user', 
                     'order.billingDetail.shippingAddress',
                     'variantCombination'
-                ])->latest()->paginate(10);
+                ]);
+
+            // Apply search filter for sellers
+            if ($this->search) {
+                $seller_query->where(function($q) {
+                    $q->whereHas('product', function($product) {
+                        $product->where('name', 'like', '%' . $this->search . '%');
+                    })->orWhereHas('order.user', function($user) {
+                        $user->where('name', 'like', '%' . $this->search . '%')
+                             ->orWhere('email', 'like', '%' . $this->search . '%');
+                    })->orWhereHas('order', function($order) {
+                        $order->where('order_number', 'like', '%' . $this->search . '%');
+                    });
+                });
+            }
+
+            // Apply status filter for sellers
+            if ($this->statusFilter) {
+                $seller_query->where('status', $this->statusFilter);
+            }
+
+            $seller_query = $seller_query->latest()->paginate(10);
         }
 
         if ($this->search) {
@@ -195,7 +216,15 @@ new class extends Component
         }
 
         if ($this->statusFilter) {
-            $query->where('overall_status', $this->statusFilter);
+            if(!$isSeller){
+               $query->where('overall_status', $this->statusFilter);
+            }else {
+                // Filter by overall_status
+                $query->whereHas('orderSellerProducts', function($q) {
+                    $q->where('status', $this->statusFilter);
+                });
+            }
+            
         }
 
         // Calculate statistics based on user role
@@ -818,11 +847,21 @@ new class extends Component
                         <!-- Status Filter -->
                         <select wire:model.live="statusFilter" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white">
                             <option value="">All Status</option>
-                            <option value="pending">Pending</option>
-                            <option value="processing">Processing</option>
-                            <option value="partially_shipped">Partially Shipped</option>
-                            <option value="completed">Completed</option>
-                            <option value="cancelled">Cancelled</option>
+                            @if($isSeller)
+                                <!-- Seller sees actual item statuses -->
+                                <option value="pending">Pending</option>
+                                <option value="confirmed">Confirmed</option>
+                                <option value="shipped">Shipped</option>
+                                <option value="delivered">Delivered</option>
+                                <option value="cancelled">Cancelled</option>
+                            @else
+                                <!-- Admin sees overall order statuses -->
+                                <option value="pending">Pending</option>
+                                <option value="processing">Processing</option>
+                                <option value="partially_shipped">Partially Shipped</option>
+                                <option value="completed">Completed</option>
+                                <option value="cancelled">Cancelled</option>
+                            @endif
                         </select>
                     </div>
 
