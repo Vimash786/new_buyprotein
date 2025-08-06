@@ -128,7 +128,7 @@
                             @endphp
                             <div class="btn-border-only cart category-hover-header">
                                 <i class="fa-sharp fa-regular fa-cart-shopping"></i>
-                                <span class="text">My Cart</span>
+                                <span style="width: max-content;" class="text">My Cart</span>
                                 @php
                                     $cartCount = 0;
                                     if (!Auth::user()) {

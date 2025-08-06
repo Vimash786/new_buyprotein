@@ -199,7 +199,7 @@
                                         Quantity: {{ $item->quantity }}
                                     </a>
                                 </div>
-                                <span class="price">₹{{ number_format($lineTotal, 2) }}</span>
+                                <span class="price">₹{{couponsApply($item->id, $lineTotal)}}</span>
                             </div>
                         @endforeach
 
@@ -234,13 +234,6 @@
                             <button type="button" class="rts-btn btn-primary apply-coupon">Apply</button>
                         </div>
                         <div class="cottom-cart-right-area">
-                            <p class="mb--20">Your personal data will be used to process your order, support your
-                                experience throughout this website, and for other purposes described in our privacy policy.
-                            </p>
-                            <div class="single-category mb--30">
-                                <input id="cat14" type="checkbox">
-                                <label for="cat14"> I have read and agree terms and conditions *</label>
-                            </div>
                             <a href="javascript:void(0)" id="pay-button" class="rts-btn btn-primary">Place Order</a>
                         </div>
                     </div>
@@ -610,9 +603,9 @@
                         $("#total_pay_amount").val(paymentAmount - data.total_discount);
                     } else {
                         Swal.fire({
-                            title: 'Payment Failed',
-                            text: 'Something went wrong. Please try again.',
-                            icon: 'error',
+                            title: 'Please Enter Coupon Code',
+                            text: 'Please enter a valid coupon code.',
+                            icon: 'warning',
                             confirmButtonText: 'OK'
                         });
                     }
