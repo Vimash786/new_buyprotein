@@ -94,6 +94,6 @@ function couponsApply($productId, $price)
             $discount = $coupon->calculateDiscount((float)$price);
             return number_format((float)$price - $discount, 2);
         }
-    }
+    }else{}
     return number_format((float)$price, 2);
 }
