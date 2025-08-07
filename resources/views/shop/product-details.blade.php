@@ -203,7 +203,7 @@
                                                     <div class="quantity-edit action-item">
                                                         <button class="button"><i class="fal fa-minus minus"></i></button>
                                                         <input type="text" class="input quantity-input" name="quantity"
-                                                            id="quantity" value="01" />
+                                                            id="quantity" value="1" />
                                                         <button class="button plus">+<i
                                                                 class="fal fa-plus plus"></i></button>
                                                     </div>
@@ -910,7 +910,7 @@
                             <div class="cart-edit">
                                 <div class="quantity-edit action-item">
                                     <button class="button"><i class="fal fa-minus minus"></i></button>
-                                    <input type="text" class="input" value="01" />
+                                    <input type="text" class="input" value="1" />
                                     <button class="button plus">+<i class="fal fa-plus plus"></i></button>
                                 </div>
                             </div>

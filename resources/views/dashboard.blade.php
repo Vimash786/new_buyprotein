@@ -991,28 +991,6 @@
             });
 
             // Handle quantity increment/decrement buttons
-            $(document).on('click', '.button.plus', function(e) {
-                e.preventDefault();
-                const input = $(this).closest('.quantity-edit').find('.quantity-input');
-                const currentValue = parseInt(input.val()) || 1;
-                input.val(currentValue + 1);
-            });
-
-            $(document).on('click', '.button:not(.plus)', function(e) {
-                e.preventDefault();
-                const input = $(this).closest('.quantity-edit').find('.quantity-input');
-                const currentValue = parseInt(input.val()) || 1;
-                if (currentValue > 1) {
-                    input.val(currentValue - 1);
-                }
-            });
-
-            // Ensure quantity input is always positive
-            $(document).on('input', '.quantity-input', function() {
-                const value = parseInt($(this).val());
-                if (isNaN(value) || value < 1) {
-                    $(this).val(1);
-                }
-            });
+            
         });
     </script>
