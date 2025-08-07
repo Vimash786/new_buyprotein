@@ -138,7 +138,7 @@
 
     <!-- rts grocery feature every day products area start -->
     <div class="rts-grocery-feature-area rts-section-gapBottom">
-        <div class="container">
+        <div class="container mt-5">
             <div class="row">
                 <div class="col-lg-12">
                     <div class="title-area-between">

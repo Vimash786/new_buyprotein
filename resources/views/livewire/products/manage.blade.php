@@ -106,12 +106,12 @@ new class extends Component
             'section_category' => 'required|array|min:1',
             'section_category.*' => 'required|in:everyday_essential,popular_pick,exclusive_deal',
             'has_variants' => 'boolean',
-            'thumbnail_image' => 'nullable|image|max:400', // Maximum 400KB
+            'thumbnail_image' => 'nullable|image|mimes:jpeg,jpg,png,gif,webp,avif|max:400', // Maximum 400KB
             'product_images' => 'nullable|array|max:3', // Maximum 3 images
-            'product_images.*' => 'nullable|image|max:400', // Maximum 400KB
+            'product_images.*' => 'nullable|image|mimes:jpeg,jpg,png,gif,webp,avif|max:400', // Maximum 400KB
             'variant_images.*' => 'nullable|array|max:3', // Maximum 3 images per variant
-            'variant_images.*.*' => 'nullable|image|max:400', // Maximum 400KB
-            'variant_thumbnails.*' => 'nullable|image|max:400', // Maximum 400KB
+            'variant_images.*.*' => 'nullable|image|mimes:jpeg,jpg,png,gif,webp,avif|max:400', // Maximum 400KB
+            'variant_thumbnails.*' => 'nullable|image|mimes:jpeg,jpg,png,gif,webp,avif|max:400', // Maximum 400KB
         ];
 
         // Add variant validation when has_variants is true
@@ -150,6 +150,16 @@ new class extends Component
         'variant_combinations.*.regular_user_price.min' => 'Regular user price must be at least 0.',
         'variant_combinations.*.shop_owner_price.min' => 'Shop owner price must be at least 0.',
         'variant_combinations.*.stock_quantity.min' => 'Stock quantity must be at least 0.',
+        
+        // Image validation messages
+        'thumbnail_image.mimes' => 'The thumbnail image must be a file of type: JPEG, JPG, PNG, GIF, WebP, or AVIF.',
+        'thumbnail_image.max' => 'The thumbnail image may not be greater than 400 KB.',
+        'product_images.*.mimes' => 'Each product image must be a file of type: JPEG, JPG, PNG, GIF, WebP, or AVIF.',
+        'product_images.*.max' => 'Each product image may not be greater than 400 KB.',
+        'variant_images.*.*.mimes' => 'Each variant image must be a file of type: JPEG, JPG, PNG, GIF, WebP, or AVIF.',
+        'variant_images.*.*.max' => 'Each variant image may not be greater than 400 KB.',
+        'variant_thumbnails.*.mimes' => 'Each variant thumbnail must be a file of type: JPEG, JPG, PNG, GIF, WebP, or AVIF.',
+        'variant_thumbnails.*.max' => 'Each variant thumbnail may not be greater than 400 KB.',
     ];
 
     public function with()

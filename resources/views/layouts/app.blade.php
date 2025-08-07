@@ -22,6 +22,18 @@
         .single-shopping-card-one .thumbnail-preview img {
             height: unset;
         }
+        .single-shopping-card-one .thumbnail-preview .badge {
+            left: unset;
+        }
+        .single-shopping-card-one .thumbnail-preview .badge i {
+            font-size: 60px;
+        }
+        .single-shopping-card-one .thumbnail-preview .badge span {
+            position: absolute;
+            left: 11px;
+            font-size: 10px;
+        }
+        
     </style>
     @stack('styles')
 </head>

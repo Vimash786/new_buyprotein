@@ -32,7 +32,7 @@
                         <div class="category-search-wrapper">
                             <div class="category-btn category-hover-header">
                                 <img class="parent" src="{{ asset('assets/images/icons/bar-1.svg') }}" alt="icons">
-                                <span>Categories</span>
+                                <span class="m-3">Categories</span>
                                 @php
                                     use App\Models\Category;
                                     $catData = Category::where('is_active', 1)->limit(10)->get();
