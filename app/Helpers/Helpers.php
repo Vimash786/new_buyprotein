@@ -11,64 +11,75 @@ if (!function_exists('format_price')) {
     function format_price($productId, $type = '')
     {
         $product = products::find($productId);
+        if (!$product) {
+            return '₹0.00';
+        }
+        
         $variant = ProductVariantCombination::where('product_id', $product->id)->first();
-        if (Auth::user()) {
-            $userRole = Auth::user()->role;
-            
-            if ($variant) {
-                if ($userRole == 'User') {
+        $user = Auth::user();
+        $userRole = $user ? $user->role : 'User';
+        
+        if ($variant) {
+            // Product has variants
+            switch ($userRole) {
+                case 'User':
                     if ($type == 'actual' && $variant->regular_user_discount > 0) {
                         return '₹' . number_format((float)$variant->regular_user_price, 2);
                     } else {
                         return '₹' . number_format((float)$variant->regular_user_final_price, 2);
                     }
-                } elseif ($userRole == 'Gym Owner/Trainer/Influencer/Dietitian') {
+                    
+                case 'Gym Owner/Trainer/Influencer/Dietitian':
                     if ($type == 'actual' && $variant->gym_owner_discount > 0) {
                         return '₹' . number_format((float)$variant->gym_owner_price, 2);
                     } else {
                         return '₹' . number_format((float)$variant->gym_owner_final_price, 2);
                     }
-                } elseif ($userRole == 'Shop Owner') {
-                    if ($type == 'actual' && $variant->shop_owner_discount) {
+                    
+                case 'Shop Owner':
+                    if ($type == 'actual' && $variant->shop_owner_discount > 0) {
                         return '₹' . number_format((float)$variant->shop_owner_price, 2);
                     } else {
                         return '₹' . number_format((float)$variant->shop_owner_final_price, 2);
                     }
-                }
-            } else {
-                if ($userRole == 'User') {
+                    
+                default:
+                    if ($type == 'actual' && $variant->regular_user_discount > 0) {
+                        return '₹' . number_format((float)$variant->regular_user_price, 2);
+                    } else {
+                        return '₹' . number_format((float)$variant->regular_user_final_price, 2);
+                    }
+            }
+        } else {
+            // Product without variants
+            switch ($userRole) {
+                case 'User':
                     if ($type == 'actual' && $product->regular_user_discount > 0) {
                         return '₹' . number_format((float)$product->regular_user_price, 2);
                     } else {
                         return '₹' . number_format((float)$product->regular_user_final_price, 2);
                     }
-                } elseif ($userRole == 'Gym Owner/Trainer/Influencer/Dietitian') {
+                    
+                case 'Gym Owner/Trainer/Influencer/Dietitian':
                     if ($type == 'actual' && $product->gym_owner_discount > 0) {
                         return '₹' . number_format((float)$product->gym_owner_price, 2);
                     } else {
                         return '₹' . number_format((float)$product->gym_owner_final_price, 2);
                     }
-                } elseif ($userRole == 'Shop Owner') {
+                    
+                case 'Shop Owner':
                     if ($type == 'actual' && $product->shop_owner_discount > 0) {
                         return '₹' . number_format((float)$product->shop_owner_price, 2);
                     } else {
                         return '₹' . number_format((float)$product->shop_owner_final_price, 2);
                     }
-                }
-            }
-        } else {
-            if ($variant) {
-                if ($type == 'actual' && $variant->regular_user_discount > 0) {
-                    return '₹' . number_format((float)$variant->regular_user_price, 2);
-                } else {
-                    return '₹' . number_format((float)$variant->regular_user_final_price, 2);
-                }
-            } else {
-                if ($type == 'actual' && $product->regular_user_price > 0) {
-                    return '₹' . number_format((float)$product->regular_user_price, 2);
-                } else {
-                    return '₹' . number_format((float)$product->regular_user_final_price, 2);
-                }
+                    
+                default:
+                    if ($type == 'actual' && $product->regular_user_discount > 0) {
+                        return '₹' . number_format((float)$product->regular_user_price, 2);
+                    } else {
+                        return '₹' . number_format((float)$product->regular_user_final_price, 2);
+                    }
             }
         }
     }
@@ -108,6 +119,86 @@ if (!function_exists('get_cart_count')) {
             // For guest users, sum the quantities from session
             $cart = session('cart', []);
             return array_sum(array_column($cart, 'quantity'));
+        }
+    }
+}
+
+if (!function_exists('has_discount')) {
+    function has_discount($productId)
+    {
+        $product = products::find($productId);
+        if (!$product) {
+            return false;
+        }
+        
+        $variant = ProductVariantCombination::where('product_id', $product->id)->first();
+        $user = Auth::user();
+        $userRole = $user ? $user->role : 'User';
+        
+        if ($variant) {
+            // Product has variants
+            switch ($userRole) {
+                case 'User':
+                    return $variant->regular_user_discount > 0;
+                case 'Gym Owner/Trainer/Influencer/Dietitian':
+                    return $variant->gym_owner_discount > 0;
+                case 'Shop Owner':
+                    return $variant->shop_owner_discount > 0;
+                default:
+                    return $variant->regular_user_discount > 0;
+            }
+        } else {
+            // Product without variants
+            switch ($userRole) {
+                case 'User':
+                    return $product->regular_user_discount > 0;
+                case 'Gym Owner/Trainer/Influencer/Dietitian':
+                    return $product->gym_owner_discount > 0;
+                case 'Shop Owner':
+                    return $product->shop_owner_discount > 0;
+                default:
+                    return $product->regular_user_discount > 0;
+            }
+        }
+    }
+}
+
+if (!function_exists('get_discount_percentage')) {
+    function get_discount_percentage($productId)
+    {
+        $product = products::find($productId);
+        if (!$product) {
+            return 0;
+        }
+        
+        $variant = ProductVariantCombination::where('product_id', $product->id)->first();
+        $user = Auth::user();
+        $userRole = $user ? $user->role : 'User';
+        
+        if ($variant) {
+            // Product has variants
+            switch ($userRole) {
+                case 'User':
+                    return $variant->regular_user_discount ?? 0;
+                case 'Gym Owner/Trainer/Influencer/Dietitian':
+                    return $variant->gym_owner_discount ?? 0;
+                case 'Shop Owner':
+                    return $variant->shop_owner_discount ?? 0;
+                default:
+                    return $variant->regular_user_discount ?? 0;
+            }
+        } else {
+            // Product without variants
+            switch ($userRole) {
+                case 'User':
+                    return $product->regular_user_discount ?? 0;
+                case 'Gym Owner/Trainer/Influencer/Dietitian':
+                    return $product->gym_owner_discount ?? 0;
+                case 'Shop Owner':
+                    return $product->shop_owner_discount ?? 0;
+                default:
+                    return $product->regular_user_discount ?? 0;
+            }
         }
     }
 }

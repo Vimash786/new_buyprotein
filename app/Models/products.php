@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Facades\Auth;
 
 class products extends Model
 {
@@ -160,6 +161,36 @@ class products extends Model
     public function getHasDiscountAttribute()
     {
         return $this->discount_percentage > 0 || $this->discounted_price < $this->price;
+    }
+
+    /**
+     * Get the discount percentage based on user role and variant status.
+     */
+    public function getDiscountPercentageAttribute()
+    {
+        $user = Auth::user();
+        $userRole = $user ? $user->role : 'User';
+        
+        // Check if product has variants
+        $variant = $this->variantCombinations->first();
+        
+        if ($variant) {
+            // Product has variants, use variant discount
+            return match ($userRole) {
+                'User' => $variant->regular_user_discount ?? 0,
+                'Gym Owner/Trainer/Influencer/Dietitian' => $variant->gym_owner_discount ?? 0,
+                'Shop Owner' => $variant->shop_owner_discount ?? 0,
+                default => $variant->regular_user_discount ?? 0
+            };
+        } else {
+            // Product without variants, use product discount
+            return match ($userRole) {
+                'User' => $this->regular_user_discount ?? 0,
+                'Gym Owner/Trainer/Influencer/Dietitian' => $this->gym_owner_discount ?? 0,
+                'Shop Owner' => $this->shop_owner_discount ?? 0,
+                default => $this->regular_user_discount ?? 0
+            };
+        }
     }
 
     /**

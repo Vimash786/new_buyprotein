@@ -213,9 +213,9 @@
                                                 <div class="image-and-action-area-wrapper">
                                                     <a href="{{ route('product.details', Crypt::encrypt($everyDayProduct->id)) }}"
                                                         class="thumbnail-preview">
-                                                        @if ($everyDayProduct->discount_percentage > 0)
+                                                        @if (has_discount($everyDayProduct->id))
                                                             <div class="badge">
-                                                                <span>{{ $everyDayProduct->discount_percentage }}% <br>
+                                                                <span>{{ get_discount_percentage($everyDayProduct->id) }}% <br>
                                                                     Off
                                                                 </span>
                                                                 <i class="fa-solid fa-bookmark"></i>
@@ -250,11 +250,12 @@
                                                         <h4 class="title">{{ $everyDayProduct->name }}</h4>
                                                     </a>
                                                     <div class="price-area">
-                                                        {{-- <span class="current">₹{{ $everyDayProduct->regular_user_price }}</span> --}}
                                                         <div class="current">{{ format_price($everyDayProduct->id) }}</div>
-                                                        <div class="previous">
-                                                            {{ format_price($everyDayProduct->id, 'actual') }}
-                                                        </div>
+                                                        @if(has_discount($everyDayProduct->id))
+                                                            <div class="previous">
+                                                                {{ format_price($everyDayProduct->id, 'actual') }}
+                                                            </div>
+                                                        @endif
                                                     </div>
                                                     <div class="cart-counter-action">
                                                         <div class="quantity-edit">
@@ -351,9 +352,9 @@
                                                 <div class="image-and-action-area-wrapper">
                                                     <a href="{{ route('product.details', Crypt::encrypt($populerProduct->id)) }}"
                                                         class="thumbnail-preview">
-                                                        @if ($populerProduct->discount_percentage > 0)
+                                                        @if (has_discount($populerProduct->id))
                                                             <div class="badge">
-                                                                <span>{{ $populerProduct->discount_percentage }}%<br>Off</span>
+                                                                <span>{{ get_discount_percentage($populerProduct->id) }}%<br>Off</span>
                                                                 <i class="fa-solid fa-bookmark"></i>
                                                             </div>
                                                         @endif
@@ -386,9 +387,11 @@
                                                     </a>
                                                     <div class="price-area">
                                                         <div class="current">{{ format_price($populerProduct->id) }}</div>
-                                                        <div class="previous">
-                                                            {{ format_price($populerProduct->id, 'actual') }}
-                                                        </div>
+                                                        @if(has_discount($populerProduct->id))
+                                                            <div class="previous">
+                                                                {{ format_price($populerProduct->id, 'actual') }}
+                                                            </div>
+                                                        @endif
                                                     </div>
 
                                                     <!-- Quantity & Cart -->
@@ -494,9 +497,9 @@
                                                             <div class="image-and-action-area-wrapper">
                                                                 <a href="{{ route('product.details', Crypt::encrypt($lat_pro->id)) }}"
                                                                     class="thumbnail-preview">
-                                                                    @if ($lat_pro->discount_percentage > 0)
+                                                                    @if (has_discount($lat_pro->id))
                                                                         <div class="badge">
-                                                                            <span>{{ $lat_pro->discount_percentage }}% <br>
+                                                                            <span>{{ get_discount_percentage($lat_pro->id) }}% <br>
                                                                                 Off
                                                                             </span>
                                                                             <i class="fa-solid fa-bookmark"></i>
@@ -534,9 +537,11 @@
                                                                 <div class="price-area">
                                                                     <span
                                                                         class="current">{{ format_price($lat_pro->id) }}</span>
-                                                                    <div class="previous">
-                                                                        {{ format_price($lat_pro->id, 'actual') }}
-                                                                    </div>
+                                                                    @if(has_discount($lat_pro->id))
+                                                                        <div class="previous">
+                                                                            {{ format_price($lat_pro->id, 'actual') }}
+                                                                        </div>
+                                                                    @endif
                                                                 </div>
                                                                 <div class="cart-counter-action">
                                                                     <div class="quantity-edit">
@@ -698,9 +703,9 @@
                                                 <div class="image-and-action-area-wrapper">
                                                     <a href="{{ route('product.details', Crypt::encrypt($offer->id)) }}"
                                                         class="thumbnail-preview">
-                                                        @if ($offer->discount_percentage > 0)
+                                                        @if (has_discount($offer->id))
                                                             <div class="badge">
-                                                                <span>{{ $offer->discount_percentage }}% <br>
+                                                                <span>{{ get_discount_percentage($offer->id) }}% <br>
                                                                     Off
                                                                 </span>
                                                                 <i class="fa-solid fa-bookmark"></i>
@@ -732,9 +737,11 @@
                                                     </a>
                                                     <div class="price-area">
                                                         <span class="current">{{ format_price($offer->id) }}</span>
-                                                        <div class="previous">
-                                                            {{ format_price($offer->id, 'actual') }}
-                                                        </div>
+                                                        @if(has_discount($offer->id))
+                                                            <div class="previous">
+                                                                {{ format_price($offer->id, 'actual') }}
+                                                            </div>
+                                                        @endif
                                                     </div>
                                                     <div class="cart-counter-action">
                                                         <div class="quantity-edit">
