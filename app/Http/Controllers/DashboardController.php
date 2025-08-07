@@ -87,7 +87,19 @@ class DashboardController extends Controller
         if ($offers->isEmpty()) {
             $offers = products::with(['images', 'variants', 'seller'])
                 ->where('super_status', 'approved')
-                ->where('discount_percentage', '>', 10) // Products with more than 10% discount
+                ->where(function($query) {
+                    $query->where(function($subQuery) {
+                        // Check main product discounts
+                        $subQuery->where('regular_user_discount', '>', 10)
+                                 ->orWhere('gym_owner_discount', '>', 10)
+                                 ->orWhere('shop_owner_discount', '>', 10);
+                    })->orWhereHas('variantCombinations', function($variantQuery) {
+                        // Check variant discounts
+                        $variantQuery->where('regular_user_discount', '>', 10)
+                                    ->orWhere('gym_owner_discount', '>', 10)
+                                    ->orWhere('shop_owner_discount', '>', 10);
+                    });
+                })
                 ->whereNotIn('id', $everyDayEssentials->pluck('id'))
                 ->whereNotIn('id', $populerProducts->pluck('id'))
                 ->whereNotIn('id', $latestProducts->pluck('id'))
@@ -113,13 +125,47 @@ class DashboardController extends Controller
             $brands = Sellers::where('status', 'approved')->limit(10)->get();
 
             $productsQuery = products::query()->with('seller')->where('super_status', 'approved');
+            
+            // Set page title based on type
+            $pageTitle = 'Shop';
+            $pageDescription = 'Browse our wide selection of products';
 
             if ($type == 'category' && $id) {
                 $productsQuery->where('category_id', $id);
+                $category = Category::find($id);
+                $pageTitle = $category ? $category->name : 'Category Products';
+                $pageDescription = $category ? "Browse products in {$category->name} category" : 'Browse category products';
             } elseif ($type == 'brand' && $id) {
                 $productsQuery->where('seller_id', $id);
+                $brand = Sellers::find($id);
+                $pageTitle = $brand ? $brand->brand : 'Brand Products';
+                $pageDescription = $brand ? "Browse products from {$brand->brand}" : 'Browse brand products';
             } elseif ($type == 'new-arrivals') {
                 $productsQuery->orderBy('created_at', 'desc');
+                $pageTitle = 'New Arrivals';
+                $pageDescription = 'Check out our latest products';
+            } elseif ($type == 'popular-picks') {
+                $productsQuery->whereJsonContains('section_category', 'popular_pick');
+                $pageTitle = 'Popular Picks';
+                $pageDescription = 'Discover our most popular and trending products';
+            } elseif ($type == 'discount-deals') {
+                // Get products with discounts - check both main product and variants
+                $productsQuery->where(function($query) {
+                    $query->where(function($subQuery) {
+                        // Check main product discounts
+                        $subQuery->whereJsonContains('section_category', 'exclusive_deal')
+                                 ->orWhere('regular_user_discount', '>', 50)
+                                 ->orWhere('gym_owner_discount', '>', 50)
+                                 ->orWhere('shop_owner_discount', '>', 50);
+                    })->orWhereHas('variantCombinations', function($variantQuery) {
+                        // Check variant discounts
+                        $variantQuery->where('regular_user_discount', '>', 50)
+                                    ->orWhere('gym_owner_discount', '>', 50)
+                                    ->orWhere('shop_owner_discount', '>', 50);
+                    });
+                });
+                $pageTitle = 'Discount Deals';
+                $pageDescription = 'Get up to 50% off on selected products';
             }
             if ($request->filled('search')) {
                 $search = $request->input('search');
@@ -164,9 +210,13 @@ class DashboardController extends Controller
             return view('shop.shop', [
                 'categories' => $categories,
                 'brands' => $brands,
-                'products' => $paginated
+                'products' => $paginated,
+                'pageTitle' => $pageTitle,
+                'pageDescription' => $pageDescription,
+                'currentType' => $type
             ]);
         } catch (Exception $e) {
+            Log::error('Shop route error: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Invalid category or brand ID.');
         }
     }

@@ -231,11 +231,11 @@
                         </div>
                         <!-- button-area -->
                         <div class="right-btn-area">
-                            <a href="#" class="btn-narrow">Popular Picks</a>
-                            <button class="rts-btn btn-primary">
+                            <a href="{{ route('shop', ['type' => 'popular-picks']) }}" class="btn-narrow">Popular Picks</a>
+                            <a href="{{ route('shop', ['type' => 'discount-deals']) }}" class="rts-btn btn-primary">
                                 Get Up to 50% Discount Now
                                 <span>Shop Now</span>
-                            </button>
+                            </a>
                         </div>
                         <!-- button-area end -->
                     </div>

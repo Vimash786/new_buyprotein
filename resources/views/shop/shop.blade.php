@@ -16,13 +16,64 @@
             .filter-toggle-button {
                 display: block;
             }
+        }
+        
+        .page-header {
+            padding: 2rem 0;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 8px;
+            margin-bottom: 2rem;
+        }
+        
+        .page-title {
+            font-size: 2.5rem;
+            font-weight: 600;
+            color: #009ec9;
+            margin-bottom: 0.5rem;
+        }
+        
+        .page-description {
+            font-size: 1.1rem;
+            color: #6c757d;
+            margin: 0;
+        }
+        
+        @media (max-width: 768px) {
+            .page-title {
+                font-size: 2rem;
+            }
             
+            .page-description {
+                font-size: 1rem;
+            }
+        }
+        
+        .no-products-found {
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 2px dashed #dee2e6;
+        }
+        
+        .no-products-found .fa-magnifying-glass {
+            opacity: 0.5;
         }
     </style>
     <!-- shop[ grid sidebar wrapper -->
 
     <div class="shop-grid-sidebar-area rts-section-gap">
         <div class="container">
+            <!-- Page Header -->
+            @if(isset($pageTitle) && $pageTitle !== 'Shop')
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="page-header text-center">
+                            <h1 class="page-title">{{ $pageTitle }}</h1>
+                            <p class="page-description">{{ $pageDescription }}</p>
+                        </div>
+                    </div>
+                </div>
+            @endif
+            
             <div class="row">
                 <div class="col text-end filter-toggle-button">
                     <button class="filter-toggle border border-info rounded p-2 me-4 mt-2 mb-2 w-auto">
@@ -166,6 +217,26 @@
                                             </div>
                                         @endif
                                     @endforeach
+                                @else
+                                    <div class="col-12">
+                                        <div class="no-products-found text-center py-5">
+                                            <i class="fa-light fa-magnifying-glass fa-4x text-muted mb-3"></i>
+                                            <h3 class="text-muted">No Products Found</h3>
+                                            <p class="text-muted">Sorry, we couldn't find any products matching your criteria.</p>
+                                            <a href="{{ route('shop') }}" class="rts-btn btn-primary mt-3">Browse All Products</a>
+                                        </div>
+                                    </div>
+                                @endif
+                                
+                                @if (isset($products) && $products->count() == 0)
+                                    <div class="col-12">
+                                        <div class="no-products-found text-center py-5">
+                                            <i class="fa-light fa-magnifying-glass fa-4x text-muted mb-3"></i>
+                                            <h3 class="text-muted">No Products Found</h3>
+                                            <p class="text-muted">Sorry, we couldn't find any products matching your criteria.</p>
+                                            <a href="{{ route('shop') }}" class="rts-btn btn-primary mt-3">Browse All Products</a>
+                                        </div>
+                                    </div>
                                 @endif
                             </div>
                         </div>
