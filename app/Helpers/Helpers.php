@@ -97,3 +97,17 @@ function couponsApply($productId, $price)
     }else{}
     return number_format((float)$price, 2);
 }
+
+if (!function_exists('get_cart_count')) {
+    function get_cart_count()
+    {
+        if (Auth::check()) {
+            // For logged-in users, sum the quantities from database
+            return \App\Models\Cart::where('user_id', Auth::id())->sum('quantity');
+        } else {
+            // For guest users, sum the quantities from session
+            $cart = session('cart', []);
+            return array_sum(array_column($cart, 'quantity'));
+        }
+    }
+}

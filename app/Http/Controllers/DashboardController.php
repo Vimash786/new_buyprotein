@@ -280,10 +280,12 @@ class DashboardController extends Controller
     {
         $request->validate([
             'product_id' => 'required|exists:products,id',
-            'variant_option_ids' => 'nullable|array'
+            'variant_option_ids' => 'nullable|array',
+            'quantity' => 'nullable|integer|min:1'
         ]);
 
         $product = products::findOrFail($request->product_id);
+        $quantity = $request->quantity ?? 1;
         $variantData = ProductVariantCombination::where('product_id', $product->id)->first();
 
         if (!$request->has('variant_option_ids') && $variantData) {
@@ -302,37 +304,58 @@ class DashboardController extends Controller
             $variantOptionIds = $request->variant_option_ids ? array_map('intval', $request->variant_option_ids) : [];
         }
 
-        $price = $this->calculatePrice($product, $variantOptionIds, $request->variant_option_ids);
+        $price = $this->calculatePrice($product, $variantOptionIds);
 
         if (Auth::check()) {
             $userId = Auth::id();
 
-            Cart::create([
-                'user_id' => $userId,
-                'product_id' => $product->id,
-                'variant_option_ids' => $variantOptionIds,
-                'quantity' => $request->quantity,
-                'price' => $price
-            ]);
+            // Check if item already exists in cart
+            $existingCartItem = Cart::where('user_id', $userId)
+                ->where('product_id', $product->id)
+                ->where('variant_option_ids', $variantOptionIds)
+                ->first();
 
+            if ($existingCartItem) {
+                // Update quantity if item exists
+                $existingCartItem->quantity += $quantity;
+                $existingCartItem->save();
+            } else {
+                // Create new cart item
+                Cart::create([
+                    'user_id' => $userId,
+                    'product_id' => $product->id,
+                    'variant_option_ids' => $variantOptionIds,
+                    'quantity' => $quantity,
+                    'price' => $price
+                ]);
+            }
+
+            // Calculate total cart count (sum of all quantities)
             $cartData = Cart::where('user_id', Auth::user()->id)->get();
-            $countCart = $cartData->count();
+            $countCart = $cartData->sum('quantity');
         } else {
             $cart = session()->get('cart', []);
 
             $itemKey = $product->id . '_' . implode('_', $variantOptionIds);
 
-            $cart[$itemKey] = [
-                'product_id' => $product->id,
-                'variant_option_ids' => $variantOptionIds,
-                'quantity' => $request->quantity,
-                'price' => $price,
-                'name' => $product->name,
-            ];
+            if (isset($cart[$itemKey])) {
+                // Update quantity if item exists
+                $cart[$itemKey]['quantity'] += $quantity;
+            } else {
+                // Create new cart item
+                $cart[$itemKey] = [
+                    'product_id' => $product->id,
+                    'variant_option_ids' => $variantOptionIds,
+                    'quantity' => $quantity,
+                    'price' => $price,
+                    'name' => $product->name,
+                ];
+            }
 
             session()->put('cart', $cart);
 
-            $countCart = count($cart);
+            // Calculate total cart count (sum of all quantities)
+            $countCart = array_sum(array_column($cart, 'quantity'));
         }
 
         return response()->json(['status' => 'success', 'cartCount' => $countCart]);
@@ -379,7 +402,7 @@ class DashboardController extends Controller
         return response()->json([
             'success' => true,
             'totalPrice' => $totalPrice,
-            'cartCount' => $cartItems->count()
+            'cartCount' => $cartItems->sum('quantity') // Sum of quantities, not count of items
         ]);
     }
 
@@ -574,7 +597,7 @@ class DashboardController extends Controller
 
             $wishlistCounter = Wishlist::where('user_id', Auth::user()->id)->get()->count();
             $cartItems = Cart::where('user_id', Auth::id())->get();
-            $cartCounter = $cartItems->count();
+            $cartCounter = $cartItems->sum('quantity'); // Sum of quantities, not count of items
 
             $totalPrice = $cartItems->sum(function ($item) {
                 return $item->price * $item->quantity;
@@ -588,7 +611,7 @@ class DashboardController extends Controller
                     unset($cart[$request->id]);
                     session()->put('cart', $cart);
                 }
-                $cartCounter = count($cart);
+                $cartCounter = array_sum(array_column($cart, 'quantity')); // Sum of quantities
                 $totalPrice = array_sum(array_map(function($item) {
                     return $item['price'] * $item['quantity'];
                 }, $cart));
@@ -607,7 +630,7 @@ class DashboardController extends Controller
                 
                 // Get cart data for counter
                 $cart = session()->get('cart', []);
-                $cartCounter = count($cart);
+                $cartCounter = array_sum(array_column($cart, 'quantity')); // Sum of quantities
                 $totalPrice = array_sum(array_map(function($item) {
                     return $item['price'] * $item['quantity'];
                 }, $cart));

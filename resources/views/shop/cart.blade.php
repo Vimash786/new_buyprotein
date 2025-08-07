@@ -112,8 +112,11 @@
 
                         <div class="bottom">
                             <div class="wrapper total">
-                                <span>Subtotal</span>
-                                <h6 class="totalPrice">₹{{ $totalPrice }}</h6>
+                                <h3 class="">Subtotal</h3>
+                                <h3 class="totalPrice">₹{{ $totalPrice }}</h3>
+                            </div>
+                            <div class="wrapper shipping">
+                                <p>including 18% GST</p>
                             </div>
                             <div class="button-area">
                                 <a href="{{ route('user.checkout') }}" class="rts-btn btn-primary">Proceed To Checkout</a>

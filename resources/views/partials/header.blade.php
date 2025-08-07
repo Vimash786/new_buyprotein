@@ -129,18 +129,11 @@
                             <div class="btn-border-only cart category-hover-header">
                                 <i class="fa-sharp fa-regular fa-cart-shopping"></i>
                                 <span style="width: max-content;" class="text">My Cart</span>
-                                @php
-                                    $cartCount = 0;
-                                    if (!Auth::user()) {
-                                        $cart = session('cart', []);
-                                        $cartCount = count($cart);
-                                    }
-                                @endphp
                                 <span class="number"><span
-                                        class="cartCount">{{ isset($cartData) ? $cartData->count() : $cartCount }}</span></span>
+                                        class="cartCount">{{ get_cart_count() }}</span></span>
                                 {{-- <div class="category-sub-menu card-number-show">
                                     <h5 class="shopping-cart-number">Shopping Cart
-                                        ({{ isset($cartData) ? $cartData->count() : 0 }})</h5>
+                                        ({{ get_cart_count() }})</h5>
                                     <div class="cart-items-scroll-vertical">
                                         @if (isset($cartData) && $cartData && $cartData->count() > 0)
                                             @foreach ($cartData as $cartItem)

@@ -207,19 +207,21 @@
                             <div class="left-area">
                                 <span>Subtotal</span>
                             </div>
-                            <span class="price">₹{{ $totalPrice }}</span>
+                            <span class="price">₹{{ number_format($totalPrice, 2) }}</span>
                         </div>
                         <div class="single-shop-list">
                             <div class="left-area">
                                 <span>Shipping</span>
                             </div>
                             <span class="price" style="text-decoration: line-through;">Flat rate: ₹100.00</span>
+                            <span class="price" style="color: #28a745; margin-left: 10px;">Free</span>
                         </div>
                         <div class="single-shop-list">
-                            <div class="left-area">
-                                <span style="font-weight: 600; color: #2C3C28;">Total Price:</span>
+                            <div class="left-area d-block">
+                                <h3 style="font-weight: 600; color: #2C3C28;">Total Price:</h3><br>
+                                
                             </div>
-                            <span class="price" id="totalAmount" style="color: #009ec9;">₹{{ $shipTotal }}</span>
+                            <h3 class="price" id="totalAmount" style="color: #009ec9;">₹{{ number_format($shipTotal, 2) }}</h3>
                         </div>
                         <input type="hidden" name="total_pay_amount" id="total_pay_amount"
                             value="{{ $shipTotal }}">
@@ -229,9 +231,12 @@
                             </div>
                             <span class="price" id="dicountAmount" style="color: #009ec9;"></span>
                         </div>
-                        <div class="bottom-cupon-code-cart-area">
-                            <input type="text" placeholder="Cupon/Referal Code" id="coupon" class="coupon">
-                            <button type="button" class="rts-btn btn-primary apply-coupon">Apply</button>
+                        <div class="bottom-cupon-code-cart-area" >
+                            <div class="d-flex w-100" style="border: 1px solid #009ec9; border-radius: 6px;">
+                                <input type="text" placeholder="Cupon/Referal Code" id="coupon" class="coupon" >
+                                 <button type="button" class="rts-btn btn-primary apply-coupon p-3 w-50">Apply</button>
+                            </div>
+                            
                         </div>
                         <div class="cottom-cart-right-area">
                             <a href="javascript:void(0)" id="pay-button" class="rts-btn btn-primary">Place Order</a>
