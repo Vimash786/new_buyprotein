@@ -64,10 +64,6 @@
                             Subscribe to the mailing list to receive updates one <br> the new arrivals and other
                             discounts
                         </p>
-                        <form class="footersubscribe-form" action="#">
-                            <input type="email" placeholder="Your email address" required>
-                            <button class="rts-btn btn-primary">Subscribe</button>
-                        </form>
 
                         <p class="dsic">
                             I would like to receive news and special offer

@@ -238,10 +238,10 @@
                         </div>
                         <!-- button-area -->
                         <div class="right-btn-area">
-                            <a href="#" class="btn-narrow">Trending Products</a>
+                            <a href="#" class="btn-narrow">Popular Picks</a>
                             <button class="rts-btn btn-primary">
-                                Get 30% Discount Now
-                                <span>Sale</span>
+                                Get Up to 50% Discount Now
+                                <span>Shop Now</span>
                             </button>
                         </div>
                         <!-- button-area end -->

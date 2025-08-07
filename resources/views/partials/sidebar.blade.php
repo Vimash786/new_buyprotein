@@ -30,30 +30,19 @@
                                 <a href="{{ route('home') }}" class="main">Home</a>
                             </li>
                             <li>
-                                <a href="{{ route('shop') }}" class="main">Shop</a>
+                                <a href="{{ route('shop') }}" class="main">Explore</a>
                             </li>
                             <li>
-                                <a href="{{ route('user.blogs') }}" class="main">Blog</a>
+                                <a href="{{ route('user.blogs') }}" class="main">Categories</a>
                             </li>
                             <li>
-                                <a href="{{ route('term.condition') }}" class="main">Terms & Conditions</a>
+                                <a href="{{ route('term.condition') }}" class="main">Offers</a>
                             </li>
                             <li>
                                 <a href="{{ route('about.us') }}" class="main">About Us</a>
                             </li>
                             <li>
-                                <a href="{{ route('contact') }}" class="main">Contact</a>
-                            </li>
-                            <li class="has-droupdown">
-                                <a href="#" class="main">Policies</a>
-                                <ul class="submenu mm-collapse">
-                                    <li><a class="mobile-menu-link" href="{{ route('privacy.policy') }}">Privacy
-                                            Policy</a></li>
-                                    <li><a class="mobile-menu-link" href="{{ route('shipping.policy') }}">Shipping
-                                            Policy</a></li>
-                                    <li><a class="mobile-menu-link" href="{{ route('return.policy') }}">Return
-                                            Policy</a></li>
-                                </ul>
+                                <a href="{{ route('contact') }}" class="main">Contact Us</a>
                             </li>
                         </ul>
                     </nav>
@@ -85,16 +74,6 @@
 
     <!-- button area wrapper start -->
     <div class="button-area-main-wrapper-menuy-sidebar mt--50">
-        <div class="contact-area">
-            <div class="phone">
-                <i class="fa-light fa-headset"></i>
-                <a href="#">02345697871</a>
-            </div>
-            <div class="phone">
-                <i class="fa-light fa-envelope"></i>
-                <a href="#">02345697871</a>
-            </div>
-        </div>
         @if (!Auth::user())
             <div class="buton-area-bottom">
                 <a href="{{ route('login') }}" class="rts-btn btn-primary">Sign In</a>
