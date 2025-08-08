@@ -111,7 +111,24 @@
                         <h5 class="title">Cart Totals</h5>
 
                         <div class="bottom">
-                            <div class="wrapper total">
+                            <div class="wrapper total justify-content-between">
+                                <h6 class="">Item Price</h6>
+                                <h6 class="totalPrice">₹{{ no_tax_price($totalPrice) }}</h6>
+                            </div>
+                            <div class="wrapper total justify-content-between">
+                                <h6 class="">GST (18%)</h6>
+                                <h6 class="totalPrice">₹₹{{ number_format($totalPrice * 0.18, 2) }}</h6>
+                            </div>
+                             <div class="wrapper total justify-content-between">
+                                <h6 class="">Shipping Charge</h6>
+                                <div>
+                                    <span class="price" style="text-decoration: line-through;">Flat rate: ₹100.00</span>
+                                    <span class="price" style="color: #28a745; margin-left: 10px;">Free</span>
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="wrapper total justify-content-between">
+                                
                                 <h3 class="">Subtotal</h3>
                                 <h3 class="totalPrice">₹{{ $totalPrice }}</h3>
                             </div>

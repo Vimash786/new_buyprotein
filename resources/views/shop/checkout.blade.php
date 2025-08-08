@@ -209,21 +209,28 @@
                             </div>
                             <span class="price">₹{{ number_format($totalPrice, 2) }}</span>
                         </div>
-                        <div class="single-shop-list">
-                            <div class="left-area">
-                                <span>Shipping</span>
+                        <div class="mx-5">
+                            <div class="d-flex justify-content-between mt-2">
+                                <h5 style="font-weight: 600; color: #2C3C28;">Item price :</h5>
+                                <span class="price">₹{{ no_tax_price($totalPrice) }}</span>
                             </div>
-                            <span class="price" style="text-decoration: line-through;">Flat rate: ₹100.00</span>
-                            <span class="price" style="color: #28a745; margin-left: 10px;">Free</span>
-                        </div>
-                        <div class="single-shop-list">
-                            <div class="left-area d-block">
+                            <div class="d-flex justify-content-between mt-2">
+                                <h5 style="font-weight: 600; color: #2C3C28;">GST include 18%:</h5>
+                                <span class="price">₹{{ number_format($totalPrice * 0.18, 2) }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mt-2">
+                                <h5 style="font-weight: 600; color: #2C3C28;">Shipping charges:</h5><br>
+                                <div>
+                                    <span class="price" style="text-decoration: line-through;">Flat rate: ₹100.00</span>
+                                    <span class="price" style="color: #28a745; margin-left: 10px;">Free</span>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between">
                                 <h3 style="font-weight: 600; color: #2C3C28;">Total Price:</h3><br>
-                                
+                                <h3 class="price" id="totalAmount" style="color: #009ec9;">₹{{ number_format($shipTotal, 2) }}</h3>
                             </div>
-                            <h3 class="price" id="totalAmount" style="color: #009ec9;">₹{{ number_format($shipTotal, 2) }}</h3>
                         </div>
-                        <input type="hidden" name="total_pay_amount" id="total_pay_amount"
+                        <input type="hidden" name   ="total_pay_amount" id="total_pay_amount"
                             value="{{ $shipTotal }}">
                         <div class="single-shop-list d-none" id="couponDiscount">
                             <div class="left-area">

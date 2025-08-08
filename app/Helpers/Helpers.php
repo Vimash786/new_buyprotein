@@ -202,3 +202,14 @@ if (!function_exists('get_discount_percentage')) {
         }
     }
 }
+if (!function_exists('no_tax_price')) {
+    function no_tax_price($totalPrice)
+    {
+        $gst = 0.18; // 18% GST
+        $gst_price = $totalPrice * $gst;
+        $no_gst_price = $totalPrice - $gst_price;
+        return number_format($no_gst_price, 2); 
+    }
+}
+        
+        
