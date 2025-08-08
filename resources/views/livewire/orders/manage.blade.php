@@ -1662,7 +1662,15 @@ new class extends Component
                                         <div>
                                             <span class="text-gray-600 dark:text-gray-400">Name:</span>
                                             <span class="ml-2 font-medium">
-                                                {{ $viewOrder->user->name ?? ($viewOrder->guest_email ? 'Guest Customer' : 'N/A') }}
+                                                @if($viewOrder->user)
+                                                    {{ $viewOrder->billingDetail->name }}
+                                                @elseif($viewOrder->billingDetail && ($viewOrder->billingDetail->billing_first_name || $viewOrder->billingDetail->billing_last_name))
+                                                    {{ trim(($viewOrder->billingDetail->billing_first_name ?? '') . ' ' . ($viewOrder->billingDetail->billing_last_name ?? '')) }}
+                                                @elseif($viewOrder->guest_email)
+                                                    Guest Customer
+                                                @else
+                                                    N/A
+                                                @endif
                                             </span>
                                         </div>
                                         <div>
@@ -1677,7 +1685,20 @@ new class extends Component
                                         @endif
                                     </div>
                                 @else
-                                    <p class="text-gray-500">Customer information not available</p>
+                                        @if($viewOrder->billingDetail)
+                                            <div>
+                                                <span class="text-gray-600 dark:text-gray-400">Name:</span>
+                                                <span class="ml-2">{{ $viewOrder->billingDetail->billing_first_name }} {{ $viewOrder->billingDetail->billing_last_name }}</span>
+                                            </div>
+                                            <div>    
+                                                <span class="text-gray-600 dark:text-gray-400">Phone:</span>
+                                                <span class="ml-2">{{ $viewOrder->billingDetail->billing_phone }}</span>
+                                            </div>
+                                            <div>
+                                                <span class="text-gray-600 dark:text-gray-400">Email:</span>
+                                                <span class="ml-2">{{ $viewOrder->guest_email }}</span>
+                                            </div>
+                                        @endif
                                 @endif
                             </div>
 
@@ -1829,9 +1850,14 @@ new class extends Component
                                             <span class="text-gray-600 dark:text-gray-400">Subtotal:</span>
                                             <span>₹{{ number_format($viewOrder->billingDetail->subtotal, 2) }}</span>
                                         </div>
+                                        <hr>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600 dark:text-gray-400">Item Amount:</span>
+                                            <span>₹{{ number_format($viewOrder->billingDetail->item_price, 2) }}</span>
+                                        </div>
                                         <div class="flex justify-between">
                                             <span class="text-gray-600 dark:text-gray-400">Tax Amount:</span>
-                                            <span>₹{{ number_format($viewOrder->billingDetail->tax_amount, 2) }}</span>
+                                            <span>₹{{ number_format($viewOrder->billingDetail->gst_amount, 2) }}</span>
                                         </div>
                                         <div class="flex justify-between">
                                             <span class="text-gray-600 dark:text-gray-400">Shipping Charge:</span>

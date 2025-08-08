@@ -33,13 +33,27 @@ class InvoiceController extends Controller
 
         $order = $orderItem->order;
 
+        // Create customer object for invoice (handle both registered and guest users)
+        $customer = $order->user;
+        if (!$customer && $order->billingDetail) {
+            // For guest users, create a customer object from billing details
+            $customer = (object) [
+                'name' => trim(($order->billingDetail->billing_first_name ?? '') . ' ' . ($order->billingDetail->billing_last_name ?? '')),
+                'email' => $order->guest_email ?? 'N/A'
+            ];
+            // If no name in billing details, use generic guest name
+            if (empty(trim($customer->name))) {
+                $customer->name = 'Guest Customer';
+            }
+        }
+
         // Generate PDF
         $pdf = PDF::loadView('invoices.standard-invoice', [
             'type' => 'seller',
             'orderItem' => $orderItem,
             'order' => $order,
             'seller' => $seller,
-            'customer' => $order->user,
+            'customer' => $customer,
             'billingDetail' => $order->billingDetail,
             'shippingAddress' => $order->billingDetail->shippingAddress ?? null
         ]);
@@ -48,7 +62,7 @@ class InvoiceController extends Controller
         //     'orderItem' => $orderItem,
         //     'order' => $order,
         //     'seller' => $seller,
-        //     'customer' => $order->user,
+        //     'customer' => $customer,
         //     'billingDetail' => $order->billingDetail,
         //     'shippingAddress' => $order->billingDetail->shippingAddress ?? null
         // ]);
@@ -75,11 +89,25 @@ class InvoiceController extends Controller
             'billingDetail.shippingAddress'
         ])->findOrFail($orderId);
 
+        // Create customer object for invoice (handle both registered and guest users)
+        $customer = $order->user;
+        if (!$customer && $order->billingDetail) {
+            // For guest users, create a customer object from billing details
+            $customer = (object) [
+                'name' => trim(($order->billingDetail->billing_first_name ?? '') . ' ' . ($order->billingDetail->billing_last_name ?? '')),
+                'email' => $order->guest_email ?? 'N/A'
+            ];
+            // If no name in billing details, use generic guest name
+            if (empty(trim($customer->name))) {
+                $customer->name = 'Guest Customer';
+            }
+        }
+
         // Generate PDF
         $pdf = PDF::loadView('invoices.standard-invoice', [
             'type' => 'admin',
             'order' => $order,
-            'customer' => $order->user,
+            'customer' => $customer,
             'billingDetail' => $order->billingDetail,
             'shippingAddress' => $order->billingDetail->shippingAddress ?? null
         ]);

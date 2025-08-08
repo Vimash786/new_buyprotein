@@ -49,15 +49,22 @@ class RazorpayPaymentController extends Controller
         $userId = null;
         $guestEmail = null;
         $userEmail = null; // Email to use for sending confirmation
+        $firstName = null;
+        $lastName = null;
         
         if (Auth::check()) {
             $userId = Auth::user()->id;
             // Use email from billing data or fall back to user's stored email
             $userEmail = $billing['email'] ?? Auth::user()->email;
+            // Get first and last name from billing data or parse from user's name
+            $firstName = $billing['first_name'] ?? (Auth::user()->name ? explode(' ', Auth::user()->name)[0] : 'N/A');
+            $lastName = $billing['last_name'] ?? (Auth::user()->name && count(explode(' ', Auth::user()->name)) > 1 ? implode(' ', array_slice(explode(' ', Auth::user()->name), 1)) : '');
         } else {
-            // For guest users, we'll store the email from billing data
+            // For guest users, we'll store the email and names from billing data
             $guestEmail = $billing['email'] ?? null;
             $userEmail = $guestEmail;
+            $firstName = $billing['first_name'] ?? 'Guest';
+            $lastName = $billing['last_name'] ?? 'Customer';
         }
 
         $order = orders::create([
@@ -100,8 +107,13 @@ class RazorpayPaymentController extends Controller
             ]);
             $existingShippingAddress = $shippingAddress->id;
 
+            // Get price breakdown from billing data
+            $priceBreakdown = $billing['price_breakdown'] ?? [];
+
             $billingDetails = BillingDetail::create([
                 'order_id' => $orderId,
+                'billing_first_name' => $firstName,
+                'billing_last_name' => $lastName,
                 'billing_phone' => $existing->billing_phone,
                 'billing_address' => $existing->billing_address,
                 'billing_city' => $existing->billing_city,
@@ -114,6 +126,9 @@ class RazorpayPaymentController extends Controller
                 'shipping_charge' => 0,
                 'discount_amount' => $discount,
                 'total_amount' => $amount - $discount,
+                'item_price' => $priceBreakdown['item_price'] ?? $amount,
+                'gst_amount' => $priceBreakdown['gst_amount'] ?? 0,
+                'total_before_discount' => $priceBreakdown['total_before_discount'] ?? $amount,
                 'payment_method' => 'razorpay',
                 'payment_status' => 'complete',
             ]);
@@ -130,8 +145,13 @@ class RazorpayPaymentController extends Controller
                 'country' => 'India'
             ]);
 
+            // Get price breakdown from billing data
+            $priceBreakdown = $billing['price_breakdown'] ?? [];
+
             $billingDetails = BillingDetail::create([
                 'order_id' => $orderId,
+                'billing_first_name' => $firstName,
+                'billing_last_name' => $lastName,
                 'billing_phone' => $billing['phone'],
                 'billing_address' => $billing['street'],
                 'billing_city' => $billing['city'],
@@ -144,6 +164,9 @@ class RazorpayPaymentController extends Controller
                 'shipping_charge' => 0,
                 'discount_amount' => $discount,
                 'total_amount' => $amount - $discount,
+                'item_price' => $priceBreakdown['item_price'] ?? $amount,
+                'gst_amount' => $priceBreakdown['gst_amount'] ?? 0,
+                'total_before_discount' => $priceBreakdown['total_before_discount'] ?? $amount,
                 'payment_method' => 'razorpay',
                 'payment_status' => 'complete',
             ]);
@@ -204,7 +227,7 @@ class RazorpayPaymentController extends Controller
 
                     // Create a guest user object for email
                     $guestUser = (object) [
-                        'name' => 'Guest Customer',
+                        'name' => trim($firstName . ' ' . $lastName),
                         'email' => $userEmail
                     ];
 
@@ -257,7 +280,7 @@ class RazorpayPaymentController extends Controller
             }
             
             $guestUser = (object) [
-                'name' => 'Guest Customer',
+                'name' => trim($firstName . ' ' . $lastName),
                 'email' => $userEmail
             ];
             Mail::to($userEmail)->send(new UserOrder($guestUser, $allOrderItems, $amount));

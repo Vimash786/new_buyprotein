@@ -12,6 +12,8 @@ class BillingDetail extends Model
 
     protected $fillable = [
         'order_id',
+        'billing_first_name',
+        'billing_last_name',
         'billing_phone',
         'billing_address',
         'billing_city',
@@ -25,6 +27,9 @@ class BillingDetail extends Model
         'shipping_charge',
         'discount_amount',
         'total_amount',
+        'item_price',
+        'gst_amount',
+        'total_before_discount',
         'payment_method',
         'payment_status',
     ];
@@ -35,6 +40,9 @@ class BillingDetail extends Model
         'shipping_charge' => 'decimal:2',
         'discount_amount' => 'decimal:2',
         'total_amount' => 'decimal:2',
+        'item_price' => 'decimal:2',
+        'gst_amount' => 'decimal:2',
+        'total_before_discount' => 'decimal:2',
     ];
 
     /**

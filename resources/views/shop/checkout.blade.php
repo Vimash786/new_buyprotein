@@ -64,6 +64,18 @@
                         @endauth
                         <form action="#">
                             <div id="newAddressForm" style="display: {{ (Auth::check() && count($billingAddress) > 0) ? 'none' : 'block' }};">
+                                @guest
+                                <div class="half-input-wrapper">
+                                    <div class="single-input">
+                                        <label for="firstName">First Name*</label>
+                                        <input id="billingFirstName" type="text" name="billingFirstName" required>
+                                    </div>
+                                    <div class="single-input">
+                                        <label for="lastName">Last Name*</label>
+                                        <input id="billingLastName" type="text" name="billingLastName" required>
+                                    </div>
+                                </div>
+                                @endguest
                                 <div class="single-input">
                                     <label for="email">Email Address*</label>
                                     <input id="billingEmail" type="email" name="billingEmail" 
@@ -397,29 +409,60 @@
             let billingData = {};
             let shippingData = {};
 
+            // Prepare price breakdown data
+            const priceBreakdown = {
+                item_price: {{ no_tax_price($totalPrice) }},
+                gst_amount: {{ number_format($totalPrice * 0.18, 2) }},
+                shipping_charge: 0,
+                total_before_discount: {{ $totalPrice }},
+                discount_amount: 0,
+                final_total: {{ $shipTotal }}
+            };
+
             if (useExisting) {
                 // Just send the existing address ID, but still need email
                 billingData = {
                     existing_billing_id: selectedAddressId,
-                    email: "{{ Auth::check() ? Auth::user()->email : '' }}"
+                    email: "{{ Auth::check() ? Auth::user()->email : '' }}",
+                    @auth
+                    first_name: "{{ Auth::user()->name ? explode(' ', Auth::user()->name)[0] : 'N/A' }}",
+                    last_name: "{{ Auth::user()->name ? (count(explode(' ', Auth::user()->name)) > 1 ? implode(' ', array_slice(explode(' ', Auth::user()->name), 1)) : '') : 'N/A' }}",
+                    @endauth
+                    price_breakdown: priceBreakdown
                 };
             } else {
                 // Get data from form fields
                 billingData = {
+                    @guest
+                    first_name: $('#billingFirstName').val().trim(),
+                    last_name: $('#billingLastName').val().trim(),
+                    @else
+                    first_name: "{{ Auth::user()->name ? explode(' ', Auth::user()->name)[0] : 'N/A' }}",
+                    last_name: "{{ Auth::user()->name ? (count(explode(' ', Auth::user()->name)) > 1 ? implode(' ', array_slice(explode(' ', Auth::user()->name), 1)) : '') : 'N/A' }}",
+                    @endguest
                     email: $('#billingEmail').val().trim(),
                     phone: $('#billingPhone').val().trim(),
                     street: $('#billingStreet').val().trim(),
                     city: $('#billingCity').val().trim(),
                     state: $('#billingState').val().trim(),
-                    zip: $('#billingZip').val().trim()
+                    zip: $('#billingZip').val().trim(),
+                    price_breakdown: priceBreakdown
                 };
 
                 // Validate manual input
+                @guest
+                if (!billingData.first_name || !billingData.last_name || !billingData.email || !billingData.phone || !billingData.street || !billingData.city || !billingData
+                    .state || !billingData.zip) {
+                    alert("Please fill all required billing fields including first name, last name, and email address.");
+                    return;
+                }
+                @else
                 if (!billingData.email || !billingData.phone || !billingData.street || !billingData.city || !billingData
                     .state || !billingData.zip) {
                     alert("Please fill all required billing fields including email address.");
                     return;
                 }
+                @endguest
             }
 
             // Shipping data
@@ -439,6 +482,9 @@
 
             let appliedDiscount = 0;
             let appliedCoupon = null;
+
+            // Use updated price breakdown if coupon was applied, otherwise use default
+            const finalPriceBreakdown = window.priceBreakdown || priceBreakdown;
 
             let options = {
                 "key": "{{ config('services.razorpay.key') }}",
@@ -460,7 +506,10 @@
                     
                     const paymentData = {
                         razorpay_payment_id: response.razorpay_payment_id,
-                        billing: billingData,
+                        billing: {
+                            ...billingData,
+                            price_breakdown: finalPriceBreakdown
+                        },
                         shipping: shippingData,
                         products: allProductData,
                         amount: (paymentAmount / 100),
@@ -560,8 +609,8 @@
                         "name": "{{ Auth::user()->name }}",
                         "email": "{{ Auth::user()->email }}"
                     @else
-                        "name": "Guest User",
-                        "email": ""
+                        "name": (billingData.first_name || '') + ' ' + (billingData.last_name || ''),
+                        "email": billingData.email || ''
                     @endauth
                 },
                 "theme": {
@@ -613,6 +662,16 @@
                         $("#dicountAmount").text("₹" + data.total_discount);
                         $("#totalAmount").text("₹" + (paymentAmount - data.total_discount));
                         $("#total_pay_amount").val(paymentAmount - data.total_discount);
+                        
+                        // Update the global price breakdown when coupon is applied
+                        window.priceBreakdown = {
+                            item_price: {{ no_tax_price($totalPrice) }},
+                            gst_amount: {{ number_format($totalPrice * 0.18, 2) }},
+                            shipping_charge: 0,
+                            total_before_discount: {{ $totalPrice }},
+                            discount_amount: data.total_discount,
+                            final_total: (paymentAmount - data.total_discount)
+                        };
                     } else {
                         Swal.fire({
                             title: 'Please Enter Coupon Code',
