@@ -145,6 +145,26 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Payment Method Section -->
+                            <div class="rts-payment-method-area mt-4">
+                                <h3 class="title">Payment Method</h3>
+                                <div class="payment-options">
+                                    <label class="option-card">
+                                        <input type="radio" name="paymentMethod" value="online" id="paymentOnline" checked />
+                                        <div class="custom-radio"></div>
+                                        <span>Online Payment (Razorpay)</span>
+                                        <small class="payment-desc d-block mt-1">Pay securely using Credit/Debit Cards, Net Banking, UPI, or Wallets</small>
+                                    </label>
+
+                                    <label class="option-card">
+                                        <input type="radio" name="paymentMethod" value="cod" id="paymentCOD" />
+                                        <div class="custom-radio"></div>
+                                        <span>Cash on Delivery (COD)</span>
+                                        <small class="payment-desc d-block mt-1">Pay when your order is delivered to your doorstep</small>
+                                    </label>
+                                </div>
+                            </div>
                         </form>
                     </div>
                 </div>
@@ -389,6 +409,112 @@
     </div>
 @endsection
 
+<style>
+/* Payment Method Styling */
+.rts-payment-method-area {
+    margin-top: 20px;
+}
+
+.rts-payment-method-area .title {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 15px;
+    color: #2C3C28;
+}
+
+.payment-options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.payment-options .option-card {
+    display: flex;
+    align-items: flex-start;
+    padding: 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-bottom: 10px;
+}
+
+.payment-options .option-card:hover {
+    border-color: #009ec9;
+    background-color: #f8f9fa;
+}
+
+.payment-options .option-card input[type="radio"] {
+    display: none;
+}
+
+.payment-options .option-card input[type="radio"]:checked + .custom-radio + span {
+    color: #009ec9;
+    font-weight: 600;
+}
+
+.payment-options .option-card input[type="radio"]:checked ~ .custom-radio {
+    background-color: #009ec9;
+    border-color: #009ec9;
+}
+
+.payment-options .option-card input[type="radio"]:checked ~ .custom-radio::after {
+    opacity: 1;
+}
+
+.payment-options .option-card input[type="radio"]:checked ~ * {
+    border-color: #009ec9;
+}
+
+.payment-options .option-card.selected,
+.payment-options .option-card input[type="radio"]:checked + .custom-radio + span {
+    border-color: #009ec9;
+}
+
+.custom-radio {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #ddd;
+    border-radius: 50%;
+    margin-right: 10px;
+    position: relative;
+    background-color: white;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.custom-radio::after {
+    content: '';
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: white;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.payment-desc {
+    color: #666;
+    font-size: 13px;
+    margin-left: 30px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .payment-options .option-card {
+        padding: 12px;
+    }
+    
+    .payment-desc {
+        margin-left: 25px;
+    }
+}
+</style>
+
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -402,6 +528,7 @@
             const payAmountTotal = $("#total_pay_amount").val();
             const paymentAmount = payAmountTotal * 100;
             const sameAsShipping = document.querySelector('input[name="sameAsShipping"]:checked').value;
+            const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
 
             const selectedAddressId = $('input[name="billAdd"]:checked').val();
             const useExisting = selectedAddressId !== undefined;
@@ -486,6 +613,80 @@
             // Use updated price breakdown if coupon was applied, otherwise use default
             const finalPriceBreakdown = window.priceBreakdown || priceBreakdown;
 
+            // Handle COD orders differently
+            if (paymentMethod === 'cod') {
+                // Process COD order directly
+                Swal.fire({
+                    title: 'Processing Order...',
+                    text: 'Please wait while we confirm your COD order.',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                const orderData = {
+                    payment_method: 'cod',
+                    billing: {
+                        ...billingData,
+                        price_breakdown: finalPriceBreakdown
+                    },
+                    shipping: shippingData,
+                    products: allProductData,
+                    amount: (payAmountTotal),
+                    discount: appliedDiscount,
+                    coupon: appliedCoupon,
+                    @guest
+                    is_guest: true
+                    @else
+                    is_guest: false,
+                    user_email: "{{ Auth::user()->email ?? 'N/A' }}"
+                    @endguest
+                };
+
+                // Send COD order to server
+                $.ajax({
+                    url: "{{ route('cod.payment') }}", // You'll need to create this route
+                    type: "POST",
+                    headers: {
+                        "X-CSRF-TOKEN": "{{ csrf_token() }}"
+                    },
+                    data: orderData,
+                    success: function(data) {
+                        if (data.success) {
+                            Swal.fire({
+                                title: 'Order Placed Successfully!',
+                                text: 'Your COD order has been confirmed. You will pay when the order is delivered.',
+                                icon: 'success',
+                                confirmButtonText: 'Continue Shopping'
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    window.location.href = "/";
+                                }
+                            });
+                        } else {
+                            Swal.fire({
+                                title: 'Order Failed',
+                                text: 'Something went wrong. Please try again.',
+                                icon: 'error',
+                                confirmButtonText: 'OK'
+                            });
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.log('COD Order Error:', xhr.responseText);
+                        Swal.fire({
+                            title: 'Order Failed',
+                            text: 'Server error: ' + (xhr.responseJSON?.message || 'Please try again.'),
+                            icon: 'error',
+                            confirmButtonText: 'OK'
+                        });
+                    }
+                });
+                return;
+            }
+
+            // Original Razorpay payment processing for online payments
             let options = {
                 "key": "{{ config('services.razorpay.key') }}",
                 "amount": paymentAmount,
@@ -506,6 +707,7 @@
                     
                     const paymentData = {
                         razorpay_payment_id: response.razorpay_payment_id,
+                        payment_method: 'online',
                         billing: {
                             ...billingData,
                             price_breakdown: finalPriceBreakdown

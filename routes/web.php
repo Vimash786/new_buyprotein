@@ -33,6 +33,7 @@ Route::get('/checkout', [DashboardController::class, 'checkout'])->name('user.ch
 // Payment routes (accessible to both guest and authenticated users)
 Route::get('razorpay', [RazorpayPaymentController::class, 'index'])->name('razorpay.index');
 Route::post('/razorpay-payment', [RazorpayPaymentController::class, 'payment'])->name('razorpay.payment');
+Route::post('/cod-payment', [RazorpayPaymentController::class, 'codPayment'])->name('cod.payment');
 Route::post('/test-payment', function(Request $request) {
     Log::info('Test payment route hit', ['method' => $request->method(), 'data' => $request->all()]);
     return response()->json(['success' => true, 'message' => 'Test route working']);
