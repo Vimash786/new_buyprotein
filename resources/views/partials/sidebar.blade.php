@@ -36,9 +36,6 @@
                                 <a href="{{ route('user.blogs') }}" class="main">Categories</a>
                             </li>
                             <li>
-                                <a href="{{ route('term.condition') }}" class="main">Offers</a>
-                            </li>
-                            <li>
                                 <a href="{{ route('about.us') }}" class="main">About Us</a>
                             </li>
                             <li>

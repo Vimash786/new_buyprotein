@@ -221,9 +221,6 @@
                                         <a class="nav-link"
                                             href="{{ route('shop', ['type' => 'category']) }}">Categories</a>
                                     </li>
-                                    <li class="parent has-dropdown">
-                                        <a class="nav-link" href="{{ route('shop', ['type' => 'offer']) }}">Offers</a>
-                                    </li>
                                     <li class="parent"><a href="{{ route('about.us') }}">About Us</a></li>
                                     <li class="parent"><a href="{{ route('contact') }}">Contact Us</a></li>
                                 </ul>

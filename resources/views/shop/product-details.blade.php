@@ -495,26 +495,28 @@
 
                                     <div class="single-tab-content-shop-details">
                                         <div class="product-details-review-product-style">
-                                            @foreach ($reviews as $review)
-                                                <div class="card mb-3 shadow-sm border-0">
-                                                    <div class="card-body">
-                                                        <div
-                                                            class="d-flex justify-content-between align-items-center mb-2">
-                                                            <h6 class="mb-0">{{ $review->name }}</h6>
-                                                            <div class="text-warning">
-                                                                @for ($i = 1; $i <= 5; $i++)
-                                                                    <i
-                                                                        class="{{ $i <= $review->rating ? 'fa-solid' : 'fa-regular' }} fa-star"></i>
-                                                                @endfor
+                                            @if ($reviews->count())
+                                                @foreach ($reviews as $review)
+                                                    <div class="card mb-3 shadow-sm border-0">
+                                                        <div class="card-body">
+                                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                                <h6 class="mb-0">{{ $review->name }}</h6>
+                                                                <div class="text-warning">
+                                                                    @for ($i = 1; $i <= 5; $i++)
+                                                                        <i class="{{ $i <= $review->rating ? 'fa-solid' : 'fa-regular' }} fa-star"></i>
+                                                                    @endfor
+                                                                </div>
                                                             </div>
+                                                            <p class="mb-1 text-muted" style="font-size: 14px;">
+                                                                {{ $review->created_at->format('F d, Y') }}
+                                                            </p>
+                                                            <p class="mb-0">{{ $review->review }}</p>
                                                         </div>
-                                                        <p class="mb-1 text-muted" style="font-size: 14px;">
-                                                            {{ $review->created_at->format('F d, Y') }}
-                                                        </p>
-                                                        <p class="mb-0">{{ $review->review }}</p>
                                                     </div>
-                                                </div>
-                                            @endforeach
+                                                @endforeach
+                                            @else
+                                                <div class="alert alert-info text-center mb-0">No review yet</div>
+                                            @endif
                                         </div>
                                     </div>
                                 </div>
