@@ -451,10 +451,36 @@
                                             </div>
 
                                             <div class="submit-review-area">
+                                                {{-- Success/Error Messages --}}
+                                                @if (session('success'))
+                                                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                                        {{ session('success') }}
+                                                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                                    </div>
+                                                @endif
+
+                                                @if (session('error'))
+                                                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                                        {{ session('error') }}
+                                                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                                    </div>
+                                                @endif
+
+                                                @if ($errors->any())
+                                                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                                        <ul class="mb-0">
+                                                            @foreach ($errors->all() as $error)
+                                                                <li>{{ $error }}</li>
+                                                            @endforeach
+                                                        </ul>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                                    </div>
+                                                @endif
+
                                                 <form action="{{ route('review.store') }}" method="POST"
                                                     class="submit-review-area">
                                                     @csrf
-                                                    <h5 class="title">Submit Your Review</h5>
+                                                    <h5 class="title">Submit Your Review <small class="text-muted">(No login required)</small></h5>
 
                                                     <div class="your-rating">
                                                         <span>Your Rating Of This Product :</span>
@@ -473,15 +499,11 @@
                                                     <div class="half-input-wrapper">
                                                         <div class="half-input">
                                                             <input type="text" name="name" placeholder="Your Name*"
-                                                                required>
-                                                        </div>
-                                                        <div class="half-input">
-                                                            <input type="email" name="email"
-                                                                placeholder="Your Email *" required>
+                                                                value="{{ old('name') }}" required>
                                                         </div>
                                                     </div>
 
-                                                    <textarea name="review" placeholder="Write Your Review" required></textarea>
+                                                    <textarea name="review" placeholder="Write Your Review" required>{{ old('review') }}</textarea>
                                                     <button class="rts-btn btn-primary" type="submit">SUBMIT
                                                         REVIEW</button>
                                                 </form>
@@ -1245,6 +1267,7 @@
     document.addEventListener('DOMContentLoaded', function() {
         const stars = document.querySelectorAll('.star');
         const ratingInput = document.getElementById('rating-value');
+        const reviewForm = document.querySelector('form.submit-review-area');
 
         stars.forEach(star => {
             star.addEventListener('click', function() {
@@ -1263,6 +1286,18 @@
                 });
             });
         });
+
+        // Add form validation
+        if (reviewForm) {
+            reviewForm.addEventListener('submit', function(e) {
+                const rating = ratingInput.value;
+                if (!rating || rating === '0') {
+                    e.preventDefault();
+                    alert('Please select a rating before submitting your review.');
+                    return false;
+                }
+            });
+        }
 
         // Handle variant selection to show corresponding images
         const variantRadios = document.querySelectorAll('input[type="radio"][name^="variant_"]');

@@ -9,4 +9,10 @@ class Review extends Model
     protected $table = 'product_reviews';
 
     protected $fillable = ['user_id', 'product_id', 'name', 'email', 'review', 'rating'];
+
+    protected $casts = [
+        'user_id' => 'integer',
+        'product_id' => 'integer',
+        'rating' => 'integer',
+    ];
 }

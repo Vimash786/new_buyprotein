@@ -47,6 +47,9 @@ Route::post('/wishlist/update-quantity', [DashboardController::class, 'updateQua
 Route::delete('/wishlist/remove', [DashboardController::class, 'removeWishlist'])->name('wishlist.remove');
 Route::post('/wish-to-cart', [DashboardController::class, 'wishToCart'])->name('wishlist.to.cart');
 
+// Review routes (accessible to both guest and authenticated users)
+Route::post('/review-store', [DashboardController::class, 'reviewStore'])->name('review.store');
+
 
 // Route::get('/', function () {
 //     return view('dashboard');
@@ -90,7 +93,6 @@ Route::middleware(['auth'])->group(function () {
     
     Route::delete('/remove-cart/{id}', [DashboardController::class, 'removeCart'])->name('cart.remove');
     Route::post('/bulk-order', [DashboardController::class, 'bulkOrder'])->name('bulk.order');
-    Route::post('/review-store', [DashboardController::class, 'reviewStore'])->name('review.store');
 
     // Invoice routes
     Route::get('/invoice/seller/{orderItemId}', [App\Http\Controllers\InvoiceController::class, 'downloadSellerInvoice'])->name('invoice.seller.download');

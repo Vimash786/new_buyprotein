@@ -902,8 +902,7 @@ class DashboardController extends Controller
         $validator = Validator::make(
             $request->all(),
             [
-                'name' => 'required|string',
-                'email' => 'required|email',
+                'name' => 'required|string|max:255',
                 'review' => 'required|string',
                 'rating' => 'required|integer|min:1|max:5',
             ]
@@ -913,18 +912,22 @@ class DashboardController extends Controller
             return back()->withErrors($validator)->withInput();
         }
 
-        Review::create(
-            [
-                'product_id' => $request->productId,
-                'user_id' => Auth::user()->id,
-                'name'   => $request->name,
-                'email'  => $request->email,
-                'review' => $request->review,
-                'rating' => $request->rating,
-            ]
-        );
+        try {
+            Review::create(
+                [
+                    'product_id' => $request->productId,
+                    'user_id' => Auth::check() ? Auth::user()->id : 0, // Use 0 for guest users until migration is done
+                    'name'   => $request->name,
+                    'email'  => 'guest@example.com', // Temporary placeholder until migration is done
+                    'review' => $request->review,
+                    'rating' => $request->rating,
+                ]
+            );
 
-        return redirect()->back()->with('Product Review is submitted successfully!');
+            return redirect()->back()->with('success', 'Product Review is submitted successfully!');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Failed to submit review. Please try again.');
+        }
     }
 
     public function blogs()
