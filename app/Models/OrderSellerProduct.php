@@ -19,6 +19,7 @@ class OrderSellerProduct extends Model
         'unit_price',
         'total_amount',
         'status',
+        'product_payment_status',
         'notes',
         'variant_combination_id',
     ];
@@ -28,6 +29,7 @@ class OrderSellerProduct extends Model
         'unit_price' => 'decimal:2',
         'total_amount' => 'decimal:2',
         'status' => 'string',
+        'product_payment_status' => 'string',
         'variant' => 'array',
     ];
 

@@ -16,12 +16,16 @@ new class extends Component
     public $showModal = false;
     public $showDeleteModal = false;
     public $showStatusModal = false;
+    public $showPaymentStatusModal = false;
     public $showViewModal = false;
     public $editMode = false;
     public $orderId = null;
     public $orderToDelete = null;
     public $orderToToggle = null;
+    public $orderToUpdatePayment = null;
     public $newStatusValue = null;
+    public $newPaymentStatusValue = null;
+    public $paymentUpdateType = null; // 'product' or 'billing'
     public $viewOrder = null;
     
     // Form fields
@@ -369,6 +373,26 @@ new class extends Component
         $this->newStatusValue = null;
     }
 
+    public function confirmPaymentStatusChange($id, $newPaymentStatus, $type = 'product')
+    {
+        if ($type === 'product') {
+            $this->orderToUpdatePayment = OrderSellerProduct::findOrFail($id);
+        } else {
+            $this->orderToUpdatePayment = orders::findOrFail($id);
+        }
+        $this->newPaymentStatusValue = $newPaymentStatus;
+        $this->paymentUpdateType = $type;
+        $this->showPaymentStatusModal = true;
+    }
+
+    public function closePaymentStatusModal()
+    {
+        $this->showPaymentStatusModal = false;
+        $this->orderToUpdatePayment = null;
+        $this->newPaymentStatusValue = null;
+        $this->paymentUpdateType = null;
+    }
+
     public function editSellerOrder($id)
     {
         $orderItem = OrderSellerProduct::with(['order', 'product'])->findOrFail($id);
@@ -493,6 +517,7 @@ new class extends Component
                         'unit_price' => $item['unit_price'],
                         'total_amount' => $item['total_amount'],
                         'status' => $this->mapOverallStatusToItemStatus($this->overall_status),
+                        'product_payment_status' => 'pending', // Default to pending for new orders
                         'notes' => $this->notes,
                         'variant_combination_id' => $item['variant_combination_id'] ?? null,
                         'variant' => $this->getVariantOptions($item['variant_combination_id'] ?? null),
@@ -521,6 +546,7 @@ new class extends Component
                     'unit_price' => $item['unit_price'],
                     'total_amount' => $item['total_amount'],
                     'status' => $this->mapOverallStatusToItemStatus($this->overall_status),
+                    'product_payment_status' => 'pending', // Default to pending for new orders
                     'notes' => $this->notes,
                     'variant_combination_id' => $item['variant_combination_id'] ?? null,
                     'variant' => $this->getVariantOptions($item['variant_combination_id'] ?? null),
@@ -703,6 +729,64 @@ new class extends Component
         session()->flash('message', 'Order status updated successfully!');
         
         $this->closeStatusModal();
+    }
+
+    public function updatePaymentStatus($id = null, $newPaymentStatus = null, $type = null)
+    {
+        $item = $this->orderToUpdatePayment ?? null;
+        $paymentStatus = $this->newPaymentStatusValue ?? $newPaymentStatus;
+        $updateType = $this->paymentUpdateType ?? $type;
+        
+        if ($updateType === 'product' && $item instanceof OrderSellerProduct) {
+            // Update product payment status
+            $item->update(['product_payment_status' => $paymentStatus]);
+            
+            // Auto-update billing payment status based on all product payment statuses
+            $order = $item->order;
+            $this->updateBillingPaymentStatusBasedOnProducts($order);
+            
+            session()->flash('message', 'Product payment status updated successfully!');
+        } elseif ($updateType === 'billing' && $item instanceof orders) {
+            // Update billing payment status directly
+            $billingDetail = $item->billingDetail;
+            if ($billingDetail) {
+                $billingDetail->update(['payment_status' => $paymentStatus]);
+                session()->flash('message', 'Billing payment status updated successfully!');
+            }
+        }
+        
+        $this->closePaymentStatusModal();
+    }
+
+    /**
+     * Update billing payment status based on product payment statuses
+     */
+    private function updateBillingPaymentStatusBasedOnProducts($order)
+    {
+        $billingDetail = $order->billingDetail;
+        if (!$billingDetail) {
+            return;
+        }
+        
+        // Get all product payment statuses for this order
+        $productPaymentStatuses = $order->orderSellerProducts()
+            ->pluck('product_payment_status')
+            ->unique();
+        
+        if ($productPaymentStatuses->count() === 1) {
+            // All products have the same payment status
+            $singleStatus = $productPaymentStatuses->first();
+            if ($singleStatus === 'completed') {
+                $billingDetail->update(['payment_status' => 'completed']);
+            } else {
+                $billingDetail->update(['payment_status' => 'pending']);
+            }
+        } else {
+            // Mixed statuses - some completed, some pending
+            if ($productPaymentStatuses->contains('completed') && $productPaymentStatuses->contains('pending')) {
+                $billingDetail->update(['payment_status' => 'partially_completed']);
+            }
+        }
     }
 
     public function updatingSearch()
@@ -908,6 +992,7 @@ new class extends Component
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Customer</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Amount</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Product Payment</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
                             @endif
                         </tr>
@@ -1115,13 +1200,40 @@ new class extends Component
                                             </div>
                                         </div>
                                     </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        @php
+                                            $isCODOrder = $order->order->billingDetail && $order->order->billingDetail->payment_method === 'cod';
+                                        @endphp
+                                        @if($isCODOrder)
+                                            <div class="relative inline-block">
+                                                <select 
+                                                    onchange="if(this.value !== '{{ $order->product_payment_status }}') { @this.call('confirmPaymentStatusChange', {{ $order->id }}, this.value, 'product'); } else { this.value = '{{ $order->product_payment_status }}'; }"
+                                                    class="appearance-none bg-transparent border-0 text-xs font-medium rounded-full px-3 py-1 pr-8
+                                                        {{ $order->product_payment_status === 'pending' ? 'bg-yellow-100 text-yellow-800' : '' }}
+                                                        {{ $order->product_payment_status === 'completed' ? 'bg-green-100 text-green-800' : '' }}"
+                                                >
+                                                    <option value="pending" {{ $order->product_payment_status === 'pending' ? 'selected' : '' }}>Pending</option>
+                                                    <option value="completed" {{ $order->product_payment_status === 'completed' ? 'selected' : '' }}>Completed</option>
+                                                </select>
+                                                <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                        @else
+                                            <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
+                                                Online Payment
+                                            </span>
+                                        @endif
+                                    </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                         {{ $order->created_at->format('M d, Y') }}
                                     </td>
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="7" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                                    <td colspan="8" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
                                         No orders found.
                                     </td>
                                 </tr>
@@ -1641,12 +1753,41 @@ new class extends Component
                                     <div>
                                         <span class="text-gray-600 dark:text-gray-400">Payment Status:</span>
                                         @if($viewOrder->billingDetail)
-                                            <span class="ml-2 inline-flex px-2 py-1 text-xs font-medium rounded-full
-                                                {{ $viewOrder->billingDetail->payment_status === 'pending' ? 'bg-yellow-100 text-yellow-800' : '' }}
-                                                {{ $viewOrder->billingDetail->payment_status === 'completed' || $viewOrder->billingDetail->payment_status === 'complete' ? 'bg-green-100 text-green-800' : '' }}
-                                                {{ $viewOrder->billingDetail->payment_status === 'failed' ? 'bg-red-100 text-red-800' : '' }}">
-                                                {{ ucfirst($viewOrder->billingDetail->payment_status) }}
-                                            </span>
+                                            @php
+                                                $isCODOrder = $viewOrder->billingDetail->payment_method === 'cod';
+                                            @endphp
+                                            @if($isCODOrder && !$isSeller)
+                                                <!-- COD order - show editable payment status for sellers -->
+                                                <div class="relative inline-block ml-2">
+                                                    <select 
+                                                        onchange="if(this.value !== '{{ $viewOrder->billingDetail->payment_status }}') { @this.call('confirmPaymentStatusChange', {{ $viewOrder->id }}, this.value, 'billing'); } else { this.value = '{{ $viewOrder->billingDetail->payment_status }}'; }"
+                                                        class="appearance-none bg-transparent border-0 text-xs font-medium rounded-full px-3 py-1 pr-8
+                                                            {{ $viewOrder->billingDetail->payment_status === 'pending' ? 'bg-yellow-100 text-yellow-800' : '' }}
+                                                            {{ $viewOrder->billingDetail->payment_status === 'partially_completed' ? 'bg-blue-100 text-blue-800' : '' }}
+                                                            {{ $viewOrder->billingDetail->payment_status === 'completed' ? 'bg-green-100 text-green-800' : '' }}
+                                                            {{ $viewOrder->billingDetail->payment_status === 'failed' ? 'bg-red-100 text-red-800' : '' }}"
+                                                    >
+                                                        <option value="pending" {{ $viewOrder->billingDetail->payment_status === 'pending' ? 'selected' : '' }}>Pending</option>
+                                                        <option value="partially_completed" {{ $viewOrder->billingDetail->payment_status === 'partially_completed' ? 'selected' : '' }}>Partially Completed</option>
+                                                        <option value="completed" {{ $viewOrder->billingDetail->payment_status === 'completed' ? 'selected' : '' }}>Completed</option>
+                                                        <option value="failed" {{ $viewOrder->billingDetail->payment_status === 'failed' ? 'selected' : '' }}>Failed</option>
+                                                    </select>
+                                                    <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                                        </svg>
+                                                    </div>
+                                                </div>
+                                            @else
+                                                <!-- Read-only payment status display -->
+                                                <span class="ml-2 inline-flex px-2 py-1 text-xs font-medium rounded-full
+                                                    {{ $viewOrder->billingDetail->payment_status === 'pending' ? 'bg-yellow-100 text-yellow-800' : '' }}
+                                                    {{ $viewOrder->billingDetail->payment_status === 'partially_completed' ? 'bg-blue-100 text-blue-800' : '' }}
+                                                    {{ $viewOrder->billingDetail->payment_status === 'completed' || $viewOrder->billingDetail->payment_status === 'complete' ? 'bg-green-100 text-green-800' : '' }}
+                                                    {{ $viewOrder->billingDetail->payment_status === 'failed' ? 'bg-red-100 text-red-800' : '' }}">
+                                                    {{ ucfirst(str_replace('_', ' ', $viewOrder->billingDetail->payment_status)) }}
+                                                </span>
+                                            @endif
                                         @else
                                             <span class="ml-2 text-gray-500">N/A</span>
                                         @endif
@@ -1756,15 +1897,53 @@ new class extends Component
                                                     </div>
                                                     
                                                     <!-- Item Status -->
-                                                    <div class="mt-2">
-                                                        <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full
-                                                            {{ $item->status === 'pending' ? 'bg-yellow-100 text-yellow-800' : '' }}
-                                                            {{ $item->status === 'confirmed' ? 'bg-blue-100 text-blue-800' : '' }}
-                                                            {{ $item->status === 'shipped' ? 'bg-purple-100 text-purple-800' : '' }}
-                                                            {{ $item->status === 'delivered' ? 'bg-green-100 text-green-800' : '' }}
-                                                            {{ $item->status === 'cancelled' ? 'bg-red-100 text-red-800' : '' }}">
-                                                            {{ ucfirst($item->status) }}
-                                                        </span>
+                                                    <div class="mt-2 space-y-1">
+                                                        <div>
+                                                            <span class="text-xs text-gray-600 dark:text-gray-400">Order Status:</span>
+                                                            <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full ml-1
+                                                                {{ $item->status === 'pending' ? 'bg-yellow-100 text-yellow-800' : '' }}
+                                                                {{ $item->status === 'confirmed' ? 'bg-blue-100 text-blue-800' : '' }}
+                                                                {{ $item->status === 'shipped' ? 'bg-purple-100 text-purple-800' : '' }}
+                                                                {{ $item->status === 'delivered' ? 'bg-green-100 text-green-800' : '' }}
+                                                                {{ $item->status === 'cancelled' ? 'bg-red-100 text-red-800' : '' }}">
+                                                                {{ ucfirst($item->status) }}
+                                                            </span>
+                                                        </div>
+                                                        
+                                                        @php
+                                                            $isCODOrder = $viewOrder->billingDetail && $viewOrder->billingDetail->payment_method === 'cod';
+                                                        @endphp
+                                                        @if($isCODOrder)
+                                                            <div>
+                                                                <span class="text-xs text-gray-600 dark:text-gray-400">Payment Status:</span>
+                                                                @if(!$isSeller)
+                                                                    <!-- COD order - show editable payment status for sellers -->
+                                                                    <div class="relative inline-block ml-1">
+                                                                        <select 
+                                                                            onchange="if(this.value !== '{{ $item->product_payment_status ?? 'pending' }}') { @this.call('confirmPaymentStatusChange', {{ $item->id }}, this.value, 'product'); } else { this.value = '{{ $item->product_payment_status ?? 'pending' }}'; }"
+                                                                            class="appearance-none bg-transparent border-0 text-xs font-medium rounded-full px-2 py-1 pr-6
+                                                                                {{ ($item->product_payment_status ?? 'pending') === 'pending' ? 'bg-yellow-100 text-yellow-800' : '' }}
+                                                                                {{ ($item->product_payment_status ?? 'pending') === 'completed' ? 'bg-green-100 text-green-800' : '' }}"
+                                                                        >
+                                                                            <option value="pending" {{ ($item->product_payment_status ?? 'pending') === 'pending' ? 'selected' : '' }}>Pending</option>
+                                                                            <option value="completed" {{ ($item->product_payment_status ?? 'pending') === 'completed' ? 'selected' : '' }}>Completed</option>
+                                                                        </select>
+                                                                        <div class="absolute inset-y-0 right-0 flex items-center pr-1 pointer-events-none">
+                                                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                                                            </svg>
+                                                                        </div>
+                                                                    </div>
+                                                                @else
+                                                                    <!-- Read-only payment status display -->
+                                                                    <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full ml-1
+                                                                        {{ ($item->product_payment_status ?? 'pending') === 'pending' ? 'bg-yellow-100 text-yellow-800' : '' }}
+                                                                        {{ ($item->product_payment_status ?? 'pending') === 'completed' ? 'bg-green-100 text-green-800' : '' }}">
+                                                                        {{ ucfirst(str_replace('_', ' ', $item->product_payment_status ?? 'pending')) }}
+                                                                    </span>
+                                                                @endif
+                                                            </div>
+                                                        @endif
                                                     </div>
                                                 </div>
                                             </div>
@@ -1899,6 +2078,89 @@ new class extends Component
                             class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-zinc-700 rounded-lg hover:bg-gray-300 dark:hover:bg-zinc-600"
                         >
                             Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- Payment Status Change Confirmation Modal -->
+    @if($showPaymentStatusModal && $orderToUpdatePayment && $newPaymentStatusValue)
+        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div class="bg-white dark:bg-zinc-900 rounded-lg max-w-md w-full">
+                <div class="p-6">
+                    <div class="flex items-center justify-center w-12 h-12 mx-auto 
+                                {{ $newPaymentStatusValue === 'pending' ? 'bg-yellow-100 dark:bg-yellow-900/50' : '' }}
+                                {{ $newPaymentStatusValue === 'partially_completed' ? 'bg-blue-100 dark:bg-blue-900/50' : '' }}
+                                {{ $newPaymentStatusValue === 'completed' ? 'bg-green-100 dark:bg-green-900/50' : '' }}
+                                rounded-full mb-4">
+                        @if($newPaymentStatusValue === 'pending')
+                            <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                            </svg>
+                        @elseif($newPaymentStatusValue === 'partially_completed')
+                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                            </svg>
+                        @elseif($newPaymentStatusValue === 'completed')
+                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        @endif
+                    </div>
+                    
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white text-center mb-2">
+                        Update Payment Status
+                    </h3>
+                    <p class="text-gray-600 dark:text-gray-300 text-center mb-4">
+                        Are you sure you want to change the {{ $paymentUpdateType === 'product' ? 'product' : 'billing' }} payment status to "<strong>{{ ucwords(str_replace('_', ' ', $newPaymentStatusValue)) }}</strong>"?
+                    </p>
+                    
+                    <div class="bg-gray-50 dark:bg-zinc-800 rounded-lg p-3 mb-4">
+                        <div class="text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">Type:</span>
+                                <span class="font-medium text-gray-900 dark:text-white">
+                                    {{ $paymentUpdateType === 'product' ? 'Product Payment Status' : 'Billing Payment Status' }}
+                                </span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">New Status:</span>
+                                <span class="font-medium text-blue-600">{{ ucwords(str_replace('_', ' ', $newPaymentStatusValue)) }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    @if($paymentUpdateType === 'product')
+                        <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-4">
+                            <div class="flex">
+                                <svg class="w-5 h-5 text-blue-600 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <div class="text-sm text-blue-700 dark:text-blue-300">
+                                    <strong>Note:</strong> Updating the product payment status will automatically update the billing payment status based on all products in this order.
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+                    
+                    <div class="flex justify-end gap-3">
+                        <button 
+                            wire:click="closePaymentStatusModal"
+                            class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-zinc-700 rounded-lg hover:bg-gray-300 dark:hover:bg-zinc-600"
+                        >
+                            Cancel
+                        </button>
+                        <button 
+                            wire:click="updatePaymentStatus"
+                            class="px-4 py-2 text-sm font-medium text-white 
+                                   {{ $newPaymentStatusValue === 'pending' ? 'bg-yellow-600 hover:bg-yellow-700' : '' }}
+                                   {{ $newPaymentStatusValue === 'partially_completed' ? 'bg-blue-600 hover:bg-blue-700' : '' }}
+                                   {{ $newPaymentStatusValue === 'completed' ? 'bg-green-600 hover:bg-green-700' : '' }}
+                                   rounded-lg"
+                        >
+                            Update to {{ ucwords(str_replace('_', ' ', $newPaymentStatusValue)) }}
                         </button>
                     </div>
                 </div>
