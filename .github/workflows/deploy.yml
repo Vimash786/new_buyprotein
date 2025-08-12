@@ -30,5 +30,6 @@ jobs:
           .env
           public/build
           node_modules
+          
         timeout: 1800
 
