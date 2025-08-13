@@ -144,13 +144,9 @@
                                     Browse our products and save your favorites for later!
                                 </p>
                                 <div class="empty-wishlist-actions">
-                                    <a href="{{ route('shop') }}" class="rts-btn btn-primary me-3" style="padding: 12px 30px; font-weight: 500;">
+                                    <a href="{{ route('shop') }}" class="rts-btn btn-primary my-2"  style="display:unset; padding: 12px 30px; font-weight: 500;">
                                         <i class="fa-regular fa-shopping-bag me-2"></i>
-                                        Browse Products
-                                    </a>
-                                    <a href="{{ route('shop', ['type' => 'categories']) }}" class="rts-btn btn-outline-primary" style="padding: 12px 30px; font-weight: 500;">
-                                        <i class="fa-regular fa-list me-2"></i>
-                                        View Categories
+                                         Browse Products
                                     </a>
                                 </div>
                             </div>

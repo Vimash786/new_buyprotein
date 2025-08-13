@@ -122,7 +122,7 @@
                                 Start shopping to fill it up with your favorite products!
                             </p>
                             <div class="empty-cart-actions">
-                                <a href="{{ route('shop') }}" class="rts-btn btn-primary" style="padding: 12px 30px; font-weight: 500;">
+                                <a href="{{ route('shop') }}" class="rts-btn btn-primary" style="display:unset; padding: 12px 30px; font-weight: 500;">
                                     <i class="fa-regular fa-shopping-bag me-2"></i>
                                     Continue Shopping
                                 </a>
