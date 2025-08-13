@@ -25,7 +25,7 @@
     <div class="rts-cart-area rts-section-gap bg_light-1">
         <div class="container">
             <div class="row g-5">
-                <div class="col-xl-9 col-lg-12 col-md-12 col-12 order-2 order-xl-1 order-lg-2 order-md-2 order-sm-2">
+                <div class="col-xl-9 col-lg-12 col-md-12 col-12 order-1 order-xl-1 order-lg-2 order-md-1 order-sm-1">
                     <div class="rts-cart-list-area">
                     @if($cartData->isNotEmpty())
                         <div class="single-cart-area-list head">
@@ -131,7 +131,7 @@
                     @endif
                     </div>
                 </div>
-                <div class="col-xl-3 col-lg-12 col-md-12 col-12 order-1 order-xl-2 order-lg-1 order-md-1 order-sm-1">
+                <div class="col-xl-3 col-lg-12 col-md-12 col-12 order-2 order-xl-2 order-lg-1 order-md-2 order-sm-2">
                     @if($cartData->isNotEmpty())
                         <div class="cart-total-area-start-right">
                             <h5 class="title">Cart Totals</h5>
@@ -321,7 +321,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div>      
 @endsection
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>

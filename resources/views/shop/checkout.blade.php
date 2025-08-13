@@ -27,7 +27,7 @@
         <div class="container">
             <div class="row">
                 <div
-                    class="col-lg-8 pr--40 pr_md--5 pr_sm--5 order-2 order-xl-1 order-lg-2 order-md-2 order-sm-2 mt_md--30 mt_sm--30">
+                    class="col-lg-8 pr--40 pr_md--5 pr_sm--5 order-1 order-xl-1 order-lg-2 order-md-1 order-sm-1 mt_md--30 mt_sm--30">
 
                     <div class="rts-billing-details-area">
                         <h3 class="title">Billing Details</h3>
@@ -168,7 +168,7 @@
                         </form>
                     </div>
                 </div>
-                <div class="col-lg-4 order-1 order-xl-2 order-lg-1 order-md-1 order-sm-1">
+                <div class="col-lg-4 order-2 order-xl-2 order-lg-1 order-md-2 order-sm-2">
                     <h3 class="title-checkout">Your Order</h3>
                     <div class="right-card-sidebar-checkout">
                         <div class="top-wrapper">
