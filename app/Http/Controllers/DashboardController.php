@@ -1217,4 +1217,19 @@ class DashboardController extends Controller
             ]);
         }
     }
+
+    public function thankYou()
+    {
+        return view('shop.thank-you');
+    }
+
+    public function userOrders()
+    {
+        $orders = orders::with(['billingDetail', 'orderSellerProducts.product'])
+            ->where('user_id', Auth::id())
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+            
+        return view('user.orders', compact('orders'));
+    }
 }

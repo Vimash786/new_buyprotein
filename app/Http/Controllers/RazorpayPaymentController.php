@@ -289,7 +289,19 @@ class RazorpayPaymentController extends Controller
         $payment = $api->payment->fetch($request->razorpay_payment_id);
 
         if ($payment->capture(['amount' => $payment['amount']])) {
-            return response()->json(['success' => true]);
+            // Store order details in session for thank you page
+            session()->flash('order_details', [
+                'order_number' => $orderNumber,
+                'payment_method' => 'online',
+                'total_amount' => $amount,
+                'email' => $userEmail,
+                'payment_id' => $request->razorpay_payment_id
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'redirect_url' => route('thank.you')
+            ]);
         }
 
         return response()->json(['success' => false]);
@@ -569,7 +581,19 @@ class RazorpayPaymentController extends Controller
 
             // For COD orders, we don't need to capture payment
             // Just return success since the order has been created
-            return response()->json(['success' => true, 'message' => 'COD Order placed successfully']);
+            // Store order details in session for thank you page
+            session()->flash('order_details', [
+                'order_number' => $orderNumber,
+                'payment_method' => 'cod',
+                'total_amount' => $amount,
+                'email' => $userEmail
+            ]);
+            
+            return response()->json([
+                'success' => true, 
+                'message' => 'COD Order placed successfully',
+                'redirect_url' => route('thank.you')
+            ]);
 
         } catch (\Exception $e) {
             Log::error('COD Payment processing error', [

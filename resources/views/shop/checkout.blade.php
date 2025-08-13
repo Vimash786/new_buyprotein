@@ -658,11 +658,10 @@
                                 title: 'Order Placed Successfully!',
                                 text: 'Your COD order has been confirmed. You will pay when the order is delivered.',
                                 icon: 'success',
-                                confirmButtonText: 'Continue Shopping'
-                            }).then((result) => {
-                                if (result.isConfirmed) {
-                                    window.location.href = "/";
-                                }
+                                showConfirmButton: false,
+                                timer: 2000
+                            }).then(() => {
+                                window.location.href = data.redirect_url || "{{ route('thank.you') }}";
                             });
                         } else {
                             Swal.fire({
@@ -762,11 +761,10 @@
                                             title: 'Payment Successful!',
                                             text: 'Thank you for your purchase.',
                                             icon: 'success',
-                                            confirmButtonText: 'Keep Shopping'
-                                        }).then((result) => {
-                                            if (result.isConfirmed) {
-                                                window.location.href = "/";
-                                            }
+                                            showConfirmButton: false,
+                                            timer: 2000
+                                        }).then(() => {
+                                            window.location.href = data.redirect_url || "{{ route('thank.you') }}";
                                         });
                                     } else {
                                         Swal.fire({

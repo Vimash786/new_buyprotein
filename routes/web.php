@@ -29,6 +29,17 @@ Route::post('/submit-commet/{id}', [DashboardController::class, 'blogComment'])-
 Route::post('/add-to-cart', [DashboardController::class, 'addToCart'])->name('cart.add');
 Route::get('/cart', [DashboardController::class, 'cart'])->name('user.cart');
 Route::get('/checkout', [DashboardController::class, 'checkout'])->name('user.checkout');
+Route::get('/thank-you', [DashboardController::class, 'thankYou'])->name('thank.you');
+Route::get('/thank-you-test', function() {
+    session()->flash('order_details', [
+        'order_number' => 'ORD-20250813-BG1234',
+        'payment_method' => 'online',
+        'total_amount' => 1299.99,
+        'email' => 'test@example.com',
+        'payment_id' => 'pay_test123'
+    ]);
+    return redirect()->route('thank.you');
+})->name('thank.you.test');
 
 // Payment routes (accessible to both guest and authenticated users)
 Route::get('razorpay', [RazorpayPaymentController::class, 'index'])->name('razorpay.index');
@@ -88,6 +99,7 @@ Route::middleware(['auth'])->group(function () {
     Volt::route('policies', 'policies.manage')->name('policies.manage');
 
     Route::get('/user-account', [DashboardController::class, 'userAccount'])->name('user.account');
+    Route::get('/my-orders', [DashboardController::class, 'userOrders'])->name('user.orders');
     Route::post('/update-user-details', [DashboardController::class, 'updateUserDetails'])->name('update.user.details');
     
     
