@@ -654,15 +654,8 @@
                     data: orderData,
                     success: function(data) {
                         if (data.success) {
-                            Swal.fire({
-                                title: 'Order Placed Successfully!',
-                                text: 'Your COD order has been confirmed. You will pay when the order is delivered.',
-                                icon: 'success',
-                                showConfirmButton: false,
-                                timer: 2000
-                            }).then(() => {
-                                window.location.href = data.redirect_url || "{{ route('thank.you') }}";
-                            });
+                            // Redirect directly to thank you page without popup
+                            window.location.href = data.redirect_url || "{{ route('thank.you') }}";
                         } else {
                             Swal.fire({
                                 title: 'Order Failed',
@@ -757,15 +750,8 @@
                                 data: paymentData,
                                 success: function(data) {
                                     if (data.success) {
-                                        Swal.fire({
-                                            title: 'Payment Successful!',
-                                            text: 'Thank you for your purchase.',
-                                            icon: 'success',
-                                            showConfirmButton: false,
-                                            timer: 2000
-                                        }).then(() => {
-                                            window.location.href = data.redirect_url || "{{ route('thank.you') }}";
-                                        });
+                                        // Redirect directly to thank you page without popup
+                                        window.location.href = data.redirect_url || "{{ route('thank.you') }}";
                                     } else {
                                         Swal.fire({
                                             title: 'Payment Failed',
