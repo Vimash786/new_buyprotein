@@ -194,8 +194,8 @@
                                                         <!-- Cart -->
                                                         <div class="cart-counter-action">
                                                             <div class="quantity-edit">
-                                                                <input type="number" class="input quantity-input"
-                                                                    value="1" min="1">
+                                                                <input type="text" class="input quantity-input"
+                                                                value="1">
                                                                 <div class="button-wrapper-action">
                                                                     <button class="button"><i
                                                                             class="fa-regular fa-chevron-down"></i></button>
