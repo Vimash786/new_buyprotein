@@ -33,6 +33,39 @@
             left: 11px;
             font-size: 10px;
         }
+
+        .brand-card {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 20px;
+            height: 150px;
+            transition: box-shadow 0.3s ease, transform 0.3s ease;
+            text-align: center;
+            text-decoration: none;
+        }
+
+        .brand-card:hover {
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            transform: translateY(-5px);
+        }
+
+        .brand-logo-wrapper {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .brand-logo {
+            max-height: 80px;
+            max-width: 100%;
+            object-fit: contain;
+        }
         
     </style>
     @stack('styles')

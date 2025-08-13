@@ -121,7 +121,7 @@
 
 
                             <div id="billingFields" class="rts-billing-details-area">
-                                <h3 class="title">Shipping Details</h3>
+                                <h3 class="title">Shipping details</h3>
                                 <div class="single-input">
                                     <label for="phone">Phone*</label>
                                     <input id="shippingPhone" type="text" name="shippingPhone">

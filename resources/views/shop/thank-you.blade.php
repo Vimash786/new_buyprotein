@@ -22,7 +22,7 @@
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
             padding: 60px 40px;
             text-align: center;
-            max-width: 800px;
+            max-width: 900px;
             width: 100%;
             margin: 0 auto;
             position: relative;
@@ -116,7 +116,7 @@
         .info-label {
             font-weight: 600;
             color: #2C3C28;
-            font-size: 0.9rem;
+            font-size: 1.5rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             margin-bottom: 5px;
@@ -124,7 +124,7 @@
 
         .info-value {
             color: #495057;
-            font-size: 1.1rem;
+            font-size: 1.2rem;
         }
 
         .next-steps {
@@ -412,11 +412,6 @@
                         <i class="fas fa-box"></i>
                         Track Your Order
                     </a>
-                @else
-                    <a href="{{ route('user.account') }}" class="btn-action btn-primary-action">
-                        <i class="fas fa-user"></i>
-                        View Account
-                    </a>
                 @endauth
                 <a href="{{ route('shop') }}" class="btn-action btn-secondary-action">
                     <i class="fas fa-shopping-cart"></i>
@@ -426,7 +421,7 @@
 
             <div class="contact-info">
                 <h5><i class="fas fa-headset"></i> Need Help?</h5>
-                <p>Our customer support team is here to help! Contact us at <strong>support@buyprotein.com</strong> or call us at <strong>+91-XXXXXXXXXX</strong></p>
+                <p>Our customer support team is here to help! Contact us at <strong>support@buyprotein.com</strong> or call us at <strong>+91-97240 86537</strong></p>
             </div>
 
             <div class="social-links">

@@ -590,10 +590,8 @@
             <div class="container">
                 <div class="row">
                     <div class="col-lg-12">
-                        <div class="title-area-between">
-                            <h2 class="title-left mb--10">
-                                Shop by Brand
-                            </h2>
+                        <div class="title-area-between text-center mb-4">
+                            <h2 class="title-left mb--10">Shop by Brand</h2>
                         </div>
                     </div>
                 </div>
@@ -619,32 +617,28 @@
                                 }
                             }'>
                             <div class="swiper-wrapper">
-                                @foreach ($sellers as $seller)
+                               @foreach ($sellers as $seller)
                                     <div class="swiper-slide">
-                                        <div class="single-feature-card bg_image one"
-                                            style="background-image: url('{{ asset('storage/' . $seller->brand_logo) }}');">
-                                            <div class="content-area">
-                                                <h3 class="title">{{ $seller->brand }}</h3>
-                                                <a href="{{ route('shop', ['type' => 'brand', 'id' => Crypt::encrypt($seller->id)]) }}"
-                                                    class="shop-now-goshop-btn">
-                                                    <span class="text">Shop Now</span>
-                                                    <div class="plus-icon">
-                                                        <i class="fa-sharp fa-regular fa-plus"></i>
-                                                    </div>
-                                                    <div class="plus-icon">
-                                                        <i class="fa-sharp fa-regular fa-plus"></i>
-                                                    </div>
-                                                </a>
+                                        <a href="{{ route('shop', ['type' => 'brand', 'id' => Crypt::encrypt($seller->id)]) }}"
+                                        class="brand-card">
+                                            <div class="brand-logo-wrapper">
+                                                <img src="{{ asset('storage/' . $seller->brand_logo) }}"
+                                                    alt="{{ $seller->brand }}"
+                                                    class="brand-logo" />
                                             </div>
-                                        </div>
+                                        </a>
                                     </div>
                                 @endforeach
                             </div>
+                            <!-- Optional Swiper Navigation -->
+                            <div class="swiper-button-next"></div>
+                            <div class="swiper-button-prev"></div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+
         <!-- rts category feature area end -->
 
         <!-- rts top tranding product area -->

@@ -153,7 +153,7 @@
                                 @if (isset($products))
                                     @foreach ($products as $product)
                                         @if ($product && isset($product->seller) && $product->seller->status === 'approved')
-                                            <div class="col-6 col-md-4 col-lg-3 col-xxl-2">
+                                            <div class="col-6 col-md-4 col-lg-4 col-xxl-3">
                                                 <div class="single-shopping-card-one">
                                                     <!-- Image -->
                                                     <div class="image-and-action-area-wrapper">
@@ -192,7 +192,7 @@
                                                         </div>
 
                                                         <!-- Cart -->
-                                                        <div class="cart-counter-action">
+                                                        <div class="cart-counter-action d-flex">
                                                             <div class="quantity-edit">
                                                                 <input type="text" class="input quantity-input"
                                                                 value="1">
