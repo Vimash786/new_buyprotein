@@ -12,6 +12,7 @@ class CouponUsage extends Model
     protected $fillable = [
         'coupon_id',
         'user_id',
+        'guest_identifier',
         'order_id',
         'discount_amount',
         'order_total',

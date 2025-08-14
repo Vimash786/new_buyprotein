@@ -974,246 +974,52 @@ class DashboardController extends Controller
 
     public function applyCoupon(Request $request)
     {
-        $couponData = Coupon::with('assignments')->where('code', $request->coupon)->first();
-        $couponType = '';
-
-        if (!$couponData) {
-            $couponData = Reference::with('assignments')->where('code', $request->coupon)->first();
-            $couponType = 'reference';
-        }
-
-        // Handle cart data for both authenticated and guest users
-        if (Auth::check()) {
-            $cartData = Cart::with(['product.seller'])->where('user_id', Auth::user()->id)->get();
-            $user = Auth::user();
-        } else {
-            // For guest users, create a simpler cart structure from session
-            $sessionCart = session('cart', []);
-            $cartData = collect();
+        try {
+            $couponValidationService = new \App\Services\CouponValidationService();
             
-            foreach ($sessionCart as $item) {
-                $product = Products::find($item['product_id']);
-                if ($product) {
-                    $cartData->push((object)[
-                        'id' => $item['product_id'] . '_' . implode('_', $item['variant_option_ids']),
-                        'product_id' => $item['product_id'],
-                        'price' => $item['price'],
-                        'quantity' => $item['quantity'],
-                        'product' => $product
-                    ]);
-                }
-            }
-            $user = null;
-        }
-
-        if ($couponData) {
-            // For guest users, provide basic coupon support
+            // Generate guest identifier for guest users
+            $guestIdentifier = null;
             if (!Auth::check()) {
-                if ($couponData->status == 'active' && Carbon::now()->between($couponData->starts_at, $couponData->expires_at) && $couponData->used_count <= $couponData->usage_limit) {
-                    $subtotal = $cartData->sum(function ($item) {
-                        return $item->price * $item->quantity;
-                    });
-
-                    $totalDiscount = 0;
-                    if ($couponData->type == 'percentage') {
-                        $totalDiscount = $subtotal * ($couponData->value / 100);
-                        if (isset($couponData->maximum_discount) && $totalDiscount > $couponData->maximum_discount) {
-                            $totalDiscount = $couponData->maximum_discount;
-                        }
-                    } else {
-                        $totalDiscount = min($couponData->value, $subtotal);
-                    }
-
-                    return response()->json([
-                        'success' => true,
-                        'message' => 'Coupon applied successfully!',
-                        'total_discount' => round($totalDiscount, 2),
-                        'matched_subtotal' => round($subtotal, 2),
-                    ]);
-                } else {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Coupon is expired or invalid.'
-                    ]);
-                }
+                $guestIdentifier = $couponValidationService->generateGuestIdentifier();
             }
 
-            // Existing logic for authenticated users follows...
-            if ($couponData->status == 'active') {
-                if (Carbon::now()->between($couponData->starts_at, $couponData->expires_at)) {
-                    if ($couponData->used_count <= $couponData->usage_limit) {
-
-                        $assignedUserIds = [];
-
-                        if ($couponType == 'reference') {
-                            $assignedUserIds = $couponData->assignments->where('assignable_type', 'user')->pluck('assignable_id')->toArray();
-
-                            $matchingCartItems = $cartData;
-                        } else {
-                            if ($couponData->applicable_to != 'all_users' && $couponData->applicable_to != 'all_products') {
-
-                                $assignedUserIds = $couponData->assignments->where('assignable_type', 'user')->pluck('assignable_id')->toArray();
-
-                                $productIds = $couponData->assignments->pluck('assignable_id')->toArray();
-                                $cartProductIds = $cartData->pluck('product_id')->toArray();
-
-                                $matchedProductIds = array_intersect($cartProductIds, $productIds);
-
-                                // working fine for products
-                                $matchingCartItems = $cartData->whereIn('product_id', $matchedProductIds);
-
-                                // working fine for user
-                                if (Auth::check()) {
-                                    $matchingCartItems = $cartData->whereIn('user_id', Auth::user()->id);
-                                }
-                            } else {
-                                $matchingCartItems = $cartData;
-                            }
-                        }
-
-                        $matchedSubtotal = $matchingCartItems->sum(function ($item) {
-                            return $item->price * $item->quantity;
-                        });
-
-                        $perItemDiscounts = [];
-                        $totalDiscount = 0;
-
-                        if ($couponType == 'reference') {
-                            if (Auth::check() && (in_array(Auth::id(), $assignedUserIds) || in_array('all_shop', $couponData->applicable_to) || in_array('all_gym', $couponData->applicable_to))) {
-                                if ($couponData->type == 'percentage') {
-
-                                    foreach ($matchingCartItems as $item) {
-                                        $itemSubtotal = $item->price * $item->quantity;
-                                        $itemDiscount = $itemSubtotal * ($couponData->applyer_discount / 100);
-
-                                        $perItemDiscounts[] = [
-                                            'cart_item_id' => $item->id,
-                                            'product_id' => $item->product_id,
-                                            'quantity' => $item->quantity,
-                                            'item_subtotal' => $itemSubtotal,
-                                            'discount' => round($itemDiscount, 2),
-                                            'reference' => 'yes',
-                                        ];
-
-                                        $totalDiscount += $itemDiscount;
-                                    }
-                                    if (isset($couponData->maximum_discount) && $totalDiscount > $couponData->maximum_discount) {
-                                        $totalDiscount = $couponData->maximum_discount;
-
-                                        $perItemDiscounts = array_map(function ($item) use ($matchedSubtotal, $totalDiscount) {
-                                            $proportional = ($item['item_subtotal'] / $matchedSubtotal) * $totalDiscount;
-                                            $item['discount'] = round($proportional, 2);
-                                            return $item;
-                                        }, $perItemDiscounts);
-                                    }
-                                } else {
-                                    $flat = $couponData->value;
-                                    if ($flat > $matchedSubtotal) {
-                                        $flat = $matchedSubtotal;
-                                    }
-
-                                    foreach ($matchingCartItems as $item) {
-                                        $itemSubtotal = $item->price * $item->quantity;
-                                        $itemDiscount = ($itemSubtotal / $matchedSubtotal) * $flat;
-
-                                        $perItemDiscounts[] = [
-                                            'cart_item_id' => $item->id,
-                                            'product_id' => $item->product_id,
-                                            'quantity' => $item->quantity,
-                                            'item_subtotal' => $itemSubtotal,
-                                            'discount' => round($itemDiscount, 2),
-                                            'reference' => 'yes',
-                                        ];
-
-                                        $totalDiscount += $itemDiscount;
-                                    }
-
-                                    $totalDiscount = $flat;
-                                }
-                            }
-                        } else {
-                            if (in_array(Auth::id(), $assignedUserIds) || $matchingCartItems->isNotEmpty() || $couponData->applicable_to == 'all_users' || $couponData->applicable_to == 'all_products') {
-                                if ($couponData->type == 'percentage') {
-                                    foreach ($matchingCartItems as $item) {
-                                        if ($item->product->seller->user_id == $couponData->created_by) {
-                                            $itemSubtotal = $item->price * $item->quantity;
-                                            $itemDiscount = $itemSubtotal * ($couponData->value / 100);
-
-                                            $perItemDiscounts[] = [
-                                                'cart_item_id' => $item->id,
-                                                'product_id' => $item->product_id,
-                                                'quantity' => $item->quantity,
-                                                'item_subtotal' => $itemSubtotal,
-                                                'discount' => round($itemDiscount, 2),
-                                            ];
-
-                                            $totalDiscount += $itemDiscount;
-                                        }
-                                    }
-                                    if (isset($couponData->max_discount) && $totalDiscount > $couponData->max_discount) {
-                                        $totalDiscount = $couponData->max_discount;
-
-                                        $perItemDiscounts = array_map(function ($item) use ($matchedSubtotal, $totalDiscount) {
-                                            $proportional = ($item['item_subtotal'] / $matchedSubtotal) * $totalDiscount;
-                                            $item['discount'] = round($proportional, 2);
-                                            return $item;
-                                        }, $perItemDiscounts);
-                                    }
-                                } else {
-                                    $flat = $couponData->value;
-                                    if ($flat > $matchedSubtotal) {
-                                        $flat = $matchedSubtotal;
-                                    }
-
-                                    foreach ($matchingCartItems as $item) {
-                                        $itemSubtotal = $item->price * $item->quantity;
-                                        $itemDiscount = ($itemSubtotal / $matchedSubtotal) * $flat;
-
-                                        $perItemDiscounts[] = [
-                                            'cart_item_id' => $item->id,
-                                            'product_id' => $item->product_id,
-                                            'quantity' => $item->quantity,
-                                            'item_subtotal' => $itemSubtotal,
-                                            'discount' => round($itemDiscount, 2),
-                                        ];
-
-                                        $totalDiscount += $itemDiscount;
-                                    }
-
-                                    $totalDiscount = $flat;
-                                }
-                            }
-                        }
-
-                        return response()->json([
-                            'success' => true,
-                            'message' => 'Coupon applied successfully!',
-                            'total_discount' => round($totalDiscount, 2),
-                            'matched_subtotal' => round($matchedSubtotal, 2),
-                            'per_item_discounts' => $perItemDiscounts
-                        ]);
-                    } else {
-                        return response()->json([
-                            'success' => false,
-                            'message' => 'Coupon Limit is expired.'
-                        ]);
-                    }
-                } else {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Coupon is expired.'
-                    ]);
-                }
+            // Handle cart data for both authenticated and guest users
+            if (Auth::check()) {
+                $cartData = Cart::with(['product.seller'])->where('user_id', Auth::user()->id)->get();
             } else {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Coupon is expired.'
-                ]);
+                // For guest users, create a simpler cart structure from session
+                $sessionCart = session('cart', []);
+                $cartData = collect();
+                
+                foreach ($sessionCart as $item) {
+                    $product = Products::with('seller')->find($item['product_id']);
+                    if ($product) {
+                        $cartData->push((object)[
+                            'id' => $item['product_id'] . '_' . implode('_', $item['variant_option_ids']),
+                            'product_id' => $item['product_id'],
+                            'price' => $item['price'],
+                            'quantity' => $item['quantity'],
+                            'variant_option_ids' => $item['variant_option_ids'] ?? [],
+                            'product' => $product
+                        ]);
+                    }
+                }
             }
-        } else {
+
+            // Validate and apply coupon using the service
+            $result = $couponValidationService->validateCoupon(
+                $request->coupon, 
+                $cartData, 
+                $guestIdentifier
+            );
+
+            return response()->json($result);
+        } catch (\Exception $e) {
+            Log::error('Coupon validation error: ' . $e->getMessage());
+            
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid coupon code.'
+                'message' => 'An error occurred while validating the coupon. Please try again.'
             ]);
         }
     }

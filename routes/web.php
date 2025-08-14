@@ -51,6 +51,9 @@ Route::post('/test-payment', function(Request $request) {
 })->name('test.payment');
 Route::post('/apply-coupon', [DashboardController::class, 'applyCoupon'])->name('apply.coupon');
 
+// Test route for debugging coupon validation
+Route::get('/test-coupon', [\App\Http\Controllers\CouponTestController::class, 'testGuestCoupon'])->name('test.coupon');
+
 // Wishlist routes (accessible to both guest and authenticated users)
 Route::get('/wishlist', [DashboardController::class, 'wishList'])->name('user.wishlist');
 Route::post('/add-to-wishlist', [DashboardController::class, 'addToWishList'])->name('wishlist.add');

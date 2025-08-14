@@ -12,6 +12,7 @@ use App\Models\CouponUsage;
 use App\Models\orders;
 use App\Models\OrderSellerProduct;
 use App\Models\products;
+use App\Models\Reference;
 use App\Models\Sellers;
 use App\Models\ShippingAddress;
 use App\Models\User;
@@ -33,7 +34,7 @@ class RazorpayPaymentController extends Controller
                 'data' => $request->all()
             ]);
             
-            $api = new Api(config('services.razorpay.key'), config('services.razorpay.secret'));
+        $api = new Api(config('services.razorpay.key'), config('services.razorpay.secret'));
         $billing = $request->input('billing');
         $shipping = $request->input('shipping');
         $cartProducts = $request->input('products');
@@ -41,6 +42,14 @@ class RazorpayPaymentController extends Controller
         $discount = $request->input('discount');
         $coupon = $request->input('coupon');
         $isGuest = $request->input('is_guest', false);
+        
+        // Debug coupon data
+        Log::info('Coupon debug in payment', [
+            'coupon_received' => $coupon,
+            'discount_received' => $discount,
+            'coupon_is_null' => is_null($coupon),
+            'coupon_is_empty' => empty($coupon)
+        ]);
 
         $randomPart = 'BG' . str_pad(rand(0, 9999), 4, '0', STR_PAD_LEFT);
         $orderNumber = 'ORD-' . Carbon::now()->format('Ymd') . '-' . $randomPart;
@@ -78,18 +87,60 @@ class RazorpayPaymentController extends Controller
         $shippingAddressid = null;
 
         if ($coupon) {
+            Log::info('Coupon found, proceeding to record usage', ['coupon_code' => $coupon]);
+            
+            // Use the coupon validation service to record usage properly
+            $couponValidationService = new \App\Services\CouponValidationService();
+            
+            // Find coupon or reference
             $couponData = Coupon::where('code', $coupon)->first();
-            if ($couponData) {
-                $couponData->increment('used_count');
-                $couponData->save();
+            $isReference = false;
+            
+            if (!$couponData) {
+                $couponData = Reference::where('code', $coupon)->first();
+                $isReference = true;
+                Log::info('Coupon not found in coupons table, checking references', ['found_in_references' => !is_null($couponData)]);
+            } else {
+                Log::info('Coupon found in coupons table', ['coupon_id' => $couponData->id]);
             }
 
-            $couponUsage = CouponUsage::create([
-                'coupon_id' => $couponData->id,
-                'user_id' => $userId,
-                'order_id' => $orderId,
-                'discount_amount' => $discount,
-            ]);
+            if ($couponData) {
+                Log::info('Coupon data found, generating guest identifier if needed', [
+                    'coupon_id' => $couponData->id,
+                    'is_reference' => $isReference,
+                    'user_id' => $userId
+                ]);
+                
+                // Generate guest identifier for guest users
+                $guestIdentifier = null;
+                if (!$userId) {
+                    $guestIdentifier = $couponValidationService->generateGuestIdentifier();
+                    Log::info('Generated guest identifier', ['guest_identifier' => substr($guestIdentifier, 0, 16) . '...']);
+                }
+
+                // Record coupon usage with proper tracking
+                Log::info('About to call recordCouponUsage', [
+                    'coupon_id' => $couponData->id,
+                    'order_id' => $orderId,
+                    'discount' => $discount,
+                    'amount' => $amount,
+                    'guest_identifier' => $guestIdentifier ? substr($guestIdentifier, 0, 16) . '...' : null
+                ]);
+                
+                $couponValidationService->recordCouponUsage(
+                    $couponData,
+                    $orderId,
+                    $discount,
+                    $amount,
+                    $guestIdentifier
+                );
+                
+                Log::info('recordCouponUsage completed successfully');
+            } else {
+                Log::warning('Coupon data not found in either coupons or references table', ['coupon_code' => $coupon]);
+            }
+        } else {
+            Log::info('No coupon provided in request');
         }
 
         if (isset($billing['existing_billing_id'])) {
@@ -334,6 +385,14 @@ class RazorpayPaymentController extends Controller
             $discount = $request->input('discount');
             $coupon = $request->input('coupon');
             $isGuest = $request->input('is_guest', false);
+            
+            // Debug coupon data for COD
+            Log::info('COD Coupon debug', [
+                'coupon_received' => $coupon,
+                'discount_received' => $discount,
+                'coupon_is_null' => is_null($coupon),
+                'coupon_is_empty' => empty($coupon)
+            ]);
 
             $randomPart = 'BG' . str_pad(rand(0, 9999), 4, '0', STR_PAD_LEFT);
             $orderNumber = 'ORD-' . Carbon::now()->format('Ymd') . '-' . $randomPart;
@@ -371,18 +430,60 @@ class RazorpayPaymentController extends Controller
             $shippingAddressid = null;
 
             if ($coupon) {
+                Log::info('COD: Coupon found, proceeding to record usage', ['coupon_code' => $coupon]);
+                
+                // Use the coupon validation service to record usage properly
+                $couponValidationService = new \App\Services\CouponValidationService();
+                
+                // Find coupon or reference
                 $couponData = Coupon::where('code', $coupon)->first();
-                if ($couponData) {
-                    $couponData->increment('used_count');
-                    $couponData->save();
+                $isReference = false;
+                
+                if (!$couponData) {
+                    $couponData = Reference::where('code', $coupon)->first();
+                    $isReference = true;
+                    Log::info('COD: Coupon not found in coupons table, checking references', ['found_in_references' => !is_null($couponData)]);
+                } else {
+                    Log::info('COD: Coupon found in coupons table', ['coupon_id' => $couponData->id]);
                 }
 
-                $couponUsage = CouponUsage::create([
-                    'coupon_id' => $couponData->id,
-                    'user_id' => $userId,
-                    'order_id' => $orderId,
-                    'discount_amount' => $discount,
-                ]);
+                if ($couponData) {
+                    Log::info('COD: Coupon data found, generating guest identifier if needed', [
+                        'coupon_id' => $couponData->id,
+                        'is_reference' => $isReference,
+                        'user_id' => $userId
+                    ]);
+                    
+                    // Generate guest identifier for guest users
+                    $guestIdentifier = null;
+                    if (!$userId) {
+                        $guestIdentifier = $couponValidationService->generateGuestIdentifier();
+                        Log::info('COD: Generated guest identifier', ['guest_identifier' => substr($guestIdentifier, 0, 16) . '...']);
+                    }
+
+                    // Record coupon usage with proper tracking
+                    Log::info('COD: About to call recordCouponUsage', [
+                        'coupon_id' => $couponData->id,
+                        'order_id' => $orderId,
+                        'discount' => $discount,
+                        'amount' => $amount,
+                        'guest_identifier' => $guestIdentifier ? substr($guestIdentifier, 0, 16) . '...' : null
+                    ]);
+                    
+                    $couponValidationService->recordCouponUsage(
+                        $couponData,
+                        $orderId,
+                        $discount,
+                        $amount,
+                        $guestIdentifier
+                    );
+                    
+                    Log::info('COD: recordCouponUsage completed successfully');
+                } else {
+                    Log::warning('COD: Coupon data not found in either coupons or references table', ['coupon_code' => $coupon]);
+                }
+            } else {
+                Log::info('COD: No coupon provided in request');
             }
 
             if (isset($billing['existing_billing_id'])) {

@@ -607,8 +607,9 @@
                 };
             }
 
-            let appliedDiscount = 0;
-            let appliedCoupon = null;
+            // Check if coupon was already applied globally
+            let appliedDiscount = window.appliedDiscount || 0;
+            let appliedCoupon = window.appliedCoupon || null;
 
             // Use updated price breakdown if coupon was applied, otherwise use default
             const finalPriceBreakdown = window.priceBreakdown || priceBreakdown;
@@ -643,6 +644,13 @@
                     user_email: "{{ Auth::user()->email ?? 'N/A' }}"
                     @endguest
                 };
+
+                console.log('COD Order Data being sent:', orderData);
+                console.log('COD Coupon debug:', {
+                    appliedCoupon: appliedCoupon,
+                    appliedDiscount: appliedDiscount,
+                    couponInOrderData: orderData.coupon
+                });
 
                 // Send COD order to server
                 $.ajax({
@@ -718,6 +726,11 @@
                     };
                     
                     console.log('Payment Data being sent:', paymentData);
+                    console.log('Coupon debug before payment:', {
+                        appliedCoupon: appliedCoupon,
+                        appliedDiscount: appliedDiscount,
+                        couponInPaymentData: paymentData.coupon
+                    });
                     console.log('User authentication status:', {
                         @auth
                         is_authenticated: true,
@@ -830,6 +843,17 @@
             const paymentAmount = {{ $shipTotal }};
             const coupon = $("#coupon").val();
 
+            // Check if coupon code is entered
+            if (!coupon || coupon.trim() === '') {
+                Swal.fire({
+                    title: 'Coupon Required',
+                    text: 'Please enter a coupon code.',
+                    icon: 'warning',
+                    confirmButtonText: 'OK'
+                });
+                return;
+            }
+
             $.ajax({
                 url: "{{ route('apply.coupon') }}",
                 type: "POST",
@@ -842,8 +866,14 @@
                 },
                 success: function(data) {
                     if (data.success) {
+                        // Store globally so it persists across functions
+                        window.appliedDiscount = data.total_discount;
+                        window.appliedCoupon = coupon;
+                        
+                        // Also set local variables
                         appliedDiscount = data.total_discount;
                         appliedCoupon = coupon;
+                        
                         $("#couponDiscount").removeClass('d-none');
                         $("#dicountAmount").text("₹" + data.total_discount);
                         $("#totalAmount").text("₹" + (paymentAmount - data.total_discount));
@@ -858,17 +888,62 @@
                             discount_amount: data.total_discount,
                             final_total: (paymentAmount - data.total_discount)
                         };
-                    } else {
+
+                        // Show success message
                         Swal.fire({
-                            title: 'Please Enter Coupon Code',
-                            text: 'Please enter a valid coupon code.',
-                            icon: 'warning',
+                            title: 'Success!',
+                            text: data.message || 'Coupon applied successfully!',
+                            icon: 'success',
+                            confirmButtonText: 'OK'
+                        });
+                        
+                        // Debug: Log applied coupon
+                        console.log('Coupon applied successfully:', {
+                            appliedCoupon: appliedCoupon,
+                            appliedDiscount: appliedDiscount,
+                            windowAppliedCoupon: window.appliedCoupon,
+                            windowAppliedDiscount: window.appliedDiscount
+                        });
+                    } else {
+                        // Clear global variables on error
+                        window.appliedDiscount = 0;
+                        window.appliedCoupon = null;
+                        appliedDiscount = 0;
+                        appliedCoupon = null;
+                        
+                        // Show specific error message from backend
+                        Swal.fire({
+                            title: 'Coupon Error',
+                            text: data.message || 'Please enter a valid coupon code.',
+                            icon: 'error',
                             confirmButtonText: 'OK'
                         });
                     }
                 },
-                error: function() {
-                    alert("Server error. Please try again.");
+                error: function(xhr, status, error) {
+                    // Clear global variables on error
+                    window.appliedDiscount = 0;
+                    window.appliedCoupon = null;
+                    
+                    console.log('Coupon validation error:', xhr.responseText);
+                    
+                    let errorMessage = 'Server error. Please try again.';
+                    
+                    // Try to parse JSON error response
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMessage = xhr.responseJSON.message;
+                    } else if (xhr.status === 422) {
+                        errorMessage = 'Invalid coupon data provided.';
+                    } else if (xhr.status === 500) {
+                        errorMessage = 'Server error occurred. Please try again later.';
+                    }
+                    
+                    Swal.fire({
+                        title: 'Error',
+                        text: errorMessage,
+                        icon: 'error',
+                        confirmButtonText: 'OK'
+                    });
                 }
             });
         });
