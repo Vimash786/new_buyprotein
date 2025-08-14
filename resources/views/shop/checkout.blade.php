@@ -120,7 +120,7 @@
                             </div><br>
 
 
-                            <div id="billingFields" class="rts-billing-details-area">
+                            <div id="shippingFields" class="rts-billing-details-area" style="display: none;">
                                 <h3 class="title">Shipping details</h3>
                                 <div class="single-input">
                                     <label for="phone">Phone*</label>
@@ -521,6 +521,11 @@
 
 <script>
     $(document).ready(function() {
+        // Debug information
+        console.log('Checkout page loaded');
+        console.log('Total price:', {{ $totalPrice ?? 0 }});
+        console.log('All products:', @json($allProduct ?? []));
+
         $('#pay-button').on('click', function(e) {
             e.preventDefault();
 
@@ -538,12 +543,12 @@
 
             // Prepare price breakdown data
             const priceBreakdown = {
-                item_price: {{ no_tax_price($totalPrice) }},
-                gst_amount: {{ number_format($totalPrice * 0.18, 2) }},
+                item_price: {{ str_replace(',', '', no_tax_price($totalPrice) ?? '0') }},
+                gst_amount: {{ round($totalPrice * 0.18, 2) ?? 0 }},
                 shipping_charge: 0,
-                total_before_discount: {{ $totalPrice }},
+                total_before_discount: {{ $totalPrice ?? 0 }},
                 discount_amount: 0,
-                final_total: {{ $shipTotal }}
+                final_total: {{ $shipTotal ?? 0 }}
             };
 
             if (useExisting) {
@@ -821,19 +826,19 @@
             rzp.open();
         });
 
-        function toggleBillingFields() {
+        function toggleShippingFields() {
             if ($('#sameNo').is(':checked')) {
-                $('#billingFields').show();
+                $('#shippingFields').show();
             } else {
-                $('#billingFields').hide();
+                $('#shippingFields').hide();
             }
         }
 
         // Event listeners
-        $('input[name="sameAsShipping"]').on('change', toggleBillingFields);
+        $('input[name="sameAsShipping"]').on('change', toggleShippingFields);
 
         // Initial state
-        toggleBillingFields();
+        toggleShippingFields();
     });
 </script>
 
@@ -881,10 +886,10 @@
                         
                         // Update the global price breakdown when coupon is applied
                         window.priceBreakdown = {
-                            item_price: {{ no_tax_price($totalPrice) }},
-                            gst_amount: {{ number_format($totalPrice * 0.18, 2) }},
+                            item_price: {{ str_replace(',', '', no_tax_price($totalPrice) ?? '0') }},
+                            gst_amount: {{ round($totalPrice * 0.18, 2) ?? 0 }},
                             shipping_charge: 0,
-                            total_before_discount: {{ $totalPrice }},
+                            total_before_discount: {{ $totalPrice ?? 0 }},
                             discount_amount: data.total_discount,
                             final_total: (paymentAmount - data.total_discount)
                         };
