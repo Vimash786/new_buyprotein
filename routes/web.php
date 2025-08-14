@@ -52,7 +52,7 @@ Route::post('/test-payment', function(Request $request) {
 Route::post('/apply-coupon', [DashboardController::class, 'applyCoupon'])->name('apply.coupon');
 
 // Test route for debugging coupon validation
-Route::get('/test-coupon', [\App\Http\Controllers\CouponTestController::class, 'testGuestCoupon'])->name('test.coupon');
+// Route::get('/test-coupon', [\App\Http\Controllers\CouponTestController::class, 'testGuestCoupon'])->name('test.coupon');
 
 // Wishlist routes (accessible to both guest and authenticated users)
 Route::get('/wishlist', [DashboardController::class, 'wishList'])->name('user.wishlist');
@@ -70,7 +70,7 @@ Route::post('/review-store', [DashboardController::class, 'reviewStore'])->name(
 // })->name('home');
 
 Volt::route('dashboard', 'admindash')
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth', 'verified', 'super.seller.only'])
     ->name('dashboard');
 
 Route::middleware(['auth'])->group(function () {

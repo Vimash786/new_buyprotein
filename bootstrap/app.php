@@ -13,6 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
             'seller.approved' => \App\Http\Middleware\EnsureSellerApproved::class,
+            'super.seller.only' => \App\Http\Middleware\RestrictToSuperAndSeller::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
