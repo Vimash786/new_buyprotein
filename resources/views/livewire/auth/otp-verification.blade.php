@@ -30,14 +30,20 @@ new #[Layout('components.layouts.auth')] class extends Component {
 
     public function loadPendingOtp(): void
     {
-        $this->pendingOtp = Otp::where('email', $this->email)
-            ->where('is_verified', false)
-            ->where('expires_at', '>', now())
-            ->first();
+        try {
+            $this->pendingOtp = Otp::where('email', $this->email)
+                ->where('is_verified', false)
+                ->where('expires_at', '>', now())
+                ->first();
 
-        if ($this->pendingOtp) {
-            $this->timeRemaining = max(0, now()->diffInSeconds($this->pendingOtp->expires_at, false));
-        } else {
+            if ($this->pendingOtp) {
+                $this->timeRemaining = max(0, now()->diffInSeconds($this->pendingOtp->expires_at, false));
+            } else {
+                $this->timeRemaining = 0;
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Failed to load pending OTP: ' . $e->getMessage());
+            $this->pendingOtp = null;
             $this->timeRemaining = 0;
         }
     }
@@ -53,63 +59,81 @@ new #[Layout('components.layouts.auth')] class extends Component {
             'otp_code' => ['required', 'string', 'size:6'],
         ]);
 
-        $otp = Otp::verifyOtp($this->email, $this->otp_code);
+        try {
+            $otp = Otp::verifyOtp($this->email, $this->otp_code);
 
-        if (!$otp) {
-            $this->addError('otp_code', 'Invalid or expired OTP code.');
-            return;
+            if (!$otp) {
+                $this->addError('otp_code', 'Invalid or expired OTP code.');
+                return;
+            }
+
+            // Mark OTP as verified
+            $otp->markAsVerified();
+
+            // Create the user account
+            $userData = $otp->user_data;
+            $userData['password'] = Hash::make($userData['password']);
+            $userData['role'] = 'User';
+
+            $user = User::create($userData);
+
+            // Fire registered event
+            event(new Registered($user));
+
+            // Log the user in
+            Auth::login($user);
+
+            // Clear session data
+            session()->forget(['otp_email']);
+
+            // Redirect to dashboard or extra info
+            $this->redirect(route('extra.info', absolute: false), navigate: true);
+            
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Failed to verify OTP: ' . $e->getMessage());
+            $this->addError('otp_code', 'Unable to verify OTP due to database connection issues. Please try again later.');
         }
-
-        // Mark OTP as verified
-        $otp->markAsVerified();
-
-        // Create the user account
-        $userData = $otp->user_data;
-        $userData['password'] = Hash::make($userData['password']);
-        $userData['role'] = 'User';
-
-        $user = User::create($userData);
-
-        // Fire registered event
-        event(new Registered($user));
-
-        // Log the user in
-        Auth::login($user);
-
-        // Clear session data
-        session()->forget(['otp_email']);
-
-        // Redirect to dashboard or extra info
-        $this->redirect(route('extra.info', absolute: false), navigate: true);
     }
 
     public function resendOtp(): void
     {
-        $existingOtp = Otp::where('email', $this->email)
-            ->where('is_verified', false)
-            ->first();
+        try {
+            $existingOtp = Otp::where('email', $this->email)
+                ->where('is_verified', false)
+                ->first();
 
-        if (!$existingOtp) {
-            $this->addError('email', 'No pending registration found for this email.');
-            return;
+            if (!$existingOtp) {
+                $this->addError('email', 'No pending registration found for this email.');
+                return;
+            }
+
+            // Create new OTP with same user data
+            $newOtp = Otp::createForEmail($this->email, $existingOtp->user_data);
+
+            // Send OTP email
+            \Illuminate\Support\Facades\Mail::to($this->email)->send(
+                new \App\Mail\OtpVerificationMail($newOtp->otp_code, $existingOtp->user_data['name'] ?? 'User')
+            );
+
+            $this->loadPendingOtp();
+            session()->flash('status', 'New OTP has been sent to your email.');
+            
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Failed to resend OTP: ' . $e->getMessage());
+            $this->addError('email', 'Unable to resend OTP due to database connection issues. Please try again later.');
         }
-
-        // Create new OTP with same user data
-        $newOtp = Otp::createForEmail($this->email, $existingOtp->user_data);
-
-        // Send OTP email
-        \Illuminate\Support\Facades\Mail::to($this->email)->send(
-            new \App\Mail\OtpVerificationMail($newOtp->otp_code, $existingOtp->user_data['name'] ?? 'User')
-        );
-
-        $this->loadPendingOtp();
-        session()->flash('status', 'New OTP has been sent to your email.');
     }
 
     public function goBack(): void
     {
-        // Clear any pending OTP
-        Otp::where('email', $this->email)->delete();
+        try {
+            // Clear any pending OTP
+            Otp::where('email', $this->email)->delete();
+        } catch (\Exception $e) {
+            // Log the error but continue with redirect
+            \Illuminate\Support\Facades\Log::warning('Failed to delete OTP during goBack: ' . $e->getMessage());
+        }
+        
         session()->forget(['otp_email']);
         
         $this->redirect(route('register'), navigate: true);
