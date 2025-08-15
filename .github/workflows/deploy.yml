@@ -29,5 +29,6 @@ jobs:
         exclude: |
           .env
           public/build
+          node_modules
         timeout: 1800
 
