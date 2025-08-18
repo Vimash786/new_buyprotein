@@ -117,7 +117,7 @@ new class extends Component
 
 <div>
      <div class="min-h-screen bg-gray-50 dark:bg-zinc-800 py-8">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-7x2 mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Flash Messages -->
             @if (session()->has('error'))
                 <div class="mb-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg">
