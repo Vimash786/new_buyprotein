@@ -70,16 +70,11 @@ class InvoiceController extends Controller
     }
 
     /**
-     * Download invoice PDF for admin (full order)
+     * Download invoice PDF for admin (full order) or user's own order
      */
     public function downloadOrderInvoice($orderId)
     {
         $user = Auth::user();
-
-        // Check if user is admin/super admin
-        if (!in_array($user->role, ['Admin', 'Super'])) {
-            abort(403, 'Access denied. Admin privileges required.');
-        }
 
         $order = orders::with([
             'user',
@@ -88,6 +83,17 @@ class InvoiceController extends Controller
             'orderSellerProducts.variantCombination',
             'billingDetail.shippingAddress'
         ])->findOrFail($orderId);
+
+        // Check if user is admin/super admin OR the owner of the order
+        // For guest orders (user_id is null), only admins can view them
+        if (!in_array($user->role, ['Admin', 'Super'])) {
+            if ($order->user_id === null) {
+                abort(403, 'Access denied. Guest order invoices can only be viewed by administrators.');
+            }
+            if ($order->user_id !== $user->id) {
+                abort(403, 'Access denied. You can only view your own invoices.');
+            }
+        }
 
         // Create customer object for invoice (handle both registered and guest users)
         $customer = $order->user;

@@ -81,7 +81,7 @@
                                                     <td>{{ $order->status }}</td>
                                                     <td>₹{{ $order->total_order_amount }} for
                                                         {{ $order->orderSellerProducts->count() }} item</td>
-                                                    <td><a href="#" class="btn-small d-block">View</a></td>
+                                                    <td><a href="{{ route('invoice.order.download', $order->id) }}" class="btn-small d-block">View</a></td>
                                                 </tr>
                                             @endforeach
                                         </tbody>
