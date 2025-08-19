@@ -538,7 +538,7 @@
         $('#pay-button').on('click', function(e) {
             e.preventDefault();
 
-            const allProductData = @json($allProduct);
+            const allProductData = @json($allProduct ?? []);
             const payAmountTotal = $("#total_pay_amount").val();
             const paymentAmount = payAmountTotal * 100;
             const sameAsShipping = document.querySelector('input[name="sameAsShipping"]:checked').value;
@@ -602,6 +602,7 @@
                     return;
                 }
                 @endguest
+            }
 
             // Shipping data
             if (sameAsShipping === "no") {
@@ -748,9 +749,10 @@
                         user_id: {{ Auth::user()->id }},
                         user_email: "{{ Auth::user()->email ?? 'N/A' }}",
                         user_name: "{{ Auth::user()->name ?? 'N/A' }}"
-                        @else
-                        is_authenticated: false
                         @endauth
+                        @guest
+                        is_authenticated: false
+                        @endguest
                     });
                     
                     // First test with test route
@@ -818,10 +820,11 @@
                     @auth
                         "name": "{{ Auth::user()->name }}",
                         "email": "{{ Auth::user()->email }}"
-                    @else
+                    @endauth
+                    @guest
                         "name": (billingData.first_name || '') + ' ' + (billingData.last_name || ''),
                         "email": billingData.email || ''
-                    @endauth
+                    @endguest
                 },
                 "theme": {
                     "color": "#528FF0"
