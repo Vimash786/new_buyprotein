@@ -6,6 +6,7 @@ use App\Models\Coupon;
 use App\Models\CouponUsage;
 use App\Models\CouponAssignment;
 use App\Models\Reference;
+use App\Models\ReferenceUsage;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
@@ -361,31 +362,16 @@ class CouponValidationService
                 'discount_amount' => $discountAmount,
                 'order_total' => $orderTotal,
                 'guest_identifier' => $guestIdentifier,
-                'is_authenticated' => Auth::check()
+                'is_authenticated' => Auth::check(),
+                'table_name' => $couponData->getTable()
             ]);
 
-            $usageData = [
-                'coupon_id' => $couponData->id,
-                'order_id' => $orderId,
-                'discount_amount' => $discountAmount,
-                'order_total' => $orderTotal,
-                'used_at' => now(),
-            ];
-
-            if (Auth::check()) {
-                $usageData['user_id'] = Auth::id();
+            // Check if this is a reference or regular coupon
+            if ($couponData instanceof Reference) {
+                $this->recordReferenceUsage($couponData, $orderId, $discountAmount, $orderTotal, $guestIdentifier);
             } else {
-                $usageData['guest_identifier'] = $guestIdentifier;
+                $this->recordRegularCouponUsage($couponData, $orderId, $discountAmount, $orderTotal, $guestIdentifier);
             }
-
-            Log::info('Coupon usage data prepared', $usageData);
-
-            $couponUsage = CouponUsage::create($usageData);
-            Log::info('Coupon usage created', ['usage_id' => $couponUsage->id]);
-
-            // Increment coupon used count
-            $couponData->increment('used_count');
-            Log::info('Coupon used count incremented', ['new_count' => $couponData->fresh()->used_count]);
 
         } catch (\Exception $e) {
             Log::error('Error recording coupon usage', [
@@ -394,6 +380,109 @@ class CouponValidationService
             ]);
             throw $e;
         }
+    }
+
+    /**
+     * Record reference usage with giver and applyer benefits
+     */
+    private function recordReferenceUsage($reference, $orderId, $discountAmount, $orderTotal, $guestIdentifier = null)
+    {
+        // Calculate both giver and applyer discounts
+        $discounts = $reference->calculateDiscount($orderTotal);
+        
+        $usageData = [
+            'reference_id' => $reference->id,
+            'order_id' => $orderId,
+            'total_discount_amount' => $discounts['total_discount'],
+            'giver_earning_amount' => $discounts['giver_discount'],
+            'applyer_discount_amount' => $discounts['applyer_discount'],
+            'order_total' => $orderTotal,
+            'used_at' => now(),
+        ];
+
+        if (Auth::check()) {
+            $usageData['user_id'] = Auth::id();
+            
+            // Try to find the giver user by parsing reference codes or assignments
+            $giverUserId = $this->findReferenceGiver($reference, Auth::id());
+            if ($giverUserId) {
+                $usageData['giver_user_id'] = $giverUserId;
+            }
+        } else {
+            // For guest users, we can't easily track the giver
+            // We could implement a session-based tracking if needed
+        }
+
+        Log::info('Reference usage data prepared', $usageData);
+
+        $referenceUsage = ReferenceUsage::create($usageData);
+        Log::info('Reference usage created', ['usage_id' => $referenceUsage->id]);
+
+        // Increment reference used count
+        $reference->increment('used_count');
+        Log::info('Reference used count incremented', ['new_count' => $reference->fresh()->used_count]);
+    }
+
+    /**
+     * Record regular coupon usage
+     */
+    private function recordRegularCouponUsage($couponData, $orderId, $discountAmount, $orderTotal, $guestIdentifier = null)
+    {
+        $usageData = [
+            'coupon_id' => $couponData->id,
+            'order_id' => $orderId,
+            'discount_amount' => $discountAmount,
+            'order_total' => $orderTotal,
+            'used_at' => now(),
+        ];
+
+        if (Auth::check()) {
+            $usageData['user_id'] = Auth::id();
+        } else {
+            $usageData['guest_identifier'] = $guestIdentifier;
+        }
+
+        Log::info('Coupon usage data prepared', $usageData);
+
+        $couponUsage = CouponUsage::create($usageData);
+        Log::info('Coupon usage created', ['usage_id' => $couponUsage->id]);
+
+        // Increment coupon used count
+        $couponData->increment('used_count');
+        Log::info('Coupon used count incremented', ['new_count' => $couponData->fresh()->used_count]);
+    }
+
+    /**
+     * Find the giver user ID for a reference code
+     */
+    private function findReferenceGiver($reference, $currentUserId)
+    {
+        // Strategy 1: Check if reference is specifically assigned to a user (the giver)
+        $assignment = \App\Models\ReferenceAssign::where('reference_id', $reference->id)
+            ->where('assignable_type', 'user')
+            ->where('assignable_id', '!=', $currentUserId)
+            ->first();
+        
+        if ($assignment) {
+            return $assignment->assignable_id;
+        }
+
+        // Strategy 2: Parse reference code if it contains user information
+        // This assumes reference codes follow patterns like "GYMJOH123" or "SHOPJOH123" where 123 is user ID
+        if (preg_match('/(GYM|SHOP)[A-Z]{0,3}(\d+)$/', $reference->code, $matches)) {
+            $possibleUserId = (int) $matches[2];
+            if (\App\Models\User::where('id', $possibleUserId)->exists() && $possibleUserId != $currentUserId) {
+                return $possibleUserId;
+            }
+        }
+
+        // Strategy 3: Check who created this reference (if it's a personal reference)
+        if ($reference->created_by && $reference->created_by != 1 && $reference->created_by != $currentUserId) { // Not system created
+            return $reference->created_by;
+        }
+
+        // If we can't determine the giver, return null
+        return null;
     }
 
     /**

@@ -49,9 +49,9 @@ Route::post('/test-payment', function(Request $request) {
     Log::info('Test payment route hit', ['method' => $request->method(), 'data' => $request->all()]);
     return response()->json(['success' => true, 'message' => 'Test route working']);
 })->name('test.payment');
-Route::post('/apply-coupon', [DashboardController::class, 'applyCoupon'])->name('apply.coupon');
-
-// Test route for debugging coupon validation
+    Route::post('/apply-coupon', [DashboardController::class, 'applyCoupon'])->name('apply.coupon');
+    Route::post('/apply-reference', [DashboardController::class, 'applyReference'])->name('apply.reference');
+    Route::post('/get-shareable-reference', [DashboardController::class, 'getShareableReferenceLink'])->name('get.shareable.reference');// Test route for debugging coupon validation
 // Route::get('/test-coupon', [\App\Http\Controllers\CouponTestController::class, 'testGuestCoupon'])->name('test.coupon');
 
 // Wishlist routes (accessible to both guest and authenticated users)

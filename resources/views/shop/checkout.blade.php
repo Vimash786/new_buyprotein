@@ -265,17 +265,26 @@
                         <input type="hidden" name   ="total_pay_amount" id="total_pay_amount"
                             value="{{ $shipTotal }}">
                         <div class="single-shop-list d-none" id="couponDiscount">
-                            <div class="left-area">
-                                <span style="font-weight: 600; color: #2C3C28;">Coupon Discount:</span>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="left-area">
+                                    <span style="font-weight: 600; color: #2C3C28;">Discount Applied:</span>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="price" id="dicountAmount" style="color: #009ec9;"></span>
+                                    <button type="button" class="btn btn-sm btn-outline-danger remove-applied-code" title="Remove Code">
+                                        <i class="fa fa-times"></i>
+                                    </button>
+                                </div>
                             </div>
-                            <span class="price" id="dicountAmount" style="color: #009ec9;"></span>
                         </div>
-                        <div class="bottom-cupon-code-cart-area" >
+                        <div class="bottom-cupon-code-cart-area d-block" >
                             <div class="d-flex w-100" style="border: 1px solid #009ec9; border-radius: 6px;">
-                                <input type="text" placeholder="Cupon/Referal Code" id="coupon" class="coupon" >
-                                 <button type="button" class="rts-btn btn-primary apply-coupon p-3 w-50">Apply</button>
+                                <input type="text" placeholder="Coupon/Reference Code" id="coupon" class="coupon" >
+                                <button type="button" class="rts-btn btn-primary apply-coupon p-3 w-50">Apply</button>
                             </div>
-                            
+                            <small class="text-muted mt-1">
+                                <i class="fa fa-info-circle"></i> Enter either a coupon code or reference code for discounts
+                            </small>
                         </div>
                         <div class="cottom-cart-right-area">
                             <a href="javascript:void(0)" id="pay-button" class="rts-btn btn-primary">Place Order</a>
@@ -583,19 +592,16 @@
 
                 // Validate manual input
                 @guest
-                if (!billingData.first_name || !billingData.last_name || !billingData.email || !billingData.phone || !billingData.street || !billingData.city || !billingData
-                    .state || !billingData.zip) {
+                if (!billingData.first_name || !billingData.last_name || !billingData.email || !billingData.phone || !billingData.street || !billingData.city || !billingData.state || !billingData.zip) {
                     alert("Please fill all required billing fields including first name, last name, and email address.");
                     return;
                 }
                 @else
-                if (!billingData.email || !billingData.phone || !billingData.street || !billingData.city || !billingData
-                    .state || !billingData.zip) {
+                if (!billingData.email || !billingData.phone || !billingData.street || !billingData.city || !billingData.state || !billingData.zip) {
                     alert("Please fill all required billing fields including email address.");
                     return;
                 }
                 @endguest
-            }
 
             // Shipping data
             if (sameAsShipping === "no") {
@@ -844,47 +850,104 @@
 
 <script>
     $(document).ready(function() {
-        $(".apply-coupon").on('click', function() {
-            const paymentAmount = {{ $shipTotal }};
-            const coupon = $("#coupon").val();
+        // Auto-fill reference code from URL parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const refCode = urlParams.get('ref');
+        if (refCode) {
+            $("#coupon").val(refCode);
+            
+            // Show notification about pre-filled reference code
+            Swal.fire({
+                title: 'Reference Code Detected',
+                text: `Reference code "${refCode}" has been pre-filled. Click Apply to use it.`,
+                icon: 'info',
+                confirmButtonText: 'OK',
+                timer: 5000,
+                timerProgressBar: true
+            });
+        }
 
-            // Check if coupon code is entered
-            if (!coupon || coupon.trim() === '') {
+        $(".apply-coupon").on('click', function() {
+            console.log('Apply coupon button clicked');
+            
+            const paymentAmount = {{ $shipTotal }};
+            const code = $("#coupon").val();
+            
+            console.log('Payment amount:', paymentAmount);
+            console.log('Code entered:', code);
+
+            // Check if code is entered
+            if (!code || code.trim() === '') {
+                console.log('No code entered, showing warning');
                 Swal.fire({
-                    title: 'Coupon Required',
-                    text: 'Please enter a coupon code.',
+                    title: 'Code Required',
+                    text: 'Please enter a coupon or reference code.',
                     icon: 'warning',
                     confirmButtonText: 'OK'
                 });
                 return;
             }
 
+            // Check if already applied to prevent reapplication
+            if (window.appliedCoupon === code) {
+                console.log('Code already applied:', code);
+                Swal.fire({
+                    title: 'Already Applied',
+                    text: 'This code has already been applied to your order.',
+                    icon: 'info',
+                    confirmButtonText: 'OK'
+                });
+                return;
+            }
+
+            // Determine if it's a reference code or coupon code
+            // Reference codes typically have different patterns
+            const isReferenceCode = isReference(code);
+            console.log('Is reference code:', isReferenceCode);
+            
+            const apiUrl = isReferenceCode ? "{{ route('apply.reference') }}" : "{{ route('apply.coupon') }}";
+            const dataPayload = isReferenceCode ? 
+                { reference_code: code, total_amount: paymentAmount } : 
+                { coupon: code, paymentAmount: paymentAmount };
+                
+            console.log('API URL:', apiUrl);
+            console.log('Data payload:', dataPayload);
+
+            // Show loading state
+            const originalText = $(this).text();
+            $(this).text('Applying...').prop('disabled', true);
+
             $.ajax({
-                url: "{{ route('apply.coupon') }}",
+                url: apiUrl,
                 type: "POST",
                 headers: {
                     "X-CSRF-TOKEN": "{{ csrf_token() }}"
                 },
-                data: {
-                    coupon: coupon,
-                    paymentAmount: paymentAmount,
-                },
+                data: dataPayload,
                 success: function(data) {
+                    console.log('AJAX Success response:', data);
+                    
                     if (data.success) {
+                        console.log('Code applied successfully');
+                        
                         // Store globally so it persists across functions
                         window.appliedDiscount = data.total_discount;
-                        window.appliedCoupon = coupon;
+                        window.appliedCoupon = code;
+                        window.appliedCodeType = isReferenceCode ? 'reference' : 'coupon';
                         
-                        // Also set local variables
-                        appliedDiscount = data.total_discount;
-                        appliedCoupon = coupon;
+                        console.log('Updated global variables:', {
+                            appliedDiscount: window.appliedDiscount,
+                            appliedCoupon: window.appliedCoupon,
+                            appliedCodeType: window.appliedCodeType
+                        });
                         
+                        // Show discount section
                         $("#couponDiscount").removeClass('d-none');
                         $("#dicountAmount").text("₹" + data.total_discount);
                         $("#totalAmount").text("₹" + (paymentAmount - data.total_discount));
                         $("#total_pay_amount").val(paymentAmount - data.total_discount);
                         
-                        // Update the global price breakdown when coupon is applied
+                        // Update the global price breakdown when code is applied
                         window.priceBreakdown = {
                             item_price: {{ str_replace(',', '', no_tax_price($totalPrice) ?? '0') }},
                             gst_amount: {{ round($totalPrice * 0.18, 2) ?? 0 }},
@@ -894,32 +957,34 @@
                             final_total: (paymentAmount - data.total_discount)
                         };
 
+                        // Update button text and disable input
+                        $('.apply-coupon').text('Applied').addClass('btn-success').removeClass('btn-primary');
+                        $("#coupon").prop('disabled', true);
+
                         // Show success message
                         Swal.fire({
                             title: 'Success!',
-                            text: data.message || 'Coupon applied successfully!',
+                            text: data.message || `${isReferenceCode ? 'Reference' : 'Coupon'} applied successfully!`,
                             icon: 'success',
                             confirmButtonText: 'OK'
                         });
                         
-                        // Debug: Log applied coupon
-                        console.log('Coupon applied successfully:', {
-                            appliedCoupon: appliedCoupon,
-                            appliedDiscount: appliedDiscount,
-                            windowAppliedCoupon: window.appliedCoupon,
-                            windowAppliedDiscount: window.appliedDiscount
+                        // Debug log
+                        console.log(`${isReferenceCode ? 'Reference' : 'Coupon'} applied successfully:`, {
+                            appliedCoupon: window.appliedCoupon,
+                            appliedDiscount: window.appliedDiscount,
+                            codeType: window.appliedCodeType
                         });
                     } else {
                         // Clear global variables on error
                         window.appliedDiscount = 0;
                         window.appliedCoupon = null;
-                        appliedDiscount = 0;
-                        appliedCoupon = null;
+                        window.appliedCodeType = null;
                         
                         // Show specific error message from backend
                         Swal.fire({
-                            title: 'Coupon Error',
-                            text: data.message || 'Please enter a valid coupon code.',
+                            title: `${isReferenceCode ? 'Reference' : 'Coupon'} Error`,
+                            text: data.message || `Please enter a valid ${isReferenceCode ? 'reference' : 'coupon'} code.`,
                             icon: 'error',
                             confirmButtonText: 'OK'
                         });
@@ -929,8 +994,9 @@
                     // Clear global variables on error
                     window.appliedDiscount = 0;
                     window.appliedCoupon = null;
+                    window.appliedCodeType = null;
                     
-                    console.log('Coupon validation error:', xhr.responseText);
+                    console.log('Code validation error:', xhr.responseText);
                     
                     let errorMessage = 'Server error. Please try again.';
                     
@@ -938,7 +1004,7 @@
                     if (xhr.responseJSON && xhr.responseJSON.message) {
                         errorMessage = xhr.responseJSON.message;
                     } else if (xhr.status === 422) {
-                        errorMessage = 'Invalid coupon data provided.';
+                        errorMessage = 'Invalid code data provided.';
                     } else if (xhr.status === 500) {
                         errorMessage = 'Server error occurred. Please try again later.';
                     }
@@ -949,9 +1015,69 @@
                         icon: 'error',
                         confirmButtonText: 'OK'
                     });
+                },
+                complete: function() {
+                    // Reset button state
+                    $('.apply-coupon').prop('disabled', false);
+                    if (!window.appliedCoupon) {
+                        $('.apply-coupon').text(originalText);
+                    }
                 }
             });
         });
+
+        // Function to determine if code is a reference code
+        function isReference(code) {
+            // Reference codes typically start with "COUP-" or "REF-" or have specific patterns
+            // You can customize this logic based on your reference code pattern
+            return code.startsWith('COUP-') || 
+                   code.startsWith('REF-') || 
+                   code.startsWith('GYM') || 
+                   code.startsWith('SHOP') ||
+                   /^[A-Z]{3,5}-[A-Z0-9]{6,10}$/i.test(code);
+        }
+
+        // Add remove code functionality
+        $(document).on('click', '.remove-applied-code', function() {
+            Swal.fire({
+                title: 'Remove Code?',
+                text: 'Are you sure you want to remove the applied code?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, Remove',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    removeAppliedCode();
+                }
+            });
+        });
+
+        function removeAppliedCode() {
+            const paymentAmount = {{ $shipTotal }};
+            
+            // Reset UI
+            $("#couponDiscount").addClass('d-none');
+            $("#totalAmount").text("₹" + paymentAmount);
+            $("#total_pay_amount").val(paymentAmount);
+            $("#coupon").val('').prop('disabled', false);
+            $('.apply-coupon').text('Apply').removeClass('btn-success').addClass('btn-primary');
+            
+            // Clear global variables
+            window.appliedDiscount = 0;
+            window.appliedCoupon = null;
+            window.appliedCodeType = null;
+            
+            // Reset price breakdown
+            window.priceBreakdown = {
+                item_price: {{ str_replace(',', '', no_tax_price($totalPrice) ?? '0') }},
+                gst_amount: {{ round($totalPrice * 0.18, 2) ?? 0 }},
+                shipping_charge: 0,
+                total_before_discount: {{ $totalPrice ?? 0 }},
+                discount_amount: 0,
+                final_total: paymentAmount
+            };
+        }
     });
 </script>
 

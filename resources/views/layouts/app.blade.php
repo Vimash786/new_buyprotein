@@ -10,6 +10,7 @@
         content="Ekomart-Grocery-Store(e-Commerce) HTML Template: A sleek, responsive, and user-friendly HTML template designed for online grocery stores.">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="keywords" content="Grocery, Store, stores">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Buy Protein Store (e-Commerce)')</title>
     <link rel="shortcut icon" type="image/x-icon/svg+xml" href="{{ asset('buy-protein-pro.png') }}">
 

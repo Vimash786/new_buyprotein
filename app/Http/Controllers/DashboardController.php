@@ -20,6 +20,8 @@ use App\Models\products;
 use App\Models\ProductVariantCombination;
 use App\Models\ProductVariantOption;
 use App\Models\Reference;
+use App\Models\ReferenceAssign;
+use App\Models\ReferenceUsage;
 use App\Models\Review;
 use App\Models\Sellers;
 use App\Models\User;
@@ -279,12 +281,290 @@ class DashboardController extends Controller
     public function userAccount()
     {
         if (Auth::user() != null) {
-            $orders = orders::with(['orderSellerProducts', 'billingDetail', 'billingDetail.shippingAddress'])->where('user_id', Auth::user()->id)->get();
+            $user = Auth::user();
+            $orders = orders::with(['orderSellerProducts', 'billingDetail', 'billingDetail.shippingAddress'])->where('user_id', $user->id)->get();
 
-            return view('shop.user-account', compact('orders'));
+            // Get reference data for Gym Owner/Trainer/Influencer/Dietitian and Shop Owner roles
+            $userReferences = collect();
+            $totalEarning = 0;
+            $userReferenceCode = null;
+            
+            if (in_array($user->role, ['Gym Owner/Trainer/Influencer/Dietitian', 'Shop Owner'])) {
+                // Get references available for this user type
+                $userReferences = Reference::where('status', 'active')
+                    ->where(function($query) use ($user) {
+                        $query->where('applicable_to', 'like', '%all%')
+                              ->orWhere('applicable_to', 'like', '%all_users%');
+                        
+                        if ($user->role === 'Gym Owner/Trainer/Influencer/Dietitian') {
+                            $query->orWhere('applicable_to', 'like', '%all_gym%');
+                        } else if ($user->role === 'Shop Owner') {
+                            $query->orWhere('applicable_to', 'like', '%all_shop%');
+                        }
+                    })
+                    ->orWhereHas('userAssignments', function($query) use ($user) {
+                        $query->where('assignable_id', $user->id);
+                    })
+                    ->get();
+
+                // Calculate total earnings from references
+                $totalEarning = ReferenceUsage::where('giver_user_id', $user->id)
+                    ->sum('giver_earning_amount');
+            }
+
+            return view('shop.user-account', compact('orders', 'userReferences', 'totalEarning'));
         } else {
             return redirect()->route('login');
         }
+    }
+
+    /**
+     * Ensure user has a personal reference coupon
+     */
+    private function ensurePersonalReferenceExists($user, $userReferenceCode)
+    {
+        // Check if a personal reference already exists for this user
+        $existingReference = Reference::where('code', $userReferenceCode)->first();
+        
+        if (!$existingReference) {
+            // Create a personal reference for the user
+            $roleName = $user->role === 'Gym Owner/Trainer/Influencer/Dietitian' ? 'Gym/Trainer' : 'Shop Owner';
+            
+            Reference::create([
+                'code' => $userReferenceCode,
+                'name' => "Personal Reference - {$user->name} ({$roleName})",
+                'description' => "Personal reference code for {$user->name}. Share this with customers to earn rewards!",
+                'type' => 'percentage',
+                'giver_discount' => 5.00, // 5% earning for the referrer
+                'applyer_discount' => 5.00, // 5% discount for the customer
+                'minimum_amount' => 500.00, // Minimum order of ₹500
+                'maximum_discount' => 1000.00, // Maximum discount of ₹1000
+                'usage_limit' => null, // No usage limit
+                'used_count' => 0,
+                'user_usage_limit' => 1, // Each user can use only once
+                'starts_at' => now(),
+                'expires_at' => now()->addYear(), // Valid for 1 year
+                'status' => 'active',
+                'applicable_to' => ['all'], // Available to all users
+                'user_types' => null,
+                'created_by' => 1, // System created
+                'updated_by' => 1,
+            ]);
+
+            // Assign the reference to the user
+            ReferenceAssign::create([
+                'reference_id' => Reference::where('code', $userReferenceCode)->first()->id,
+                'assignable_type' => 'user',
+                'assignable_id' => $user->id,
+                'assigned_by' => 1, // System assigned
+                'assigned_at' => now(),
+            ]);
+        }
+    }
+
+    /**
+     * Get shareable link for reference code
+     */
+    public function getShareableReferenceLink(Request $request)
+    {
+        try {
+            $user = Auth::user();
+            
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Authentication required. Please login to continue.'
+                ], 401);
+            }
+            
+            if (!in_array($user->role, ['Gym Owner/Trainer/Influencer/Dietitian', 'Shop Owner'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Access denied. Only Gym Owners/Trainers/Influencers/Dietitians and Shop Owners can share references.'
+                ], 403);
+            }
+
+            $referenceCode = $request->input('reference_code');
+            $platform = $request->input('platform', 'general');
+
+            if (!$referenceCode) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Reference code is required.'
+                ], 400);
+            }
+
+            // Verify that the reference code exists and user has access to it
+            $reference = Reference::where('code', $referenceCode)
+                ->where('status', 'active')
+                ->first();
+
+            if (!$reference) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid or inactive reference code.'
+                ], 404);
+            }
+
+            // Generate shareable link
+            $shareUrl = url('/shop') . '?ref=' . $referenceCode;
+            
+            $messages = [
+                'whatsapp' => "🎉 *Special Discount Alert!* 🎉\n\nGet exclusive discounts on premium protein supplements with my reference code: *{$referenceCode}*\n\n💪 Quality products for your fitness journey\n🏷️ Special pricing just for you\n🚚 Fast delivery\n\nShop now: {$shareUrl}\n\n#Fitness #Protein #HealthyLiving",
+                
+                'telegram' => "🎉 *Special Discount Alert!* 🎉\n\nGet exclusive discounts on premium protein supplements with my reference code: `{$referenceCode}`\n\n💪 Quality products for your fitness journey\n🏷️ Special pricing just for you\n🚚 Fast delivery\n\nShop now: {$shareUrl}",
+                
+                'facebook' => "🎉 Get exclusive discounts on premium protein supplements! Use my reference code: {$referenceCode} and save on your orders. Quality products for your fitness journey. Shop now: {$shareUrl} #Fitness #Protein #HealthyLiving",
+                
+                'twitter' => "🎉 Exclusive protein supplement discounts! Use code: {$referenceCode} for special pricing. Quality products for your #fitness journey. Shop: {$shareUrl} #Protein #HealthyLiving",
+                
+                'general' => "Get exclusive discounts on premium protein supplements with my reference code: {$referenceCode}. Shop now at {$shareUrl} and save on your orders!"
+            ];
+
+            $shareMessage = $messages[$platform] ?? $messages['general'];
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'reference_code' => $referenceCode,
+                    'share_url' => $shareUrl,
+                    'share_message' => $shareMessage,
+                    'whatsapp_link' => 'https://wa.me/?text=' . urlencode($messages['whatsapp']),
+                    'telegram_link' => 'https://t.me/share/url?url=' . urlencode($shareUrl) . '&text=' . urlencode($messages['telegram']),
+                    'facebook_link' => 'https://www.facebook.com/sharer/sharer.php?u=' . urlencode($shareUrl),
+                    'twitter_link' => 'https://twitter.com/intent/tweet?text=' . urlencode($messages['twitter']),
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error in getShareableReferenceLink: ' . $e->getMessage(), [
+                'user_id' => Auth::id(),
+                'reference_code' => $request->input('reference_code'),
+                'platform' => $request->input('platform'),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while generating share content. Please try again.'
+            ], 500);
+        }
+    }
+
+    /**
+     * Apply reference code during checkout
+     */
+    public function applyReference(Request $request)
+    {
+        try {
+            $request->validate([
+                'reference_code' => 'required|string|max:255',
+                'total_amount' => 'required|numeric|min:0',
+                'order_id' => 'nullable|integer' // for guest users
+            ]);
+
+            $user = Auth::user();
+            $referenceCode = strtoupper(trim($request->reference_code));
+            $totalAmount = (float) $request->total_amount;
+            $orderId = $request->input('order_id');
+
+            // Find the reference
+            $reference = Reference::where('code', $referenceCode)
+                ->where('status', 'active')
+                ->where('starts_at', '<=', now())
+                ->where('expires_at', '>=', now())
+                ->first();
+
+            if (!$reference) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid or expired reference code.'
+                ]);
+            }
+
+            // Check usage limits
+            if ($reference->usage_limit && $reference->used_count >= $reference->usage_limit) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Reference code usage limit has been reached.'
+                ]);
+            }
+
+            // Calculate discounts
+            $discounts = $reference->calculateDiscount($totalAmount);
+            
+            if ($discounts['total_discount'] <= 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Minimum order amount of ₹{$reference->minimum_amount} required for this reference code."
+                ]);
+            }
+
+            // Store reference code in session for later use during order placement
+            session(['applied_reference_code' => $referenceCode]);
+
+            Log::info('Reference code validated and stored in session', [
+                'reference_code' => $reference->code,
+                'user_id' => $user ? $user->id : null,
+                'order_id' => $orderId,
+                'discount_amount' => $discounts['total_discount']
+            ]);
+
+            // Store usage: user_id if logged in, else order_id
+            // You may need to update ReferenceUsage model logic accordingly
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Reference code applied successfully!',
+                'total_discount' => $discounts['total_discount'],
+                'reference_data' => [
+                    'reference_id' => $reference->id,
+                    'reference_code' => $reference->code,
+                    'reference_name' => $reference->name,
+                    'giver_discount' => $discounts['giver_discount'],
+                    'applyer_discount' => $discounts['applyer_discount'],
+                    'new_total' => max(0, $totalAmount - $discounts['total_discount']),
+                    'user_id' => $user ? $user->id : null,
+                    'order_id' => $orderId
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Reference application error: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while applying the reference code. Please try again.'
+            ]);
+        }
+    }
+
+    /**
+     * Check if reference is applicable to user
+     */
+    private function isReferenceApplicableToUser($reference, $user)
+    {
+        $applicableTypes = is_array($reference->applicable_to) ? $reference->applicable_to : [$reference->applicable_to];
+        
+        // Check global applicability
+        if (in_array('all', $applicableTypes) || in_array('all_users', $applicableTypes)) {
+            return true;
+        }
+        
+        // Check role-specific applicability
+        if ($user->role === 'Gym Owner/Trainer/Influencer/Dietitian' && in_array('all_gym', $applicableTypes)) {
+            return true;
+        }
+        
+        if ($user->role === 'Shop Owner' && in_array('all_shop', $applicableTypes)) {
+            return true;
+        }
+        
+        // Check specific user assignment
+        return ReferenceAssign::where('reference_id', $reference->id)
+            ->where('assignable_type', 'user')
+            ->where('assignable_id', $user->id)
+            ->exists();
     }
 
     public function updateUserDetails(Request $request)
