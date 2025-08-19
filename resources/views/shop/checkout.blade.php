@@ -857,17 +857,52 @@
         const urlParams = new URLSearchParams(window.location.search);
         const refCode = urlParams.get('ref');
         if (refCode) {
-            $("#coupon").val(refCode);
+            $("#coupon").val(refCode.toUpperCase());
             
             // Show notification about pre-filled reference code
             Swal.fire({
                 title: 'Reference Code Detected',
-                text: `Reference code "${refCode}" has been pre-filled. Click Apply to use it.`,
+                text: `Reference code "${refCode.toUpperCase()}" has been pre-filled. Click Apply to use it.`,
                 icon: 'info',
                 confirmButtonText: 'OK',
                 timer: 5000,
                 timerProgressBar: true
             });
+        }
+
+        // Add input validation and formatting
+        $("#coupon").on('input', function() {
+            let value = $(this).val().toUpperCase();
+            // Remove any invalid characters and limit length
+            value = value.replace(/[^A-Z0-9\-]/g, '').substring(0, 20);
+            $(this).val(value);
+        });
+
+        // Add validation feedback
+        function validateCodeFormat(code) {
+            // Basic format validation
+            if (code.length < 3) {
+                return {
+                    valid: false,
+                    message: 'Code must be at least 3 characters long.'
+                };
+            }
+            
+            if (code.length > 20) {
+                return {
+                    valid: false,
+                    message: 'Code cannot exceed 20 characters.'
+                };
+            }
+            
+            if (!/^[A-Z0-9\-]+$/i.test(code)) {
+                return {
+                    valid: false,
+                    message: 'Code can only contain letters, numbers, and hyphens.'
+                };
+            }
+            
+            return { valid: true };
         }
 
         $(".apply-coupon").on('click', function() {
@@ -891,9 +926,25 @@
                 return;
             }
 
+            // Clean and validate code format
+            const cleanCode = code.trim().toUpperCase();
+            console.log('Clean code:', cleanCode);
+
+            // Validate code format
+            const formatValidation = validateCodeFormat(cleanCode);
+            if (!formatValidation.valid) {
+                Swal.fire({
+                    title: 'Invalid Code Format',
+                    text: formatValidation.message,
+                    icon: 'warning',
+                    confirmButtonText: 'OK'
+                });
+                return;
+            }
+
             // Check if already applied to prevent reapplication
-            if (window.appliedCoupon === code) {
-                console.log('Code already applied:', code);
+            if (window.appliedCoupon === cleanCode) {
+                console.log('Code already applied:', cleanCode);
                 Swal.fire({
                     title: 'Already Applied',
                     text: 'This code has already been applied to your order.',
@@ -905,13 +956,13 @@
 
             // Determine if it's a reference code or coupon code
             // Reference codes typically have different patterns
-            const isReferenceCode = isReference(code);
+            const isReferenceCode = isReference(cleanCode);
             console.log('Is reference code:', isReferenceCode);
             
             const apiUrl = isReferenceCode ? "{{ route('apply.reference') }}" : "{{ route('apply.coupon') }}";
             const dataPayload = isReferenceCode ? 
-                { reference_code: code, total_amount: paymentAmount } : 
-                { coupon: code, paymentAmount: paymentAmount };
+                { reference_code: cleanCode, total_amount: paymentAmount } : 
+                { coupon: cleanCode, paymentAmount: paymentAmount };
                 
             console.log('API URL:', apiUrl);
             console.log('Data payload:', dataPayload);
@@ -935,7 +986,7 @@
                         
                         // Store globally so it persists across functions
                         window.appliedDiscount = data.total_discount;
-                        window.appliedCoupon = code;
+                        window.appliedCoupon = cleanCode;
                         window.appliedCodeType = isReferenceCode ? 'reference' : 'coupon';
                         
                         console.log('Updated global variables:', {
@@ -1037,7 +1088,11 @@
                    code.startsWith('REF-') || 
                    code.startsWith('GYM') || 
                    code.startsWith('SHOP') ||
-                   /^[A-Z]{3,5}-[A-Z0-9]{6,10}$/i.test(code);
+                   code.startsWith('TRAINER') ||
+                   code.startsWith('INFLUENCER') ||
+                   code.startsWith('DIETITIAN') ||
+                   /^[A-Z]{3,5}-[A-Z0-9]{6,10}$/i.test(code) ||
+                   /^(GYM|SHOP|TRAINER|INFLUENCER|DIETITIAN)[A-Z]{0,3}\d+$/i.test(code);
         }
 
         // Add remove code functionality

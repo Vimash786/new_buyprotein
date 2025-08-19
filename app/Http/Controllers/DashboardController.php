@@ -468,6 +468,14 @@ class DashboardController extends Controller
             $totalAmount = (float) $request->total_amount;
             $orderId = $request->input('order_id');
 
+            Log::info('Reference code application attempt', [
+                'reference_code' => $referenceCode,
+                'total_amount' => $totalAmount,
+                'user_id' => $user ? $user->id : null,
+                'order_id' => $orderId,
+                'is_guest' => !Auth::check()
+            ]);
+
             // Find the reference
             $reference = Reference::where('code', $referenceCode)
                 ->where('status', 'active')
@@ -476,9 +484,20 @@ class DashboardController extends Controller
                 ->first();
 
             if (!$reference) {
+                Log::warning('Reference code not found or expired', [
+                    'reference_code' => $referenceCode
+                ]);
                 return response()->json([
                     'success' => false,
                     'message' => 'Invalid or expired reference code.'
+                ]);
+            }
+
+            // Check if minimum amount is met
+            if ($reference->minimum_amount && $totalAmount < $reference->minimum_amount) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Minimum order amount of ₹{$reference->minimum_amount} required for this reference code."
                 ]);
             }
 
@@ -490,13 +509,35 @@ class DashboardController extends Controller
                 ]);
             }
 
+            // Check user eligibility for reference code
+            if (!$this->isReferenceApplicableToUser($reference, $user)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This reference code is not applicable to your account type.'
+                ]);
+            }
+
+            // Check user-specific usage limits
+            if ($reference->user_usage_limit && $user) {
+                $userUsageCount = \App\Models\ReferenceUsage::where('reference_id', $reference->id)
+                    ->where('applyer_user_id', $user->id)
+                    ->count();
+
+                if ($userUsageCount >= $reference->user_usage_limit) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'You have already used this reference code the maximum number of times allowed.'
+                    ]);
+                }
+            }
+
             // Calculate discounts
             $discounts = $reference->calculateDiscount($totalAmount);
             
             if ($discounts['total_discount'] <= 0) {
                 return response()->json([
                     'success' => false,
-                    'message' => "Minimum order amount of ₹{$reference->minimum_amount} required for this reference code."
+                    'message' => "This reference code is not applicable to your current order amount."
                 ]);
             }
 
@@ -505,13 +546,13 @@ class DashboardController extends Controller
 
             Log::info('Reference code validated and stored in session', [
                 'reference_code' => $reference->code,
+                'reference_id' => $reference->id,
                 'user_id' => $user ? $user->id : null,
                 'order_id' => $orderId,
-                'discount_amount' => $discounts['total_discount']
+                'discount_amount' => $discounts['total_discount'],
+                'giver_discount' => $discounts['giver_discount'],
+                'applyer_discount' => $discounts['applyer_discount']
             ]);
-
-            // Store usage: user_id if logged in, else order_id
-            // You may need to update ReferenceUsage model logic accordingly
 
             return response()->json([
                 'success' => true,
@@ -529,8 +570,21 @@ class DashboardController extends Controller
                 ]
             ]);
 
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Reference code validation input error', [
+                'errors' => $e->errors(),
+                'request_data' => $request->all()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid input data provided.'
+            ], 422);
         } catch (\Exception $e) {
-            Log::error('Reference application error: ' . $e->getMessage());
+            Log::error('Reference application error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'request_data' => $request->all()
+            ]);
             
             return response()->json([
                 'success' => false,
@@ -546,25 +600,53 @@ class DashboardController extends Controller
     {
         $applicableTypes = is_array($reference->applicable_to) ? $reference->applicable_to : [$reference->applicable_to];
         
+        Log::info('Checking reference applicability', [
+            'reference_id' => $reference->id,
+            'applicable_types' => $applicableTypes,
+            'user_role' => $user ? $user->role : 'guest',
+            'user_id' => $user ? $user->id : null
+        ]);
+
         // Check global applicability
         if (in_array('all', $applicableTypes) || in_array('all_users', $applicableTypes)) {
+            Log::info('Reference applicable to all users');
             return true;
         }
         
-        // Check role-specific applicability
+        // For guest users, only allow if specifically set for all shop users
+        if (!$user) {
+            $isGuestAllowed = in_array('all_shop', $applicableTypes) || 
+                            in_array('all_gym', $applicableTypes) ||
+                            in_array('all_users', $applicableTypes);
+            
+            Log::info('Guest user applicability check', ['is_allowed' => $isGuestAllowed]);
+            return $isGuestAllowed;
+        }
+        
+        // Check role-specific applicability for authenticated users
         if ($user->role === 'Gym Owner/Trainer/Influencer/Dietitian' && in_array('all_gym', $applicableTypes)) {
+            Log::info('Reference applicable to gym users');
             return true;
         }
         
         if ($user->role === 'Shop Owner' && in_array('all_shop', $applicableTypes)) {
+            Log::info('Reference applicable to shop owners');
             return true;
         }
-        
-        // Check specific user assignment
-        return ReferenceAssign::where('reference_id', $reference->id)
+
+        // Check if user is specifically assigned to this reference
+        $isSpecificallyAssigned = \App\Models\ReferenceAssign::where('reference_id', $reference->id)
             ->where('assignable_type', 'user')
             ->where('assignable_id', $user->id)
             ->exists();
+
+        if ($isSpecificallyAssigned) {
+            Log::info('User specifically assigned to reference');
+            return true;
+        }
+        
+        Log::info('Reference not applicable to user');
+        return false;
     }
 
     public function updateUserDetails(Request $request)
@@ -1255,17 +1337,37 @@ class DashboardController extends Controller
     public function applyCoupon(Request $request)
     {
         try {
+            // Input validation
+            $request->validate([
+                'coupon' => 'required|string|max:255',
+                'paymentAmount' => 'required|numeric|min:0'
+            ]);
+
+            $couponCode = strtoupper(trim($request->coupon));
+            $paymentAmount = (float) $request->paymentAmount;
+
+            Log::info('Coupon application attempt', [
+                'coupon_code' => $couponCode,
+                'payment_amount' => $paymentAmount,
+                'user_id' => Auth::check() ? Auth::id() : null,
+                'is_guest' => !Auth::check()
+            ]);
+
             $couponValidationService = new \App\Services\CouponValidationService();
             
             // Generate guest identifier for guest users
             $guestIdentifier = null;
             if (!Auth::check()) {
                 $guestIdentifier = $couponValidationService->generateGuestIdentifier();
+                Log::info('Generated guest identifier for coupon validation', [
+                    'guest_identifier' => substr($guestIdentifier, 0, 16) . '...'
+                ]);
             }
 
             // Handle cart data for both authenticated and guest users
             if (Auth::check()) {
                 $cartData = Cart::with(['product.seller'])->where('user_id', Auth::user()->id)->get();
+                Log::info('Using authenticated user cart data', ['cart_items' => $cartData->count()]);
             } else {
                 // For guest users, create a simpler cart structure from session
                 $sessionCart = session('cart', []);
@@ -1284,18 +1386,53 @@ class DashboardController extends Controller
                         ]);
                     }
                 }
+                Log::info('Using guest session cart data', ['cart_items' => $cartData->count()]);
+            }
+
+            // Check if cart is empty
+            if ($cartData->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Your cart is empty. Please add items to your cart before applying a coupon.'
+                ]);
             }
 
             // Validate and apply coupon using the service
             $result = $couponValidationService->validateCoupon(
-                $request->coupon, 
+                $couponCode, 
                 $cartData, 
                 $guestIdentifier
             );
 
+            Log::info('Coupon validation result', [
+                'coupon_code' => $couponCode,
+                'success' => $result['success'] ?? false,
+                'message' => $result['message'] ?? 'No message',
+                'discount' => $result['total_discount'] ?? 0
+            ]);
+
+            // Store coupon code in session if successful
+            if ($result['success'] ?? false) {
+                session(['applied_coupon_code' => $couponCode]);
+                Log::info('Coupon code stored in session', ['coupon_code' => $couponCode]);
+            }
+
             return response()->json($result);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Coupon validation input error', [
+                'errors' => $e->errors(),
+                'request_data' => $request->all()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid input data provided.'
+            ], 422);
         } catch (\Exception $e) {
-            Log::error('Coupon validation error: ' . $e->getMessage());
+            Log::error('Coupon validation error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'request_data' => $request->all()
+            ]);
             
             return response()->json([
                 'success' => false,
