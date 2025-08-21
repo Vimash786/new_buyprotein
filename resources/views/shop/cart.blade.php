@@ -143,7 +143,7 @@
                                 </div>
                                 <div class="wrapper total justify-content-between">
                                     <h6 class="">GST (18%)</h6>
-                                    <h6 class="totalPrice">₹₹{{ number_format($totalPrice * 0.18, 2) }}</h6>
+                                    <h6 class="totalPrice">₹{{ number_format($totalPrice * 0.18, 2) }}</h6>
                                 </div>
                                  <div class="wrapper total justify-content-between">
                                     <h6 class="">Shipping Charge</h6>

@@ -299,7 +299,7 @@ class ManageCoupons extends Component
         // Handle "all_products" and "all_users" assignments by updating applicable_to column
         if (in_array($this->assignmentType, ['all_products', 'all_users'])) {
             // Map assignment types to valid ENUM values
-            $validApplicableTo = $this->assignmentType === 'all_products' ? 'products' : 'users';
+            $validApplicableTo = $this->assignmentType === 'all_products' ? 'all_products' : 'all_users';
             
             $this->selectedCoupon->update([
                 'applicable_to' => $validApplicableTo,
