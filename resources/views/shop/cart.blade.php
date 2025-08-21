@@ -58,22 +58,17 @@
                                     </div>
                                     <div class="thumbnail">
                                         @if ($listData->product->has_variants == 1)
-                                            @foreach ($listData->variant_option_ids as $key => $value)
-                                                @php
-                                                    $image = $listData->product->images->firstWhere(
-                                                        'variant_combination_id',
-                                                        $value,
-                                                    );
-                                                @endphp
+                                            @php
+                                                $variantImage = $listData->getVariantImage();
+                                            @endphp
 
-                                                @if ($image)
-                                                    <img src="{{ asset('storage/' . $image->image_path) }}"
-                                                        alt="Thumbnail for Variant {{ $value }}">
-                                                        @break
-                                                @else
-                                                    <p>No image for variant {{ $value }}</p>
-                                                @endif
-                                            @endforeach
+                                            @if ($variantImage)
+                                                <img src="{{ asset('storage/' . $variantImage->image_path) }}"
+                                                    alt="Variant Image">
+                                            @else
+                                                <img src="{{ asset('storage/' . $listData->product->thumbnail_image) }}"
+                                                    alt="Default Product Image">
+                                            @endif
                                         @else
                                             <img src="{{ asset('storage/' . $listData->product->thumbnail_image) }}"
                                                 alt="shop">

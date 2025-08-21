@@ -1047,7 +1047,7 @@
                         priceElement.textContent = "₹" + matchingCombination.gym_owner_price;
                     }
                 } else if (userType == 'Shop Owner') {
-                    if (matchingCombination.gym_owner_discount > 0) {
+                    if (matchingCombination.shop_owner_discount > 0) {
                         priceElement.textContent = "₹" + matchingCombination.shop_owner_final_price;
                     } else {
                         priceElement.textContent = "₹" + matchingCombination.shop_owner_price;

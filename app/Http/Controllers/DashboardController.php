@@ -775,6 +775,9 @@ class DashboardController extends Controller
 
     private function calculatePrice($product, $requestVariantOptionIds)
     {
+        $user = Auth::user();
+        $userRole = $user ? $user->role : 'User';
+
         if ($requestVariantOptionIds) {
             $requestOptionIds = array_values($requestVariantOptionIds);
             $normalizedIds = array_map('intval', $requestOptionIds);
@@ -788,11 +791,23 @@ class DashboardController extends Controller
             });
 
             if ($matchingCombination) {
-                return $matchingCombination->regular_user_final_price;
+                // Return price based on user role for variants
+                return match ($userRole) {
+                    'User' => $matchingCombination->regular_user_final_price ?? $matchingCombination->regular_user_price,
+                    'Gym Owner/Trainer/Influencer/Dietitian' => $matchingCombination->gym_owner_final_price ?? $matchingCombination->gym_owner_price,
+                    'Shop Owner' => $matchingCombination->shop_owner_final_price ?? $matchingCombination->shop_owner_price,
+                    default => $matchingCombination->regular_user_final_price ?? $matchingCombination->regular_user_price
+                };
             }
         }
 
-        return $product->regular_user_final_price;
+        // Return price based on user role for products without variants
+        return match ($userRole) {
+            'User' => $product->regular_user_final_price ?? $product->regular_user_price,
+            'Gym Owner/Trainer/Influencer/Dietitian' => $product->gym_owner_final_price ?? $product->gym_owner_price,
+            'Shop Owner' => $product->shop_owner_final_price ?? $product->shop_owner_price,
+            default => $product->regular_user_final_price ?? $product->regular_user_price
+        };
     }
 
     public function removeCart($id)
@@ -1070,12 +1085,15 @@ class DashboardController extends Controller
                 return response()->json(['success' => false, 'message' => 'Item not found in wishlist.']);
             }
 
+            // Recalculate price using current user role and variant
+            $recalculatedPrice = $this->calculatePrice($wishlistItem->product_id, $wishlistItem->variant_option_ids);
+
             $cartItem = Cart::create([
                 'user_id' => Auth::user()->id,
                 'product_id' => $wishlistItem->product_id,
                 'variant_option_ids' => $wishlistItem->variant_option_ids,
                 'quantity' => $wishlistItem->quantity,
-                'price' => $wishlistItem->price
+                'price' => $recalculatedPrice
             ]);
 
             $wishlistItem->delete();
@@ -1089,6 +1107,9 @@ class DashboardController extends Controller
             
             $wishlistItem = $wishlist[$itemId];
             
+            // Recalculate price for guest user
+            $recalculatedPrice = $this->calculatePrice($wishlistItem['product_id'], $wishlistItem['variant_option_ids']);
+            
             // Add to cart session
             $cart = session()->get('cart', []);
             $cartItemKey = $wishlistItem['product_id'] . '_' . implode('_', $wishlistItem['variant_option_ids']);
@@ -1097,7 +1118,7 @@ class DashboardController extends Controller
                 'product_id' => $wishlistItem['product_id'],
                 'variant_option_ids' => $wishlistItem['variant_option_ids'],
                 'quantity' => $wishlistItem['quantity'],
-                'price' => $wishlistItem['price']
+                'price' => $recalculatedPrice
             ];
             
             session()->put('cart', $cart);
