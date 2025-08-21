@@ -839,7 +839,7 @@ class DashboardController extends Controller
 
         if (Auth::check()) {
             // Authenticated user - get from database
-            $wishlistData = Wishlist::with(['product', 'product.images'])->where('user_id', Auth::user()->id)->get();
+            $wishlistData = Wishlist::with(['product', 'product.images', 'product.variantCombinations'])->where('user_id', Auth::user()->id)->get();
         } else {
             // Guest user - get from session
             $sessionWishlist = session()->get('wishlist', []);
@@ -1134,22 +1134,69 @@ class DashboardController extends Controller
     public function cart()
     {
         if (Auth::check()) {
-            $cartData = Cart::with(['product', 'product.images'])->where('user_id', Auth::user()->id)->get();
+            $cartData = Cart::with(['product', 'product.images', 'product.variantCombinations'])->where('user_id', Auth::user()->id)->get();
         } else {
             $sessionCart = session('cart', []);
             $cartData = [];
 
             foreach ($sessionCart as $item) {
-                $product = products::with('images')->find($item['product_id']);
+                $product = products::with(['images', 'variantCombinations'])->find($item['product_id']);
 
                 if ($product) {
-                    $cartData[] = (object)[
-                        'id' => $item['product_id'] . '_' . implode('_', $item['variant_option_ids']),
-                        'product' => $product,
-                        'variant_option_ids' => $item['variant_option_ids'],
-                        'quantity' => $item['quantity'],
-                        'price' => $item['price'],
-                    ];
+                    // Create a Cart-like object with the getVariantImage method
+                    $cartItem = new class {
+                        public $id;
+                        public $product;
+                        public $variant_option_ids;
+                        public $quantity;
+                        public $price;
+
+                        public function getVariantCombination()
+                        {
+                            if (!$this->variant_option_ids || !$this->product) {
+                                return null;
+                            }
+
+                            $selectedOptionIds = array_values($this->variant_option_ids);
+                            sort($selectedOptionIds);
+
+                            foreach ($this->product->variantCombinations as $combination) {
+                                $combinationOptionIds = is_array($combination->variant_options) 
+                                    ? $combination->variant_options 
+                                    : json_decode($combination->variant_options, true);
+                                
+                                if ($combinationOptionIds) {
+                                    sort($combinationOptionIds);
+                                    if ($selectedOptionIds === $combinationOptionIds) {
+                                        return $combination;
+                                    }
+                                }
+                            }
+
+                            return null;
+                        }
+
+                        public function getVariantImage()
+                        {
+                            $combination = $this->getVariantCombination();
+                            
+                            if (!$combination) {
+                                return null;
+                            }
+
+                            return $this->product->images
+                                ->where('variant_combination_id', $combination->id)
+                                ->first();
+                        }
+                    };
+
+                    $cartItem->id = $item['product_id'] . '_' . implode('_', $item['variant_option_ids']);
+                    $cartItem->product = $product;
+                    $cartItem->variant_option_ids = $item['variant_option_ids'];
+                    $cartItem->quantity = $item['quantity'];
+                    $cartItem->price = $item['price'];
+
+                    $cartData[] = $cartItem;
                 }
             }
 
@@ -1165,7 +1212,7 @@ class DashboardController extends Controller
             $billingAddress = [];
 
             if (Auth::check()) {
-                $cartData = Cart::with('product')->where('user_id', Auth::user()->id)->get();
+                $cartData = Cart::with(['product', 'product.images', 'product.variantCombinations'])->where('user_id', Auth::user()->id)->get();
                 $order = orders::where('user_id', Auth::user()->id)->orderBy('created_at', 'desc')->first();
 
                 if ($order) {
@@ -1178,16 +1225,63 @@ class DashboardController extends Controller
                 $sessionCart = session('cart', []);
 
                 foreach ($sessionCart as $item) {
-                    $product = Products::find($item['product_id']);
+                    $product = products::with(['images', 'variantCombinations'])->find($item['product_id']);
 
                     if ($product) {
-                        $cartData->push((object)[
-                            'id' => $item['product_id'] . '_' . implode('_', $item['variant_option_ids']),
-                            'product' => $product,
-                            'variant_option_ids' => $item['variant_option_ids'],
-                            'quantity' => $item['quantity'],
-                            'price' => $item['price'],
-                        ]);
+                        // Create a Cart-like object with the getVariantImage method
+                        $cartItem = new class {
+                            public $id;
+                            public $product;
+                            public $variant_option_ids;
+                            public $quantity;
+                            public $price;
+
+                            public function getVariantCombination()
+                            {
+                                if (!$this->variant_option_ids || !$this->product) {
+                                    return null;
+                                }
+
+                                $selectedOptionIds = array_values($this->variant_option_ids);
+                                sort($selectedOptionIds);
+
+                                foreach ($this->product->variantCombinations as $combination) {
+                                    $combinationOptionIds = is_array($combination->variant_options) 
+                                        ? $combination->variant_options 
+                                        : json_decode($combination->variant_options, true);
+                                    
+                                    if ($combinationOptionIds) {
+                                        sort($combinationOptionIds);
+                                        if ($selectedOptionIds === $combinationOptionIds) {
+                                            return $combination;
+                                        }
+                                    }
+                                }
+
+                                return null;
+                            }
+
+                            public function getVariantImage()
+                            {
+                                $combination = $this->getVariantCombination();
+                                
+                                if (!$combination) {
+                                    return null;
+                                }
+
+                                return $this->product->images
+                                    ->where('variant_combination_id', $combination->id)
+                                    ->first();
+                            }
+                        };
+
+                        $cartItem->id = $item['product_id'] . '_' . implode('_', $item['variant_option_ids']);
+                        $cartItem->product = $product;
+                        $cartItem->variant_option_ids = $item['variant_option_ids'];
+                        $cartItem->quantity = $item['quantity'];
+                        $cartItem->price = $item['price'];
+
+                        $cartData->push($cartItem);
                     }
                 }
             }
