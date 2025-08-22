@@ -136,8 +136,48 @@ new class extends Component
         $this->resetErrorBag();
     }
     
+    public function updatedImage()
+    {
+        $this->validateOnly('image');
+        
+        // Add a small delay to ensure file upload is complete
+        if ($this->image) {
+            // Check if the temporary file exists and is accessible
+            try {
+                $this->image->temporaryUrl();
+                $this->dispatch('fileUploadFinished');
+            } catch (\Exception $e) {
+                session()->flash('error', 'File upload incomplete. Please wait a moment and try again.');
+            }
+        }
+    }
+
+    public function updatedSubImage()
+    {
+        $this->validateOnly('sub_image');
+        
+        // Add a small delay to ensure file upload is complete
+        if ($this->sub_image) {
+            // Check if the temporary file exists and is accessible
+            try {
+                $this->sub_image->temporaryUrl();
+                $this->dispatch('fileUploadFinished');
+            } catch (\Exception $e) {
+                session()->flash('error', 'File upload incomplete. Please wait a moment and try again.');
+            }
+        }
+    }
+
     public function save()
     {
+        // Wait for file upload to complete if image is being uploaded
+        if ($this->image && is_object($this->image)) {
+            // Validate image first
+            $this->validate([
+                'image' => 'required|image|max:400',
+            ]);
+        }
+        
         $rules = [
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -157,8 +197,13 @@ new class extends Component
 
         // Handle image upload
         if ($this->image) {
-            $imagePath = $this->image->store('categories', 'public');
-            $categoryData['image'] = $imagePath;
+            try {
+                $imagePath = $this->image->store('categories', 'public');
+                $categoryData['image'] = $imagePath;
+            } catch (\Exception $e) {
+                session()->flash('error', 'Failed to upload image. Please try again.');
+                return;
+            }
         }
 
         if ($this->editMode) {
@@ -181,6 +226,14 @@ new class extends Component
     
     public function saveSubCategory()
     {
+        // Wait for file upload to complete if image is being uploaded
+        if ($this->sub_image && is_object($this->sub_image)) {
+            // Validate image first
+            $this->validate([
+                'sub_image' => 'required|image|max:400',
+            ]);
+        }
+        
         $rules = [
             'category_id' => 'required|exists:categories,id',
             'sub_name' => 'required|string|max:255',
@@ -202,8 +255,13 @@ new class extends Component
 
         // Handle image upload
         if ($this->sub_image) {
-            $imagePath = $this->sub_image->store('subcategories', 'public');
-            $subCategoryData['image'] = $imagePath;
+            try {
+                $imagePath = $this->sub_image->store('subcategories', 'public');
+                $subCategoryData['image'] = $imagePath;
+            } catch (\Exception $e) {
+                session()->flash('error', 'Failed to upload image. Please try again.');
+                return;
+            }
         }
 
         if ($this->editMode) {
@@ -483,6 +541,12 @@ new class extends Component
             </div>
         @endif
 
+        @if (session()->has('error'))
+            <div class="bg-red-50 dark:bg-red-900/50 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg mb-6">
+                {{ session('error') }}
+            </div>
+        @endif
+
         <!-- Content Tables -->
         @if($activeTab === 'categories')
             <!-- Categories Table -->
@@ -527,7 +591,7 @@ new class extends Component
                                             {{ $category->sub_categories_count }} sub-categories
                                         </span>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                         {{ $category->sort_order }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
@@ -621,7 +685,7 @@ new class extends Component
                                             {{ $subCategory->category->name }}
                                         </span>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                         {{ $subCategory->sort_order }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
@@ -736,6 +800,34 @@ new class extends Component
                                 accept="image/*"
                                 class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
                             >
+                            
+                            <!-- Loading indicator for file upload -->
+                            <div wire:loading wire:target="image" class="flex items-center mt-2">
+                                <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <span class="text-sm text-blue-600">Uploading image...</span>
+                            </div>
+                            
+                            <!-- Preview new image -->
+                            @if($image)
+                                <div class="mt-3">
+                                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">Preview:</p>
+                                    <div class="flex items-center space-x-3">
+                                        <img src="{{ $image->temporaryUrl() }}" 
+                                             alt="Preview" 
+                                             class="w-20 h-20 object-cover rounded-lg border border-gray-300">
+                                        <div class="flex items-center text-green-600">
+                                            <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                            </svg>
+                                            <span class="text-sm">Ready to save</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+                            
                             <p class="text-xs text-gray-500 mt-1">Upload image files (max 400KB)</p>
                             @error('image') <span class="text-red-500 text-sm">{{ $errors->first('image') }}</span> @enderror
                         </div>
@@ -770,14 +862,27 @@ new class extends Component
                         <div class="flex gap-3 pt-4">
                             <button 
                                 type="submit"
-                                class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium"
+                                wire:loading.attr="disabled"
+                                wire:target="save,image"
+                                class="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white py-2 px-4 rounded-lg font-medium flex items-center justify-center"
                             >
-                                {{ $editMode ? 'Update Category' : 'Create Category' }}
+                                <span wire:loading.remove wire:target="save,image">
+                                    {{ $editMode ? 'Update Category' : 'Create Category' }}
+                                </span>
+                                <span wire:loading wire:target="save,image" class="flex items-center">
+                                    <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Processing...
+                                </span>
                             </button>
                             <button 
                                 type="button"
                                 wire:click="closeModal"
-                                class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 py-2 px-4 rounded-lg font-medium"
+                                wire:loading.attr="disabled"
+                                wire:target="save,image"
+                                class="flex-1 bg-gray-300 hover:bg-gray-400 disabled:bg-gray-200 disabled:cursor-not-allowed text-gray-700 py-2 px-4 rounded-lg font-medium"
                             >
                                 Cancel
                             </button>
@@ -864,6 +969,34 @@ new class extends Component
                                 accept="image/*"
                                 class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
                             >
+                            
+                            <!-- Loading indicator for file upload -->
+                            <div wire:loading wire:target="sub_image" class="flex items-center mt-2">
+                                <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <span class="text-sm text-blue-600">Uploading image...</span>
+                            </div>
+                            
+                            <!-- Preview new image -->
+                            @if($sub_image)
+                                <div class="mt-3">
+                                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">Preview:</p>
+                                    <div class="flex items-center space-x-3">
+                                        <img src="{{ $sub_image->temporaryUrl() }}" 
+                                             alt="Preview" 
+                                             class="w-20 h-20 object-cover rounded-lg border border-gray-300">
+                                        <div class="flex items-center text-green-600">
+                                            <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                            </svg>
+                                            <span class="text-sm">Ready to save</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+                            
                             <p class="text-xs text-gray-500 mt-1">Upload image files (max 400KB)</p>
                             @error('sub_image') <span class="text-red-500 text-sm">{{ $errors->first('sub_image') }}</span> @enderror
                         </div>
@@ -898,14 +1031,27 @@ new class extends Component
                         <div class="flex gap-3 pt-4">
                             <button 
                                 type="submit"
-                                class="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg font-medium"
+                                wire:loading.attr="disabled"
+                                wire:target="saveSubCategory,sub_image"
+                                class="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-green-400 disabled:cursor-not-allowed text-white py-2 px-4 rounded-lg font-medium flex items-center justify-center"
                             >
-                                {{ $editMode ? 'Update Sub-Category' : 'Create Sub-Category' }}
+                                <span wire:loading.remove wire:target="saveSubCategory,sub_image">
+                                    {{ $editMode ? 'Update Sub-Category' : 'Create Sub-Category' }}
+                                </span>
+                                <span wire:loading wire:target="saveSubCategory,sub_image" class="flex items-center">
+                                    <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Processing...
+                                </span>
                             </button>
                             <button 
                                 type="button"
                                 wire:click="closeSubCategoryModal"
-                                class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 py-2 px-4 rounded-lg font-medium"
+                                wire:loading.attr="disabled"
+                                wire:target="saveSubCategory,sub_image"
+                                class="flex-1 bg-gray-300 hover:bg-gray-400 disabled:bg-gray-200 disabled:cursor-not-allowed text-gray-700 py-2 px-4 rounded-lg font-medium"
                             >
                                 Cancel
                             </button>
@@ -962,3 +1108,84 @@ new class extends Component
         </div>
     @endif
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add file upload validation
+    const fileInputs = document.querySelectorAll('input[type="file"]');
+    
+    fileInputs.forEach(input => {
+        input.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                // Check file size (400KB = 400 * 1024 bytes)
+                const maxSize = 400 * 1024;
+                if (file.size > maxSize) {
+                    alert('File size must be less than 400KB');
+                    e.target.value = '';
+                    return;
+                }
+                
+                // Check file type
+                const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+                if (!allowedTypes.includes(file.type)) {
+                    alert('Please select a valid image file (JPEG, PNG, GIF, or WebP)');
+                    e.target.value = '';
+                    return;
+                }
+                
+                // Add visual feedback that file is selected
+                const label = input.parentElement.querySelector('label');
+                if (label) {
+                    const originalText = label.textContent;
+                    label.textContent = `Selected: ${file.name}`;
+                    setTimeout(() => {
+                        label.textContent = originalText;
+                    }, 3000);
+                }
+            }
+        });
+    });
+    
+    // Disable form submission while file upload is in progress
+    let uploadInProgress = false;
+    
+    // Listen for file upload start
+    document.addEventListener('livewire:upload-start', () => {
+        uploadInProgress = true;
+        const submitButtons = document.querySelectorAll('button[type="submit"]');
+        submitButtons.forEach(btn => {
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+        });
+    });
+    
+    // Listen for file upload finish
+    document.addEventListener('livewire:upload-finish', () => {
+        uploadInProgress = false;
+        const submitButtons = document.querySelectorAll('button[type="submit"]');
+        submitButtons.forEach(btn => {
+            btn.disabled = false;
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+        });
+    });
+    
+    // Listen for file upload error
+    document.addEventListener('livewire:upload-error', () => {
+        uploadInProgress = false;
+        const submitButtons = document.querySelectorAll('button[type="submit"]');
+        submitButtons.forEach(btn => {
+            btn.disabled = false;
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+        });
+        alert('File upload failed. Please try again.');
+    });
+});
+
+// Listen for Livewire events
+document.addEventListener('livewire:init', () => {
+    Livewire.on('fileUploadFinished', () => {
+        console.log('File upload completed');
+    });
+});
+</script>
