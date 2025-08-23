@@ -179,25 +179,25 @@ if (!function_exists('get_discount_percentage')) {
             // Product has variants
             switch ($userRole) {
                 case 'User':
-                    return $variant->regular_user_discount ?? 0;
+                    return intval($variant->regular_user_discount ?? 0);
                 case 'Gym Owner/Trainer/Influencer/Dietitian':
-                    return $variant->gym_owner_discount ?? 0;
+                    return intval($variant->gym_owner_discount ?? 0);
                 case 'Shop Owner':
-                    return $variant->shop_owner_discount ?? 0;
+                    return intval($variant->shop_owner_discount ?? 0);
                 default:
-                    return $variant->regular_user_discount ?? 0;
+                    return intval($variant->regular_user_discount ?? 0);
             }
         } else {
             // Product without variants
             switch ($userRole) {
                 case 'User':
-                    return $product->regular_user_discount ?? 0;
+                    return intval($product->regular_user_discount ?? 0);
                 case 'Gym Owner/Trainer/Influencer/Dietitian':
-                    return $product->gym_owner_discount ?? 0;
+                    return intval($product->gym_owner_discount ?? 0);
                 case 'Shop Owner':
-                    return $product->shop_owner_discount ?? 0;
+                    return intval($product->shop_owner_discount ?? 0);
                 default:
-                    return $product->regular_user_discount ?? 0;
+                    return intval($product->regular_user_discount ?? 0);
             }
         }
     }

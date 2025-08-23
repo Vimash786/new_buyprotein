@@ -138,17 +138,13 @@
 
     <!-- rts grocery feature every day products area start -->
     <div class="rts-grocery-feature-area rts-section-gapBottom">
-        <div class="container mt-5">
+        <div class="container">
             <div class="row">
                 <div class="col-lg-12">
                     <div class="title-area-between">
                         <h2 class="title-left">
                             Everyday essential
                         </h2>
-                        <div class="">
-                            <div class=""><a href="{{ route('shop', ['type' => 'everyday-essential']) }}"
-                                    class="bg-light p-3">View All ></a></div>
-                        </div>
                         {{-- <div class="next-prev-swiper-wrapper">
                             <div class="swiper-button-prev"><i class="fa-regular fa-chevron-left"></i></div>
                             <div class="swiper-button-next"><i class="fa-regular fa-chevron-right"></i></div>
@@ -293,6 +289,11 @@
                 </div>
             </div>
         </div>
+        <hr class="mt-3 mx-4">
+        <div class="text-end mt-5 view-all">
+            <div class=""><a href="{{ route('shop', ['type' => 'everyday-essential']) }}"
+                    class="bg-light p-3">View All ></a></div>
+        </div>
     </div>
     <!-- rts grocery feature area end -->
 
@@ -305,13 +306,12 @@
                         <h2 class="title-left">
                             Popular Picks
                         </h2>
-                        <div class="">
-                            <div class=""><a href="{{ route('shop', ['type' => 'popular-picks']) }}"
-                                    class="bg-light p-3">View All ></a></div>
-                        </div>
                     </div>
                 </div>
             </div>
+            
+        </div>
+        <div class="container">
             <div class="row">
                 <div class="col-lg-12">
                     <div class="category-area-main-wrapper-one">
@@ -432,10 +432,13 @@
                 </div>
             </div>
         </div>
-    </div>
+        <hr class="mt-3 mx-4">
+        <div class="text-end mt-5 view-all">
+             <div class=""><a href="{{ route('shop', ['type' => 'popular-picks']) }}"
+                     class="bg-light p-3">View All ></a></div>
+         </div>
     </div>
     <!-- rts grocery feature area end -->
-
     <!-- best selling groceris -->
     <div class="weekly-best-selling-area rts-section-gap bg_light-1">
         <div class="container">
@@ -445,142 +448,145 @@
                         <h2 class="title-left">
                             New Arrival
                         </h2>
-                        <div class="">
-                            <div class=""><a href="{{ route('shop', ['type' => 'new-arrivals']) }}"
-                                    class="bg-light p-3">View All ></a></div>
+                    </div>
+                </div>
+            </div>
+            <div class="container">   
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="tab-content" id="myTabContent">
+                            <!-- first tabs area start-->
+                            <div class="tab-pane fade show active" id="home" role="tabpanel"
+                                aria-labelledby="home-tab">
+                                <div class="row g-4">
+                                    <div class="category-area-main-wrapper-one">
+                                        <div class="swiper mySwiper-new-arrivals swiper-data"
+                                            data-swiper='{
+                                                "spaceBetween": 16,
+                                                "slidesPerView": 6,
+                                                "loop": false,
+                                                "speed": 700,
+                                                "navigation": {
+                                                    "nextEl": ".swiper-button-next",
+                                                    "prevEl": ".swiper-button-prev"
+                                                },
+                                                "breakpoints": {
+                                                    "0": { "slidesPerView": 1, "spaceBetween": 12 },
+                                                    "320": { "slidesPerView": 2, "spaceBetween": 12 },
+                                                    "480": { "slidesPerView": 2, "spaceBetween": 12 },
+                                                    "640": { "slidesPerView": 3, "spaceBetween": 16 },
+                                                    "840": { "slidesPerView": 4, "spaceBetween": 16 },
+                                                    "1540": { "slidesPerView": 6, "spaceBetween": 16 }
+                                                }
+                                            }'>
+                                            <div class="swiper-wrapper">
+                                                {{-- Debug: Show new arrivals count --}}
+                                                @if($latestProducts->isEmpty())
+                                                    <div class="swiper-slide">
+                                                        <div class="alert alert-info">
+                                                            No new arrivals available at the moment.
+                                                        </div>
+                                                    </div>
+                                                @endif
+                                                
+                                                @foreach ($latestProducts as $lat_pro)
+                                                    @if (isset($lat_pro->seller) && $lat_pro->seller->status == 'approved')
+                                                        <div class="swiper-slide">
+                                                            <div class="single-shopping-card-one">
+                                                                <!-- iamge and sction area start -->
+                                                                <div class="image-and-action-area-wrapper">
+                                                                    <a href="{{ route('product.details', Crypt::encrypt($lat_pro->id)) }}"
+                                                                        class="thumbnail-preview">
+                                                                        @if (has_discount($lat_pro->id))
+                                                                            <div class="badge">
+                                                                                <span>{{ get_discount_percentage($lat_pro->id) }}% <br>
+                                                                                    Off
+                                                                                </span>
+                                                                                <i class="fa-solid fa-bookmark"></i>
+                                                                            </div>
+                                                                        @endif
+                                                                        @php
+                                                                            $variantThumbnail = $lat_pro->images->first(
+                                                                                function ($img) {
+                                                                                    return $img->image_type ===
+                                                                                        'variant_thumbnail';
+                                                                                },
+                                                                            );
+                                                                        @endphp
+
+                                                                        @if ($lat_pro->variants->count() > 0)
+                                                                            @if ($variantThumbnail)
+                                                                                <img src="{{ asset('storage/' . $variantThumbnail->image_path) }}"
+                                                                                    alt="product">
+                                                                            @endif
+                                                                        @else
+                                                                            <img src="{{ asset('storage/' . $lat_pro->thumbnail_image) }}"
+                                                                                alt="product">
+                                                                        @endif
+                                                                        {{-- <img src="{{ asset('storage/' . $lat_pro->thumbnail_image) }}"
+                                                            alt="product"> --}}
+                                                                    </a>
+                                                                </div>
+                                                                <!-- iamge and sction area start -->
+                                                                <div class="body-content">
+
+                                                                    <a
+                                                                        href="{{ route('product.details', Crypt::encrypt($lat_pro->id)) }}">
+                                                                        <h4 class="title">{{ $lat_pro->name }}</h4>
+                                                                    </a>
+                                                                    <div class="price-area">
+                                                                        <span
+                                                                            class="current">{{ format_price($lat_pro->id) }}</span>
+                                                                        @if(has_discount($lat_pro->id))
+                                                                            <div class="previous">
+                                                                                {{ format_price($lat_pro->id, 'actual') }}
+                                                                            </div>
+                                                                        @endif
+                                                                    </div>
+                                                                    <div class="cart-counter-action">
+                                                                        <div class="quantity-edit">
+                                                                            <input type="text" class="input quantity-input"
+                                                                                value="1">
+                                                                            <div class="button-wrapper-action">
+                                                                                <button class="button"><i
+                                                                                        class="fa-regular fa-chevron-down"></i></button>
+                                                                                <button class="button plus">+<i
+                                                                                        class="fa-regular fa-chevron-up"></i></button>
+                                                                            </div>
+                                                                        </div>
+                                                                        <a href="#"
+                                                                            class="rts-btn btn-primary radious-sm with-icon add-to-cart-btn"
+                                                                            data-product-id="{{ $lat_pro->id }}">
+                                                                            <div class="btn-text">
+                                                                                Add
+                                                                            </div>
+                                                                            <div class="arrow-icon">
+                                                                                <i class="fa-regular fa-cart-shopping"></i>
+                                                                            </div>
+                                                                            <div class="arrow-icon">
+                                                                                <i class="fa-regular fa-cart-shopping"></i>
+                                                                            </div>
+                                                                        </a>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    @endif
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- first tabs area start-->
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="row">
-                <div class="col-lg-12">
-                    <div class="tab-content" id="myTabContent">
-                        <!-- first tabs area start-->
-                        <div class="tab-pane fade show active" id="home" role="tabpanel"
-                            aria-labelledby="home-tab">
-                            <div class="row g-4">
-                                <div class="category-area-main-wrapper-one">
-                                    <div class="swiper mySwiper-new-arrivals swiper-data"
-                                        data-swiper='{
-                                            "spaceBetween": 16,
-                                            "slidesPerView": 6,
-                                            "loop": false,
-                                            "speed": 700,
-                                            "navigation": {
-                                                "nextEl": ".swiper-button-next",
-                                                "prevEl": ".swiper-button-prev"
-                                            },
-                                            "breakpoints": {
-                                                "0": { "slidesPerView": 1, "spaceBetween": 12 },
-                                                "320": { "slidesPerView": 2, "spaceBetween": 12 },
-                                                "480": { "slidesPerView": 2, "spaceBetween": 12 },
-                                                "640": { "slidesPerView": 3, "spaceBetween": 16 },
-                                                "840": { "slidesPerView": 4, "spaceBetween": 16 },
-                                                "1540": { "slidesPerView": 6, "spaceBetween": 16 }
-                                            }
-                                        }'>
-                                        <div class="swiper-wrapper">
-                                            {{-- Debug: Show new arrivals count --}}
-                                            @if($latestProducts->isEmpty())
-                                                <div class="swiper-slide">
-                                                    <div class="alert alert-info">
-                                                        No new arrivals available at the moment.
-                                                    </div>
-                                                </div>
-                                            @endif
-                                            
-                                            @foreach ($latestProducts as $lat_pro)
-                                                @if (isset($lat_pro->seller) && $lat_pro->seller->status == 'approved')
-                                                    <div class="swiper-slide">
-                                                        <div class="single-shopping-card-one">
-                                                            <!-- iamge and sction area start -->
-                                                            <div class="image-and-action-area-wrapper">
-                                                                <a href="{{ route('product.details', Crypt::encrypt($lat_pro->id)) }}"
-                                                                    class="thumbnail-preview">
-                                                                    @if (has_discount($lat_pro->id))
-                                                                        <div class="badge">
-                                                                            <span>{{ get_discount_percentage($lat_pro->id) }}% <br>
-                                                                                Off
-                                                                            </span>
-                                                                            <i class="fa-solid fa-bookmark"></i>
-                                                                        </div>
-                                                                    @endif
-                                                                    @php
-                                                                        $variantThumbnail = $lat_pro->images->first(
-                                                                            function ($img) {
-                                                                                return $img->image_type ===
-                                                                                    'variant_thumbnail';
-                                                                            },
-                                                                        );
-                                                                    @endphp
-
-                                                                    @if ($lat_pro->variants->count() > 0)
-                                                                        @if ($variantThumbnail)
-                                                                            <img src="{{ asset('storage/' . $variantThumbnail->image_path) }}"
-                                                                                alt="product">
-                                                                        @endif
-                                                                    @else
-                                                                        <img src="{{ asset('storage/' . $lat_pro->thumbnail_image) }}"
-                                                                            alt="product">
-                                                                    @endif
-                                                                    {{-- <img src="{{ asset('storage/' . $lat_pro->thumbnail_image) }}"
-                                                        alt="product"> --}}
-                                                                </a>
-                                                            </div>
-                                                            <!-- iamge and sction area start -->
-                                                            <div class="body-content">
-
-                                                                <a
-                                                                    href="{{ route('product.details', Crypt::encrypt($lat_pro->id)) }}">
-                                                                    <h4 class="title">{{ $lat_pro->name }}</h4>
-                                                                </a>
-                                                                <div class="price-area">
-                                                                    <span
-                                                                        class="current">{{ format_price($lat_pro->id) }}</span>
-                                                                    @if(has_discount($lat_pro->id))
-                                                                        <div class="previous">
-                                                                            {{ format_price($lat_pro->id, 'actual') }}
-                                                                        </div>
-                                                                    @endif
-                                                                </div>
-                                                                <div class="cart-counter-action">
-                                                                    <div class="quantity-edit">
-                                                                        <input type="text" class="input quantity-input"
-                                                                            value="1">
-                                                                        <div class="button-wrapper-action">
-                                                                            <button class="button"><i
-                                                                                    class="fa-regular fa-chevron-down"></i></button>
-                                                                            <button class="button plus">+<i
-                                                                                    class="fa-regular fa-chevron-up"></i></button>
-                                                                        </div>
-                                                                    </div>
-                                                                    <a href="#"
-                                                                        class="rts-btn btn-primary radious-sm with-icon add-to-cart-btn"
-                                                                        data-product-id="{{ $lat_pro->id }}">
-                                                                        <div class="btn-text">
-                                                                            Add
-                                                                        </div>
-                                                                        <div class="arrow-icon">
-                                                                            <i class="fa-regular fa-cart-shopping"></i>
-                                                                        </div>
-                                                                        <div class="arrow-icon">
-                                                                            <i class="fa-regular fa-cart-shopping"></i>
-                                                                        </div>
-                                                                    </a>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                @endif
-                                            @endforeach
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- first tabs area start-->
-                        </div>
-                    </div>
-                </div>
+            <hr class="mt-3 mx-4">
+            <div class="text-end mt-5 view-all">
+                <div class=""><a href="{{ route('shop', ['type' => 'new-arrivals']) }}"
+                        class="bg-light p-3">View All ></a></div>
             </div>
         </div>
         <!-- best selling groceris end -->
@@ -630,9 +636,6 @@
                                     </div>
                                 @endforeach
                             </div>
-                            <!-- Optional Swiper Navigation -->
-                            <div class="swiper-button-next"></div>
-                            <div class="swiper-button-prev"></div>
                         </div>
                     </div>
                 </div>
@@ -650,14 +653,13 @@
                             <h2 class="title-left mb--10">
                                 Exclusive deal & offers
                             </h2>
-                            <div class="">
-                                <div class=""><a href="{{ route('shop', ['type' => 'exclusive-deal']) }}"
-                                        class="bg-light p-3">View All ></a></div>
-                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="row">
+                
+            </div>
+            <div class="container">
+                    <div class="row">
                     <div class="col-lg-12">
                         <div class="category-area-main-wrapper-one">
                             <div class="swiper mySwiper-exclusive-deals swiper-data"
@@ -770,7 +772,12 @@
                             </div>
                         </div>
                     </div>
-                </div>
+                    </div>
+            </div>
+            <hr class="mt-3 mx-4">
+              <div class="text-end mt-5 view-all">
+                <div class=""><a href="{{ route('shop', ['type' => '']) }}"
+                        class="bg-light p-3">View All ></a></div>
             </div>
         </div>
         <!-- rts top tranding product area end -->
