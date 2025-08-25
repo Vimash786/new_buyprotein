@@ -35,6 +35,13 @@
     <div class="rts-chop-details-area rts-section-gap bg_light-1">
         <div class="container">
             <div class="shopdetails-style-1-wrapper">
+                <div class="d-flex justify-content-between ">
+                     <h2 class="product-title">{{ $product->name }}</h2>
+                     <div class="rating-stars-group">
+                        <span>{{ isset($totalReviews) ? $totalReviews : '' }} Reviews</span>
+                    </div>
+                </div>
+                
                 <div class="row g-5">
                     <div class="col-lg-12">
                         <div class="product-details-popup-wrapper in-shopdetails">
