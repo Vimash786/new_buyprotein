@@ -59,15 +59,7 @@
                     <!-- single footer area wrapper -->
                     <!-- single footer area wrapper -->
                     <div class="single-footer-wized">
-                        <h3 class="footer-title">Our Newsletter</h3>
-                        <p class="disc-news-letter">
-                            Subscribe to the mailing list to receive updates one <br> the new arrivals and other
-                            discounts
-                        </p>
-
-                        <p class="dsic">
-                            I would like to receive news and special offer
-                        </p>
+                       
                     </div>
                     <!-- single footer area wrapper -->
                 </div>

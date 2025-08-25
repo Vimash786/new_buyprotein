@@ -454,11 +454,11 @@
     <div class="search-input-area">
         <div class="container">
             <div class="search-input-inner">
-                <div class="input-div">
-                    <input id="searchInput1" class="search-input" type="text"
-                        placeholder="Search by keyword or #">
-                    <button><i class="far fa-search"></i></button>
-                </div>
+                <form action="{{ route('shop') }}" method="GET" class="input-div">
+                    <input id="searchInput1" class="search-input" type="text" name="search"
+                        placeholder="Search for products, categories or brands" required>
+                    <button type="submit"><i class="far fa-search"></i></button>
+                </form>
             </div>
         </div>
         <div id="close" class="search-close-icon"><i class="far fa-times"></i></div>

@@ -161,7 +161,7 @@
                                                             class="thumbnail-preview">
                                                             @if ($product->discount_percentage > 0)
                                                                 <div class="badge">
-                                                                    <span>{{ $product->discount_percentage }}%
+                                                                    <span>{{get_discount_percentage($product->id)}}%
                                                                         <br>Off</span>
                                                                     <i class="fa-solid fa-bookmark"></i>
                                                                 </div>
