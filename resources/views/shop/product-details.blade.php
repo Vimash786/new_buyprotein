@@ -186,9 +186,9 @@
                                                 </div>
                                             </div>
                                             <h2 class="product-title">{{ $product->name }}</h2>
-                                            <p class="mt--20 mb--20">
+                                            <div class="mt--20 mb--20  d-md-block d-sm-none">
                                                 {!! $product->description !!}
-                                            </p>
+                                            </div>
                                             <span class="product-price mb--15 d-block"
                                                 style="color: #DC2626; font-weight: 600;" id="product-price">
                                                 {{ format_price($product->id) }}<span
@@ -635,6 +635,7 @@
         </div>
     </div>
 
+    @if(isset($relatedProducts) && $relatedProducts->count() > 0)
     <!-- rts grocery feature area start -->
     <div class="rts-grocery-feature-area rts-section-gap bg_light-1">
         <div class="container">
@@ -755,6 +756,7 @@
         </div>
     </div>
     <!-- rts grocery feature area end -->
+    @endif
 
     <div class="rts-shorts-service-area rts-section-gap bg_primary">
         <div class="container">

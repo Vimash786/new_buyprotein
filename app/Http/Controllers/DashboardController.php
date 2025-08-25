@@ -262,7 +262,41 @@ class DashboardController extends Controller
             $id = Crypt::decrypt($id);
 
             $product = products::with(['subCategory', 'category', 'seller', 'images', 'variants', 'variantCombinations'])->findOrFail($id);
-            $relatedProducts = products::where('category_id', $product->category_id)->where('id', '!=', $id)->where('super_status', 'approved')->limit(10)->get();
+            
+            // Enhanced related products logic with fallback
+            $relatedProducts = products::where('category_id', $product->category_id)
+                ->where('id', '!=', $id)
+                ->where('super_status', 'approved')
+                ->inRandomOrder() // Add randomization
+                ->limit(10)
+                ->get();
+
+            // Fallback: If no products in same category, try subcategory or brand
+            if ($relatedProducts->isEmpty()) {
+                $relatedProducts = products::where(function($query) use ($product) {
+                    if ($product->sub_category_id) {
+                        $query->where('sub_category_id', $product->sub_category_id);
+                    }
+                    if ($product->seller_id) {
+                        $query->orWhere('seller_id', $product->seller_id);
+                    }
+                })
+                ->where('id', '!=', $id)
+                ->where('super_status', 'approved')
+                ->inRandomOrder()
+                ->limit(10)
+                ->get();
+            }
+
+            // Second fallback: If still empty, get latest products
+            if ($relatedProducts->isEmpty()) {
+                $relatedProducts = products::where('id', '!=', $id)
+                    ->where('super_status', 'approved')
+                    ->orderBy('created_at', 'desc')
+                    ->limit(10)
+                    ->get();
+            }
+            
             $reviews = Review::where('product_id', $id)->get();
             $totalReviews = $reviews->count();
             $averageRating = $reviews->avg('rating');
