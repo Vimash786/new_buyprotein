@@ -181,7 +181,7 @@ class RazorpayPaymentController extends Controller
                 'gst_amount' => $priceBreakdown['gst_amount'] ?? 0,
                 'total_before_discount' => $priceBreakdown['total_before_discount'] ?? $amount,
                 'payment_method' => 'razorpay',
-                'payment_status' => 'complete',
+                'payment_status' => 'completed',
             ]);
         } else {
 
@@ -219,7 +219,7 @@ class RazorpayPaymentController extends Controller
                 'gst_amount' => $priceBreakdown['gst_amount'] ?? 0,
                 'total_before_discount' => $priceBreakdown['total_before_discount'] ?? $amount,
                 'payment_method' => 'razorpay',
-                'payment_status' => 'complete',
+                'payment_status' => 'completed',
             ]);
         }
 

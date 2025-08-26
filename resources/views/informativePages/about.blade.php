@@ -7,11 +7,16 @@
             <div class="row">
                 <div class="col-lg-12">
                     <div class="inner-content-about-area">
-                        <h1 class="title">Do You Want To Know Us?</h1>
-                        <p class="disc">
-                            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque pretium mollis ex, vel interdum
-                            augue faucibus sit amet. Proin tempor purus ac suscipit sagittis. Nunc finibus euismod enim, eu
-                            finibus nunc ullamcorper et.
+                        <h1 class="title">Your Ultimate Fitness Partner</h                                                        <div class="body-content">
+                                                            <p class="disc">
+                                                                "BuyProtein has been my go-to supplement store for over 3 years. 
+                                                                Their quality is unmatched and their customer service is exceptional. 
+                                                                Fast delivery and authentic products every time!"
+                                                            </p>
+                                                        </div>                    <p class="disc">
+                            Welcome to BuyProtein - your premier destination for high-quality bodybuilding supplements and fitness nutrition. 
+                            We're dedicated to helping athletes, bodybuilders, and fitness enthusiasts achieve their goals with premium 
+                            supplements, protein powders, and nutritional products that fuel your journey to peak performance.
                         </p>
                         <a href="#" class="rts-btn btn-primary">Contact Us</a>
                     </div>
@@ -27,31 +32,31 @@
                 <div class="col-lg-12">
                     <div class="counter-area-main-wrapper">
                         <div class="single-counter-area">
-                            <h2 class="title"><span class="counter">60</span>M+</h2>
+                            <h2 class="title"><span class="counter">50</span>K+</h2>
                             <p>
-                                Happy <br>
-                                Customers
+                                Satisfied <br>
+                                Athletes
                             </p>
                         </div>
                         <div class="single-counter-area">
-                            <h2 class="title"><span class="counter">105</span>M+</h2>
+                            <h2 class="title"><span class="counter">500</span>+</h2>
                             <p>
-                                Grocery <br>
-                                Products
+                                Premium <br>
+                                Supplements
                             </p>
                         </div>
                         <div class="single-counter-area">
-                            <h2 class="title"><span class="counter">80</span>K+</h2>
+                            <h2 class="title"><span class="counter">15</span>+</h2>
                             <p>
-                                Active <br>
-                                Salesman
+                                Years <br>
+                                Experience
                             </p>
                         </div>
                         <div class="single-counter-area">
-                            <h2 class="title"><span class="counter">60</span>K+</h2>
+                            <h2 class="title"><span class="counter">100</span>+</h2>
                             <p>
-                                Store <br>
-                                Worldwide
+                                Countries <br>
+                                Shipping
                             </p>
                         </div>
                     </div>
@@ -73,33 +78,33 @@
                 <div class="col-lg-8 pl--60 pl_md--10 pt_md--30 pl_sm--10 pt_sm--30">
                     <div class="about-content-area-1">
                         <h2 class="title">
-                            Your Destination for Quality Produce <br> and Pantry Essentials
+                            Your Premier Source for Elite <br> Bodybuilding Supplements
                         </h2>
                         <p class="disc">
-                            Venenatis augue consequat class magnis sed purus, euismod ligula nibh congue quis vestibulum
-                            nostra, cubilia varius velit vitae rhoncus. Turpis malesuada fringilla urna dui est torquent
-                            aliquet, mi nec fermentum placerat nisi venenatis sapien, mattis nunc nullam rutrum feugiat
-                            porta. Pharetra mi nisl consequat semper quam litora aenean eros conubia molestie erat, et
-                            cursus integer rutrum sollicitudin auctor curae inceptos senectus sagittis est,
+                            At BuyProtein, we understand that achieving your fitness goals requires more than just dedication – 
+                            it demands the right nutrition and supplements. Our carefully curated selection of premium protein 
+                            powders, pre-workouts, vitamins, and performance enhancers are sourced from the most trusted brands 
+                            in the industry. Whether you're a professional bodybuilder, competitive athlete, or fitness enthusiast, 
+                            we provide the nutritional support you need to maximize your training results and accelerate your progress.
                         </p>
                         <div class="check-main-wrapper">
                             <div class="single-check-area">
-                                Elementum sociis rhoncus aptent auctor urna justo
+                                100% authentic supplements from verified manufacturers
                             </div>
                             <div class="single-check-area">
-                                Habitasse venenatis gravida nisl, sollicitudin posuere
+                                Expert nutritionist-approved product recommendations
                             </div>
                             <div class="single-check-area">
-                                Uisque cum convallis nostra in sapien nascetur, netus
+                                Fast shipping with temperature-controlled packaging
                             </div>
                             <div class="single-check-area">
-                                Class nunc aliquet nulla dis senectus lputate porta
+                                Competitive pricing with bulk discount options
                             </div>
                             <div class="single-check-area">
-                                Aenean gravida a est ante nisl nostra dui hendrerit
+                                24/7 customer support from fitness professionals
                             </div>
                             <div class="single-check-area">
-                                Bibendum venenatis dignissim non himenaeos eget
+                                Money-back guarantee on all supplement purchases
                             </div>
                         </div>
                     </div>
@@ -124,11 +129,11 @@
                 <div class="col-lg-12">
                     <div class="title-center-area-main">
                         <h2 class="title">
-                            Meet Our Expert Team
+                            Meet Our Fitness Experts
                         </h2>
                         <p class="disc">
-                            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque pretium mollis ex, vel interdum
-                            augue faucibus sit amet. Proin tempor purus ac suscipit...
+                            Our team consists of certified nutritionists, experienced bodybuilders, and fitness professionals 
+                            dedicated to helping you achieve your goals with the right supplements and expert guidance.
                         </p>
                     </div>
                 </div>
@@ -145,7 +150,7 @@
                                 <h3 class="title">
                                     Samuel Alexander
                                 </h3>
-                                <span class="designation">Design Director</span>
+                                <span class="designation">Certified Nutritionist</span>
                             </div>
                             <div class="bottom">
                                 <a href="#" class="number">
@@ -168,7 +173,7 @@
                                 <h3 class="title">
                                     Isabella Charlotte
                                 </h3>
-                                <span class="designation">Design Director</span>
+                                <span class="designation">Fitness Coach</span>
                             </div>
                             <div class="bottom">
                                 <a href="#" class="number">
@@ -191,7 +196,7 @@
                                 <h3 class="title">
                                     William Ethan
                                 </h3>
-                                <span class="designation">Design Director</span>
+                                <span class="designation">Supplement Specialist</span>
                             </div>
                             <div class="bottom">
                                 <a href="#" class="number">
@@ -214,7 +219,7 @@
                                 <h3 class="title">
                                     Sophia Amelia
                                 </h3>
-                                <span class="designation">Design Director</span>
+                                <span class="designation">Sports Nutritionist</span>
                             </div>
                             <div class="bottom">
                                 <a href="#" class="number">
@@ -238,11 +243,11 @@
                 <div class="col-lg-12">
                     <div class="title-center-area-main">
                         <h2 class="title">
-                            Why You Choose Us?
+                            Why Choose BuyProtein?
                         </h2>
                         <p class="disc">
-                            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque pretium mollis ex, vel interdum
-                            augue faucibus sit amet. Proin tempor purus ac suscipit...
+                            We're committed to providing the highest quality supplements and unmatched customer service 
+                            to support your fitness journey. Here's what sets us apart in the supplement industry.
                         </p>
                     </div>
                 </div>
@@ -256,11 +261,11 @@
                         </div>
                         <div class="bottom-content">
                             <h3 class="title">
-                                Organic Food Services
+                                Premium Quality Supplements
                             </h3>
                             <p class="disc">
-                                When an unknown printer took a galley of type and scrambled it to make follow type specimen
-                                area book.
+                                We stock only the finest supplements from trusted manufacturers, ensuring every product meets 
+                                strict quality standards and purity requirements for optimal results.
                             </p>
                         </div>
                     </div>
@@ -273,11 +278,11 @@
                         </div>
                         <div class="bottom-content">
                             <h3 class="title">
-                                Organic Food Services
+                                Expert Nutrition Guidance
                             </h3>
                             <p class="disc">
-                                When an unknown printer took a galley of type and scrambled it to make follow type specimen
-                                area book.
+                                Our certified nutritionists provide personalized supplement recommendations based on your 
+                                fitness goals, training routine, and dietary requirements.
                             </p>
                         </div>
                     </div>
@@ -290,11 +295,11 @@
                         </div>
                         <div class="bottom-content">
                             <h3 class="title">
-                                Organic Food Services
+                                Fast & Secure Delivery
                             </h3>
                             <p class="disc">
-                                When an unknown printer took a galley of type and scrambled it to make follow type specimen
-                                area book.
+                                Quick shipping with temperature-controlled packaging ensures your supplements arrive fresh 
+                                and potent, maintaining their effectiveness and quality.
                             </p>
                         </div>
                     </div>
@@ -369,7 +374,7 @@
                                                                     <h4 class="title">
                                                                         Andrew D. Smith
                                                                     </h4>
-                                                                    <span>Manager</span>
+                                                                    <span>Professional Bodybuilder</span>
                                                                 </div>
                                                             </div>
                                                             <div class="right">
@@ -426,7 +431,7 @@
                         <div class="information">
                             <h4 class="title">Best Prices &amp; Offers</h4>
                             <p class="disc">
-                                We prepared special discounts you on grocery products.
+                                We offer competitive pricing on all supplements with regular discounts and bulk deals.
                             </p>
                         </div>
                     </div>
@@ -451,7 +456,7 @@
                         <div class="information">
                             <h4 class="title">100% Return Policy</h4>
                             <p class="disc">
-                                We prepared special discounts you on grocery products.
+                                Satisfaction guaranteed with our hassle-free return policy on all supplement purchases.
                             </p>
                         </div>
                     </div>
@@ -487,7 +492,7 @@
                         <div class="information">
                             <h4 class="title">Support 24/7</h4>
                             <p class="disc">
-                                We prepared special discounts you on grocery products.
+                                Round-the-clock customer support from our fitness and nutrition experts.
                             </p>
                         </div>
                     </div>
@@ -514,9 +519,9 @@
                             </svg>
                         </div>
                         <div class="information">
-                            <h4 class="title">Great Offer Daily Deal</h4>
+                            <h4 class="title">Premium Supplement Deals</h4>
                             <p class="disc">
-                                We prepared special discounts you on grocery products.
+                                Daily deals and special offers on top-rated bodybuilding supplements and nutrition products.
                             </p>
                         </div>
                     </div>
