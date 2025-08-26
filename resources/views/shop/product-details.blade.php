@@ -35,9 +35,9 @@
     <div class="rts-chop-details-area rts-section-gap bg_light-1">
         <div class="container">
             <div class="shopdetails-style-1-wrapper">
-                <div class="d-flex justify-content-between ">
-                     <h2 class="product-title">{{ $product->name }}</h2>
-                     <div class="rating-stars-group">
+                <div class="d-flex justify-content-between d-lg-none" style="text-align: center;">
+                     <h2 class="product-title mt-0">{{ $product->name }}</h2>
+                     <div class="rating-stars-group mb-4">
                         <span>{{ isset($totalReviews) ? $totalReviews : '' }} Reviews</span>
                     </div>
                 </div>
@@ -205,7 +205,7 @@
                                                     Bulk Order
                                                 </a>
                                             @endif
-                                            <div class="product-bottom-action mt-4">
+                                            <div class="product-bottom-action mt-4 d-block d-lg-flex">
                                                 <div class="cart-edits">
                                                     <div class="quantity-edit action-item">
                                                         <button class="button"><i class="fal fa-minus minus"></i></button>
@@ -215,8 +215,9 @@
                                                                 class="fal fa-plus plus"></i></button>
                                                     </div>
                                                 </div>
+                                                <div class="d-flex">
                                                 <a href="javascript:void(0);"
-                                                    class="rts-btn btn-primary radious-sm with-icon add-to-cart-btn"
+                                                    class="rts-btn btn-primary radious-sm with-icon add-to-cart-btn my-2 mx-2"
                                                     data-product-id="{{ $product->id }}">
                                                     <div class="btn-text">
                                                         Add To Cart
@@ -229,8 +230,22 @@
                                                     </div>
                                                 </a>
                                                 <a href="javascript:void(0);" data-wish-product-id="{{ $product->id }}"
-                                                    class="rts-btn btn-primary add-to-wishlist ml--20"><i
-                                                        class="fa-light fa-heart"></i></a>
+                                                    class="rts-btn btn-primary radious-sm with-icon add-to-wishlist my-2 mx-2"
+                                                    >
+                                                    <div class="btn-text">
+                                                        Add To Wishlist
+                                                    </div>
+                                                    <div class="arrow-icon">
+                                                        <i
+                                                        class="fa-light fa-heart"></i>
+                                                    </div>
+                                                    <div class="arrow-icon">
+                                                        <i
+                                                        class="fa-light fa-heart"></i>
+                                                    </div>
+                                                </a>
+                                                </div>
+                                                
                                             </div>
 
                                             @if ($product->variants && $product->variants->count() > 0)
