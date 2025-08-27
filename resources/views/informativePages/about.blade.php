@@ -456,7 +456,7 @@
                         <div class="information">
                             <h4 class="title">100% Return Policy</h4>
                             <p class="disc">
-                                Satisfaction guaranteed with our hassle-free return policy on all supplement purchases.
+                                Satisfaction guaranteed with our hassle-free return policy in 7 day on all supplement purchases.
                             </p>
                         </div>
                     </div>

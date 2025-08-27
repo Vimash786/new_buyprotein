@@ -13,12 +13,21 @@
                             </div>
                             <div class="info">
                                 <span>Have Question? Call Us</span>
-                                <a href="#" class="number">+91 97240 86537</a>
+                                <a href="#" class="number">+91 81285 30460</a>
+                            </div>
+                        </div>
+                        <div class="call-area">
+                            <div class="icon">
+                                <i class="fa-solid fa-envelope"></i>
+                            </div>
+                            <div class="info">
+                                <span>Have Question and Support?Mail Us</span>
+                                <a href="#" class="number">proteinx.in@gmail.com</a>
                             </div>
                         </div>
                         <div class="opening-hour">
                             <div class="single">
-                                <p>Monday - Friday: <span>10:00am - 6:00pm</span></p>
+                                <p>Monday - Saturday: <span>10:00am - 6:00pm</span></p>
                             </div>
                         </div>
                     </div>

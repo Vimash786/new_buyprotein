@@ -421,7 +421,7 @@
 
             <div class="contact-info">
                 <h5><i class="fas fa-headset"></i> Need Help?</h5>
-                <p>Our customer support team is here to help! Contact us at <strong>support@buyprotein.com</strong> or call us at <strong>+91-97240 86537</strong></p>
+                <p>Our customer support team is here to help! Contact us at <strong>support@buyprotein.com</strong> or call us at <strong>+91-81285 30460</strong></p>
             </div>
 
             <div class="social-links">

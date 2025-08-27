@@ -38,21 +38,21 @@
                                 <i class="fa-light fa-location-dot"></i>
                             </div>
                             <div class="information">
-                                <h3 class="title">Berlin Germany Store</h3>
-                                <p>259 Daniel Road, FKT 2589 Berlin, Germany.</p>
-                                <a href="#" class="number">+856 (76) 259 6328</a>
-                                <a href="#" class="email">info@example.com</a>
+                                <h3 class="title">Surat</h3>
+                                <p>F-2 AKASH GANGA COMPLEX,NR .BOB BANK, OPP.MCDONALD'S, ALTHAN CHOKDI VIP ROAD SURAT -395017</p>
+                                <a href="#" class="number">+91 81285 30460</a>
+                                <a href="#" class="email">proteinx.in@gmail.com</a>
                             </div>
                         </div>
-                        <div class="location-single-card">
+                         <div class="location-single-card">
                             <div class="icon">
                                 <i class="fa-light fa-location-dot"></i>
                             </div>
                             <div class="information">
-                                <h3 class="title">Frankfurt Germany Store</h3>
-                                <p>259 Daniel Road, FKT 2589 Berlin, Germany.</p>
-                                <a href="#" class="number">+856 (76) 259 6328</a>
-                                <a href="#" class="email">info@example.com</a>
+                                <h3 class="title">Varanashi</h3>
+                                <p>F-2 AKASH GANGA COMPLEX,NR .BOB BANK, OPP.MCDONALD'S, ALTHAN CHOKDI VIP ROAD SURAT -395017</p>
+                                <a href="#" class="number">+91 81285 30460</a>
+                                <a href="#" class="email">proteinx.in@gmail.com</a>
                             </div>
                         </div>
                     </div>
