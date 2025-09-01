@@ -63,9 +63,9 @@
 </head>
 
 <body class="shop-main-h">
-    <div class="loader-wrapper" id="loaderWrapper">
+    <!-- <div class="loader-wrapper" id="loaderWrapper">
         <div class="loader"></div>
-    </div>
+    </div> -->
 
     @include('partials.header')
 
