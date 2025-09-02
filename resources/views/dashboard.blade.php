@@ -638,12 +638,12 @@
                     </div>
                 </div>
             </div>
-            <hr class="mt-3 mx-4">
+        </div>
+        <hr class="mt-3">
             <div class="text-center mt-5 view-all">
                 <div class=""><a href="{{ route('shop', ['type' => 'new-arrivals']) }}"
                         class="bg-light p-3">View All ></a></div>
             </div>
-        </div>
         <!-- best selling groceris end -->
 
         <!-- rts category feature area start -->
