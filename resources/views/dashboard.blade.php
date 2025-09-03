@@ -163,9 +163,7 @@
     
     /* Mobile responsiveness for navigation */
     @media (max-width: 768px) {
-        .product-swiper-container {
-            padding: 0 50px;
-        }
+
         
         .swiper-button-next,
         .swiper-button-prev {
@@ -263,7 +261,7 @@
                                                         @endif
 
                                                         @if($banner->title || $banner->subtitle || $banner->description || $banner->button_text)
-                                                            <div class="banner-one-inner-content mt-5 justify-content-center">
+                                                            <div class="banner-one-inner-content mt-5">
                                                                 @if($banner->subtitle)
                                                                     <span class="pre" style="color: {{ $banner->text_color }}">{{ $banner->subtitle }}</span>
                                                                 @endif
@@ -407,41 +405,43 @@
                     <div class="category-area-main-wrapper-one product-swiper-container">
                         <div class="swiper mySwiper-everyday-essentials swiper-data"
                             data-swiper='{
-                            "spaceBetween":16,
+                            "spaceBetween":8,
                             "slidesPerView":6,
-                            "loop": false,
+                            "loop": {{ $everyDayEssentials->count() > 6 ? 'true' : 'false' }},
                             "speed": 700,
+                            "autoplay":{
+                                    "delay":"4000"
+                                },
                             "navigation":{
                                 "nextEl":".everyday-essentials-next",
                                 "prevEl":".everyday-essentials-prev"
                               },
+                            @if($everyDayEssentials->count() > 1)
                             "pagination":{
                                 "el":".everyday-essentials-pagination",
                                 "clickable": true
                               },
+                            @endif
                             "breakpoints":{
-                            "0":{
-                                "slidesPerView":1,
-                                "spaceBetween": 12},
-                            "380":{
-                                "slidesPerView":2,
-                                "spaceBetween":12},
-                            "320":{
-                                "slidesPerView":2,
-                                "spaceBetween":12},
-                            "480":{
-                                "slidesPerView":2,
-                                "spaceBetween":12},
-                            "640":{
-                                "slidesPerView":3,
-                                "spaceBetween":16},
-                            "840":{
-                                "slidesPerView":4,
-                                "spaceBetween":16},
-                            "1540":{
-                                "slidesPerView":6,
-                                "spaceBetween":16}
-                            }
+                                "0":{
+                                    "slidesPerView":2,
+                                    "spaceBetween": 8},
+                                "468":{
+                                    "slidesPerView":2,
+                                    "spaceBetween":8},
+                                "638":{
+                                    "slidesPerView":3,
+                                    "spaceBetween":8},
+                                "640":{
+                                    "slidesPerView":4,
+                                    "spaceBetween":8},
+                                "840":{
+                                    "slidesPerView":5,
+                                    "spaceBetween":8},
+                                "1140":{
+                                    "slidesPerView":6,
+                                    "spaceBetween":8}
+                                }
                         }'>
                             <div class="swiper-wrapper">
                                 {{-- Debug: Show everyday essentials count --}}
@@ -544,7 +544,7 @@
             </div>
         </div>
         <!-- Pagination dots -->
-        <div class="swiper-pagination everyday-essentials-pagination"></div>
+        <div class="swiper-pagination everyday-essentials-pagination" data-total-items="{{ $everyDayEssentials->count() }}"></div>
         <hr class="mt-3 mx-4">
         <div class="text-center mt-5 view-all">
             <div class=""><a href="{{ route('shop', ['type' => 'everyday-essential']) }}"
@@ -573,18 +573,23 @@
                     <div class="category-area-main-wrapper-one product-swiper-container">
                         <div class="swiper mySwiper-popular-picks swiper-data"
                             data-swiper='{
-                                "spaceBetween": 16,
+                                "spaceBetween": 8,
                                 "slidesPerView": 6,
-                                "loop": false,
+                                "loop": {{ $populerProducts->count() > 6 ? 'true' : 'false' }},
                                 "speed": 700,
+                                "autoplay":{
+                                    "delay":"4000"
+                                },
                                 "navigation": {
                                     "nextEl": ".popular-picks-next",
                                     "prevEl": ".popular-picks-prev"
                                 },
+                                @if($populerProducts->count() > 1)
                                 "pagination": {
                                     "el": ".popular-picks-pagination",
                                     "clickable": true
                                 },
+                                @endif
                                 "breakpoints": {
                                     "0": { "slidesPerView": 1, "spaceBetween": 12 },
                                     "320": { "slidesPerView": 2, "spaceBetween": 12 },
@@ -694,7 +699,7 @@
             </div>
         </div>
           <!-- Pagination dots -->
-          <div class="swiper-pagination popular-picks-pagination"></div>
+          <div class="swiper-pagination popular-picks-pagination" data-total-items="{{ $populerProducts->count() }}"></div>
         <hr class="mt-3 mx-4">
         <div class="text-center mt-5 view-all">
              <div class=""><a href="{{ route('shop', ['type' => 'popular-picks']) }}"
@@ -727,16 +732,22 @@
                                             data-swiper='{
                                                 "spaceBetween": 16,
                                                 "slidesPerView": 6,
-                                                "loop": false,
+                                                "loop": {{ $latestProducts->count() > 6 ? 'true' : 'false' }},
                                                 "speed": 700,
+                                                "autoplay":{
+                                                    "delay":"4000"
+                                                },
                                                 "navigation": {
                                                     "nextEl": ".new-arrivals-next",
                                                     "prevEl": ".new-arrivals-prev"
                                                 },
+                                                @if($latestProducts->count() > 1)
                                                 "pagination": {
                                                     "el": ".new-arrivals-pagination",
                                                     "clickable": true
                                                 },
+                                                @endif
+                                                
                                                 "breakpoints": {
                                                     "0": { "slidesPerView": 1, "spaceBetween": 12 },
                                                     "320": { "slidesPerView": 2, "spaceBetween": 12 },
@@ -852,7 +863,7 @@
             </div>
         </div>
         <!-- Pagination dots -->
-        <div class="swiper-pagination new-arrivals-pagination"></div>
+        <div class="swiper-pagination new-arrivals-pagination" data-total-items="{{ $latestProducts->count() }}"></div>
         <hr class="mt-3">
             <div class="text-center mt-5 view-all">
                 <div class=""><a href="{{ route('shop', ['type' => 'new-arrivals']) }}"
@@ -876,16 +887,21 @@
                             data-swiper='{
                                 "spaceBetween": 16,
                                 "slidesPerView": 6,
-                                "loop": false,
+                                "loop": {{ $sellers->count() > 6 ? 'true' : 'false' }},
                                 "speed": 700,
                                 "navigation": {
                                     "nextEl": ".shop-by-brand-next",
                                     "prevEl": ".shop-by-brand-prev"
                                 },
+                                "autoplay":{
+                                    "delay":"4000"
+                                },
+                                @if($sellers->count() > 1)
                                 "pagination": {
                                     "el": ".shop-by-brand-pagination",
                                     "clickable": true
                                 },
+                                @endif
                                 "breakpoints": {
                                     "0": { "slidesPerView": 1, "spaceBetween": 12 },
                                     "320": { "slidesPerView": 2, "spaceBetween": 12 },
@@ -911,7 +927,7 @@
                             </div>
                         </div>
                         <!-- Navigation buttons -->
-                        <div class="swiper-pagination shop-by-brand-pagination"></div>
+                        <div class="swiper-pagination shop-by-brand-pagination" data-total-items="{{ $sellers->count() }}"></div>
                     </div>
                 </div>
             </div>
@@ -941,15 +957,20 @@
                                 data-swiper='{
                                     "spaceBetween": 16,
                                     "slidesPerView": 6,
-                                    "loop": false,
+                                    "loop": {{ $offers->count() > 6 ? 'true' : 'false' }},
                                     "speed": 700,
                                     "navigation": {
                                         "nextEl": ".exclusive-deals-next",
                                         "prevEl": ".exclusive-deals-prev"
                                     },
+                                    @if($offers->count() > 1)
                                     "pagination": {
                                         "el": ".exclusive-deals-pagination",
                                         "clickable": true
+                                    },
+                                    @endif
+                                    "autoplay":{
+                                        "delay":"4000"
                                     },
                                     "breakpoints": {
                                         "0": { "slidesPerView": 1, "spaceBetween": 12 },
@@ -1054,7 +1075,7 @@
                     </div>
             </div>
              <!-- Pagination dots -->
-             <div class="swiper-pagination exclusive-deals-pagination"></div>
+             <div class="swiper-pagination exclusive-deals-pagination" data-total-items="{{ $offers->count() }}"></div>
             <hr class="mt-3 mx-4">
               <div class="text-center mt-5 view-all">
                 <div class=""><a href="{{ route('shop', ['type' => '']) }}"
@@ -1069,6 +1090,44 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         $(document).ready(function() {
+            // Function to check if pagination should be visible
+            function checkPaginationVisibility() {
+                $('.swiper-pagination').each(function() {
+                    const $pagination = $(this);
+                    const totalItems = parseInt($pagination.data('total-items'));
+                    const screenWidth = $(window).width();
+                    
+                    // Determine current slidesPerView based on screen width (matching your breakpoints)
+                    let currentSlidesPerView;
+                    if (screenWidth >= 1540) {
+                        currentSlidesPerView = 6;
+                    } else if (screenWidth >= 840) {
+                        currentSlidesPerView = 4;
+                    } else if (screenWidth >= 640) {
+                        currentSlidesPerView = 3;
+                    } else if (screenWidth >= 320) {
+                        currentSlidesPerView = 2;
+                    } else {
+                        currentSlidesPerView = 1;
+                    }
+                    
+                    // Show pagination only if total items > current slides per view
+                    if (totalItems > currentSlidesPerView) {
+                        $pagination.show();
+                    } else {
+                        $pagination.hide();
+                    }
+                });
+            }
+            
+            // Check on page load
+            checkPaginationVisibility();
+            
+            // Check on window resize
+            $(window).resize(function() {
+                checkPaginationVisibility();
+            });
+
             $('.add-to-cart-btn').on('click', function(e) {
                 e.preventDefault();
 
