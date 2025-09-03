@@ -50,6 +50,140 @@
             padding: 0 4px;
         }
     }
+    
+    /* Price area modifications */
+    .price-area {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 2px;
+    }
+    
+    .price-area .current {
+        font-weight: 700;
+        color: #009ec9;
+        font-size: 16px;
+        order: 1;
+    }
+    
+    .price-area .previous {
+        text-decoration: line-through;
+        color: #999;
+        font-size: 12px;
+        order: 2;
+        margin-top: 2px;
+    }
+    
+    /* Navigation Arrows Styling */
+    .product-swiper-container {
+        position: relative;
+        padding: 0 60px;
+    }
+    
+    .swiper-button-next,
+    .swiper-button-prev {
+        width: 40px !important;
+        height: 40px !important;
+        background: #009ec9 !important;
+        border-radius: 50% !important;
+        color: white !important;
+        font-size: 14px !important;
+        margin-top: -20px !important;
+        box-shadow: 0 2px 8px #009ec9 !important;
+        transition: all 0.3s ease !important;
+        z-index: 10 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+    
+    .swiper-button-next {
+        right: 5px !important;
+    }
+    
+    .swiper-button-prev {
+        left: 5px !important;
+    }
+    
+    .swiper-button-next:hover,
+    .swiper-button-prev:hover {
+        background: #009ec9 !important;
+        transform: scale(1.1) !important;
+        box-shadow: 0 4px 12px #009ec9 !important;
+    }
+    
+    .swiper-button-next::after,
+    .swiper-button-prev::after {
+        font-size: 16px !important;
+        font-weight: bold !important;
+        color: white !important;
+    }
+
+    /* Pagination Dots Styling */
+    .swiper-pagination {
+        position: relative !important;
+        margin-top: 20px !important;
+        text-align: center !important;
+    }
+    
+    .swiper-pagination-bullet {
+        width: 12px !important;
+        height: 12px !important;
+        background: #ddd !important;
+        border-radius: 50% !important;
+        margin: 0 6px !important;
+        transition: all 0.3s ease !important;
+        cursor: pointer !important;
+    }
+    
+    .swiper-pagination-bullet-active {
+        background: #009ec9 !important;
+        transform: scale(1.2) !important;
+        box-shadow: 0 2px 8px rgba(220, 53, 69, 0.4) !important;
+    }
+    
+    /* Mobile responsiveness for navigation */
+    @media (max-width: 768px) {
+        .product-swiper-container {
+            padding: 0 50px;
+        }
+        
+        .swiper-button-next,
+        .swiper-button-prev {
+            width: 35px !important;
+            height: 35px !important;
+            margin-top: -17px !important;
+        }
+        
+        .swiper-button-next {
+            right: 5px !important;
+        }
+        
+        .swiper-button-prev {
+            left: 5px !important;
+        }
+        
+        .swiper-button-next::after,
+        .swiper-button-prev::after {
+            font-size: 14px !important;
+        }
+        
+        .swiper-pagination-bullet {
+            width: 10px !important;
+            height: 10px !important;
+            margin: 0 4px !important;
+        }
+    }
+    
+    /* Ensure arrows are always visible */
+    .swiper-button-disabled {
+        opacity: 0.5 !important;
+        cursor: not-allowed !important;
+    }
+    
+    .swiper-button-disabled:hover {
+        transform: none !important;
+    }
 </style>
     {{-- Category Section Start --}}
     <div class="background-light-gray-color rts-section-gap bg_light-1">
@@ -146,10 +280,10 @@
                                 "0":{
                                     "slidesPerView":2,
                                     "spaceBetween": 8},
-                                "320":{
+                                "468":{
                                     "slidesPerView":2,
                                     "spaceBetween":8},
-                                "480":{
+                                "638":{
                                     "slidesPerView":3,
                                     "spaceBetween":8},
                                 "640":{
@@ -211,7 +345,7 @@
         <div class="container">
             <div class="row">
                 <div class="col-lg-12">
-                    <div class="category-area-main-wrapper-one">
+                    <div class="category-area-main-wrapper-one product-swiper-container">
                         <div class="swiper mySwiper-everyday-essentials swiper-data"
                             data-swiper='{
                             "spaceBetween":16,
@@ -219,8 +353,12 @@
                             "loop": false,
                             "speed": 700,
                             "navigation":{
-                                "nextEl":".swiper-button-next",
-                                "prevEl":".swiper-button-prev"
+                                "nextEl":".everyday-essentials-next",
+                                "prevEl":".everyday-essentials-prev"
+                              },
+                            "pagination":{
+                                "el":".everyday-essentials-pagination",
+                                "clickable": true
                               },
                             "breakpoints":{
                             "0":{
@@ -340,10 +478,16 @@
                                 @endforeach
                             </div>
                         </div>
+                        <!-- Navigation buttons -->
+                        <button class="swiper-button-next everyday-essentials-next"><i class="fa-regular fa-arrow-right"></i></button>
+                        <button class="swiper-button-prev everyday-essentials-prev"><i class="fa-regular fa-arrow-left"></i></button>
+                        
                     </div>
                 </div>
             </div>
         </div>
+        <!-- Pagination dots -->
+        <div class="swiper-pagination everyday-essentials-pagination"></div>
         <hr class="mt-3 mx-4">
         <div class="text-center mt-5 view-all">
             <div class=""><a href="{{ route('shop', ['type' => 'everyday-essential']) }}"
@@ -369,7 +513,7 @@
         <div class="container">
             <div class="row">
                 <div class="col-lg-12">
-                    <div class="category-area-main-wrapper-one">
+                    <div class="category-area-main-wrapper-one product-swiper-container">
                         <div class="swiper mySwiper-popular-picks swiper-data"
                             data-swiper='{
                                 "spaceBetween": 16,
@@ -377,8 +521,12 @@
                                 "loop": false,
                                 "speed": 700,
                                 "navigation": {
-                                    "nextEl": ".swiper-button-next",
-                                    "prevEl": ".swiper-button-prev"
+                                    "nextEl": ".popular-picks-next",
+                                    "prevEl": ".popular-picks-prev"
+                                },
+                                "pagination": {
+                                    "el": ".popular-picks-pagination",
+                                    "clickable": true
                                 },
                                 "breakpoints": {
                                     "0": { "slidesPerView": 1, "spaceBetween": 12 },
@@ -482,11 +630,16 @@
                                 @endforeach
                             </div>
                         </div>
+                        <!-- Navigation buttons -->
+                        <button class="swiper-button-next popular-picks-next"><i class="fa-regular fa-arrow-right"></i></button>
+                        <button class="swiper-button-prev popular-picks-prev"><i class="fa-regular fa-arrow-left"></i></button>
                     </div>
 
                 </div>
             </div>
         </div>
+          <!-- Pagination dots -->
+          <div class="swiper-pagination popular-picks-pagination"></div>
         <hr class="mt-3 mx-4">
         <div class="text-center mt-5 view-all">
              <div class=""><a href="{{ route('shop', ['type' => 'popular-picks']) }}"
@@ -514,7 +667,7 @@
                             <div class="tab-pane fade show active" id="home" role="tabpanel"
                                 aria-labelledby="home-tab">
                                 <div class="row g-4">
-                                    <div class="category-area-main-wrapper-one">
+                                    <div class="category-area-main-wrapper-one product-swiper-container">
                                         <div class="swiper mySwiper-new-arrivals swiper-data"
                                             data-swiper='{
                                                 "spaceBetween": 16,
@@ -522,8 +675,12 @@
                                                 "loop": false,
                                                 "speed": 700,
                                                 "navigation": {
-                                                    "nextEl": ".swiper-button-next",
-                                                    "prevEl": ".swiper-button-prev"
+                                                    "nextEl": ".new-arrivals-next",
+                                                    "prevEl": ".new-arrivals-prev"
+                                                },
+                                                "pagination": {
+                                                    "el": ".new-arrivals-pagination",
+                                                    "clickable": true
                                                 },
                                                 "breakpoints": {
                                                     "0": { "slidesPerView": 1, "spaceBetween": 12 },
@@ -630,6 +787,10 @@
                                                 @endforeach
                                             </div>
                                         </div>
+                                        <!-- Navigation buttons -->
+                                        <button class="swiper-button-next new-arrivals-next"><i class="fa-regular fa-arrow-right"></i></button>
+                                        <button class="swiper-button-prev new-arrivals-prev"><i class="fa-regular fa-arrow-left"></i></button>
+                                        
                                     </div>
                                 </div>
                                 <!-- first tabs area start-->
@@ -639,6 +800,8 @@
                 </div>
             </div>
         </div>
+        <!-- Pagination dots -->
+        <div class="swiper-pagination new-arrivals-pagination"></div>
         <hr class="mt-3">
             <div class="text-center mt-5 view-all">
                 <div class=""><a href="{{ route('shop', ['type' => 'new-arrivals']) }}"
@@ -657,7 +820,7 @@
                     </div>
                 </div>
                 <div class="row g-4">
-                    <div class="category-area-main-wrapper-one">
+                    <div class="category-area-main-wrapper-one product-swiper-container">
                         <div class="swiper mySwiper-shop-by-brand swiper-data"
                             data-swiper='{
                                 "spaceBetween": 16,
@@ -665,8 +828,12 @@
                                 "loop": false,
                                 "speed": 700,
                                 "navigation": {
-                                    "nextEl": ".swiper-button-next",
-                                    "prevEl": ".swiper-button-prev"
+                                    "nextEl": ".shop-by-brand-next",
+                                    "prevEl": ".shop-by-brand-prev"
+                                },
+                                "pagination": {
+                                    "el": ".shop-by-brand-pagination",
+                                    "clickable": true
                                 },
                                 "breakpoints": {
                                     "0": { "slidesPerView": 1, "spaceBetween": 12 },
@@ -692,6 +859,11 @@
                                 @endforeach
                             </div>
                         </div>
+                        <!-- Navigation buttons -->
+                        <button class="swiper-button-next shop-by-brand-next"><i class="fa-regular fa-arrow-right"></i></button>
+                        <button class="swiper-button-prev shop-by-brand-prev"><i class="fa-regular fa-arrow-left"></i></button>
+                        <!-- Pagination dots -->
+                        <div class="swiper-pagination shop-by-brand-pagination"></div>
                     </div>
                 </div>
             </div>
@@ -716,7 +888,7 @@
             <div class="container">
                     <div class="row">
                     <div class="col-lg-12">
-                        <div class="category-area-main-wrapper-one">
+                        <div class="category-area-main-wrapper-one product-swiper-container">
                             <div class="swiper mySwiper-exclusive-deals swiper-data"
                                 data-swiper='{
                                     "spaceBetween": 16,
@@ -724,8 +896,12 @@
                                     "loop": false,
                                     "speed": 700,
                                     "navigation": {
-                                        "nextEl": ".swiper-button-next",
-                                        "prevEl": ".swiper-button-prev"
+                                        "nextEl": ".exclusive-deals-next",
+                                        "prevEl": ".exclusive-deals-prev"
+                                    },
+                                    "pagination": {
+                                        "el": ".exclusive-deals-pagination",
+                                        "clickable": true
                                     },
                                     "breakpoints": {
                                         "0": { "slidesPerView": 1, "spaceBetween": 12 },
@@ -825,10 +1001,16 @@
                                     @endforeach
                                 </div>
                             </div>
+                            <!-- Navigation buttons -->
+                             <button class="swiper-button-next exclusive-deals-next"><i class="fa-regular fa-arrow-right"></i></button>
+                             <button class="swiper-button-prev exclusive-deals-prev"><i class="fa-regular fa-arrow-left"></i></button>
+                           
                         </div>
                     </div>
                     </div>
             </div>
+             <!-- Pagination dots -->
+             <div class="swiper-pagination exclusive-deals-pagination"></div>
             <hr class="mt-3 mx-4">
               <div class="text-center mt-5 view-all">
                 <div class=""><a href="{{ route('shop', ['type' => '']) }}"
