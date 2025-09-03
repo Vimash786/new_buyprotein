@@ -25,6 +25,14 @@ new class extends Component
     
     // Form fields
     public $name = '';
+    public $title = '';
+    public $subtitle = '';
+    public $description = '';
+    public $button_text = 'Shop Now';
+    public $button_link = '';
+    public $text_color = '#ffffff';
+    public $position = 'primary';
+    public $show_icon = true;
     public $banner_image = '';
     public $banner_image_file = null;
     public $redirect_link = '';
@@ -32,6 +40,14 @@ new class extends Component
 
     protected $rules = [
         'name' => 'required|string|max:255',
+        'title' => 'nullable|string|max:255',
+        'subtitle' => 'nullable|string|max:255',
+        'description' => 'nullable|string|max:1000',
+        'button_text' => 'nullable|string|max:50',
+        'button_link' => 'nullable|url|max:500',
+        'text_color' => 'nullable|string|max:7',
+        'position' => 'required|in:primary,secondary,promotional',
+        'show_icon' => 'nullable|boolean',
         'banner_image_file' => 'nullable|image|mimes:jpg,jpeg,png,gif,webp|max:5120', // 5MB max
         'redirect_link' => 'nullable|url|max:500',
         'status' => 'required|in:active,inactive',
@@ -109,24 +125,48 @@ new class extends Component
     
     public function resetForm()
     {
-        $this->bannerId = null;
         $this->name = '';
+        $this->title = '';
+        $this->subtitle = '';
+        $this->description = '';
+        $this->button_text = 'Shop Now';
+        $this->button_link = '';
+        $this->text_color = '#ffffff';
+        $this->position = 'primary';
+        $this->show_icon = true;
         $this->banner_image = '';
         $this->banner_image_file = null;
         $this->redirect_link = '';
         $this->status = 'active';
-        $this->resetValidation();
+        $this->bannerId = null;
+        $this->editMode = false;
     }    
     
     public function save()
     {
         $this->validate();
 
+        // Debug: Log the show_icon value
+        logger('=== BANNER SAVE DEBUG ===');
+        logger('Show Icon Property Value: ' . var_export($this->show_icon, true));
+        logger('Show Icon Type: ' . gettype($this->show_icon));
+        logger('Show Icon Boolean Cast: ' . ((bool) $this->show_icon ? 'true' : 'false'));
+
         $data = [
             'name' => $this->name,
+            'title' => $this->title,
+            'subtitle' => $this->subtitle,
+            'description' => $this->description,
+            'button_text' => $this->button_text ?: 'Shop Now',
+            'button_link' => $this->button_link,
+            'text_color' => $this->text_color ?: '#ffffff',
+            'position' => $this->position,
+            'show_icon' => (bool) $this->show_icon,
             'redirect_link' => $this->redirect_link,
             'status' => $this->status,
         ];
+
+        logger('Data Array show_icon: ' . var_export($data['show_icon'], true));
 
         // Handle banner image upload
         if ($this->banner_image_file) {
@@ -171,6 +211,14 @@ new class extends Component
         
         $this->bannerId = $banner->id;
         $this->name = $banner->name;
+        $this->title = $banner->title ?? '';
+        $this->subtitle = $banner->subtitle ?? '';
+        $this->description = $banner->description ?? '';
+        $this->button_text = $banner->button_text ?? 'Shop Now';
+        $this->button_link = $banner->button_link ?? '';
+        $this->text_color = $banner->text_color ?? '#ffffff';
+        $this->position = $banner->position ?? 'primary';
+        $this->show_icon = $banner->show_icon ?? true;
         $this->banner_image = $banner->banner_image;
         $this->banner_image_file = null; // Reset file input for edit
         $this->redirect_link = $banner->redirect_link;
@@ -216,6 +264,17 @@ new class extends Component
     public function updatingStatusFilter()
     {
         $this->resetPage();
+    }
+
+    public function updatedShowIcon($value)
+    {
+        logger('Show Icon Updated - Raw Value: ' . var_export($value, true));
+        logger('Show Icon Updated - Type: ' . gettype($value));
+        
+        // Convert to proper boolean
+        $this->show_icon = filter_var($value, FILTER_VALIDATE_BOOLEAN);
+        
+        logger('Show Icon After Conversion: ' . ($this->show_icon ? 'true' : 'false'));
     }
 }; ?>
 
@@ -471,6 +530,116 @@ new class extends Component
                                 placeholder="Enter banner name"
                             >
                             @error('name') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                        </div>
+
+                        <!-- Banner Title -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Banner Title</label>
+                            <input 
+                                type="text" 
+                                wire:model="title"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
+                                placeholder="Enter banner title (displayed on banner)"
+                            >
+                            @error('title') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                        </div>
+
+                        <!-- Banner Subtitle -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Banner Subtitle</label>
+                            <input 
+                                type="text" 
+                                wire:model="subtitle"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
+                                placeholder="Enter banner subtitle (optional)"
+                            >
+                            @error('subtitle') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                        </div>
+
+                        <!-- Banner Description -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Banner Description</label>
+                            <textarea 
+                                wire:model="description"
+                                rows="3"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
+                                placeholder="Enter banner description (optional)"
+                            ></textarea>
+                            @error('description') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                        </div>
+
+                        <!-- Button Text and Link -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Button Text</label>
+                                <input 
+                                    type="text" 
+                                    wire:model="button_text"
+                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
+                                    placeholder="Shop Now"
+                                >
+                                @error('button_text') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Button Link</label>
+                                <input 
+                                    type="url" 
+                                    wire:model="button_link"
+                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
+                                    placeholder="https://example.com/shop"
+                                >
+                                @error('button_link') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                            </div>
+                        </div>
+
+                        <!-- Text Color and Position -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Text Color</label>
+                                <input 
+                                    type="color" 
+                                    wire:model="text_color"
+                                    class="w-full h-10 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800"
+                                >
+                                @error('text_color') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Banner Position</label>
+                                <select 
+                                    wire:model="position"
+                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
+                                >
+                                    <option value="primary">Primary (Main Banner)</option>
+                                    <option value="secondary">Secondary (Additional Banner)</option>
+                                    <option value="promotional">Promotional (Special Offers)</option>
+                                </select>
+                                @error('position') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                            </div>
+                        </div>
+
+                        <!-- Show Buy Icon Toggle -->
+                        <div>
+                            <div class="flex items-center space-x-3">
+                                <input 
+                                    type="checkbox" 
+                                    wire:model.live="show_icon"
+                                    id="show_icon_checkbox"
+                                    class="w-4 h-4 text-blue-600 bg-gray-100 dark:bg-zinc-800 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:ring-2"
+                                    @if($show_icon) checked @endif
+                                >
+                                <label for="show_icon_checkbox" class="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
+                                    Show Buy Icon on Banner
+                                    <span class="text-xs text-gray-500 dark:text-gray-400 block">
+                                        Display the buy-icon.svg on banner corners (desktop) or center (mobile)
+                                    </span>
+                                </label>
+                            </div>
+                            @error('show_icon') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                            
+                            <!-- Debug info (remove in production) -->
+                            <div class="text-xs text-gray-500 mt-1">
+                                Current value: {{ $show_icon ? 'true' : 'false' }} | Type: {{ gettype($show_icon) }}
+                            </div>
                         </div>
 
                         <!-- Banner Image -->

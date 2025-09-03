@@ -2,6 +2,70 @@
 
 @section('content')
 <style>
+    /* Buy Icon Styles */
+    .buy-icon-container {
+        position: relative;
+        z-index: 10;
+        pointer-events: none;
+    }
+    
+    /* Desktop - Corner positioning */
+    .buy-icon {
+        position: absolute;
+         top: -150px;
+        right: 20px;
+        width: 150px;
+        height: 150px;
+        opacity: 0.9;
+        transition: all 0.3s ease;
+    }
+    
+    .buy-icon:hover {
+        opacity: 1;
+        transform: scale(1.05);
+    }
+    
+    /* Mobile - Center positioning */
+    .buy-icon-mobile {
+        position: absolute;
+        top: -30;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 150px;
+        height: 150px;
+        opacity: 0.8;
+        transition: all 0.3s ease;
+    }
+    
+    /* Additional responsive adjustments */
+    @media (max-width: 576px) {
+        .buy-icon-mobile {
+           width: 150px;
+           height: 150px;
+        }
+    }
+    
+    @media (min-width: 1200px) {
+        .buy-icon {
+            width: 150px;
+            height: 150px;
+            top: -150px;
+            right: 30px;
+        }
+    }
+    
+    /* Banner positioning to ensure content doesn't overlap with icon */
+    .banner-one-inner-content {
+        padding-right: 120px;
+    }
+    
+    @media (max-width: 991px) {
+        .banner-one-inner-content {
+            padding-right: 20px;
+            text-align: center;
+        }
+    }
+
     @media only screen and (min-width: 200px) and (max-width: 768px) {
         .rts-section-gap {
             padding: 30px 0;
@@ -73,51 +137,6 @@
         order: 2;
         margin-top: 2px;
     }
-    
-    /* Navigation Arrows Styling */
-    .product-swiper-container {
-        position: relative;
-        padding: 0 60px;
-    }
-    
-    .swiper-button-next,
-    .swiper-button-prev {
-        width: 40px !important;
-        height: 40px !important;
-        background: #009ec9 !important;
-        border-radius: 50% !important;
-        color: white !important;
-        font-size: 14px !important;
-        margin-top: -20px !important;
-        box-shadow: 0 2px 8px #009ec9 !important;
-        transition: all 0.3s ease !important;
-        z-index: 10 !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-    }
-    
-    .swiper-button-next {
-        right: 5px !important;
-    }
-    
-    .swiper-button-prev {
-        left: 5px !important;
-    }
-    
-    .swiper-button-next:hover,
-    .swiper-button-prev:hover {
-        background: #009ec9 !important;
-        transform: scale(1.1) !important;
-        box-shadow: 0 4px 12px #009ec9 !important;
-    }
-    
-    .swiper-button-next::after,
-    .swiper-button-prev::after {
-        font-size: 16px !important;
-        font-weight: bold !important;
-        color: white !important;
-    }
 
     /* Pagination Dots Styling */
     .swiper-pagination {
@@ -139,7 +158,7 @@
     .swiper-pagination-bullet-active {
         background: #009ec9 !important;
         transform: scale(1.2) !important;
-        box-shadow: 0 2px 8px rgba(220, 53, 69, 0.4) !important;
+        box-shadow: 0 2px 8px #009ec9 !important;
     }
     
     /* Mobile responsiveness for navigation */
@@ -185,6 +204,7 @@
         transform: none !important;
     }
 </style>
+
     {{-- Category Section Start --}}
     <div class="background-light-gray-color rts-section-gap bg_light-1">
         <!-- rts banner area start -->
@@ -228,15 +248,54 @@
                                 }
                             }'>
                                 <div class="swiper-wrapper">
-                                    @foreach ($banners as $banner)
-                                        <div class="swiper-slide">
-                                            <a href="{{ $banner['redirect_link'] }}">
-                                                <div class="banner-bg-image ptb--120 ptb_md--80 ptb_sm--60"
-                                                    style="background-image: url('{{ asset('storage/' . $banner['banner_image']) }}'); background-size: cover; background-position: center;">
-                                                </div>
-                                            </a>
-                                        </div>
-                                    @endforeach
+                                        @foreach ($primaryBanners as $banner)
+                                            <div class="swiper-slide">
+                                                <a href="{{ $banner->button_link ?: $banner->redirect_link ?: '#' }}">
+                                                    <div class="banner-bg-image ptb--120 ptb_md--80 ptb_sm--60 position-relative"
+                                                        style="background-image: url('{{ asset('storage/' . $banner->banner_image) }}'); background-size: cover; background-position: center;">
+                                                        
+                                                        <!-- Buy Icon - Only show if enabled -->
+                                                        @if($banner->show_icon)
+                                                        <div class="buy-icon-container">
+                                                            <img src="{{ asset('buy-icon.svg') }}" alt="Buy Icon" class="buy-icon d-none d-lg-block">
+                                                            <img src="{{ asset('buy-icon.svg') }}" alt="Buy Icon" class="buy-icon-mobile d-lg-none">
+                                                        </div>
+                                                        @endif
+
+                                                        @if($banner->title || $banner->subtitle || $banner->description || $banner->button_text)
+                                                            <div class="banner-one-inner-content mt-5 justify-content-center">
+                                                                @if($banner->subtitle)
+                                                                    <span class="pre" style="color: {{ $banner->text_color }}">{{ $banner->subtitle }}</span>
+                                                                @endif
+                                                                @if($banner->title)
+                                                                    <h1 class="title" style="color: {{ $banner->text_color }}">
+                                                                        {!! nl2br(e($banner->title)) !!}
+                                                                    </h1>
+                                                                @endif
+                                                                @if($banner->description)
+                                                                    <p class="description mt-3" style="color: {{ $banner->text_color }}">
+                                                                        {{ $banner->description }}
+                                                                    </p>
+                                                                @endif
+                                                                @if($banner->button_text && $banner->button_link)
+                                                                    <a href="{{ $banner->button_link }}" class="rts-btn btn-primary radious-sm with-icon mt-4">
+                                                                        <div class="btn-text">
+                                                                            {{ $banner->button_text }}
+                                                                        </div>
+                                                                        <div class="arrow-icon">
+                                                                            <i class="fa-light fa-arrow-right"></i>
+                                                                        </div>
+                                                                        <div class="arrow-icon">
+                                                                            <i class="fa-light fa-arrow-right"></i>
+                                                                        </div>
+                                                                    </a>
+                                                                @endif
+                                                            </div>
+                                                        @endif
+                                                    </div>
+                                                </a>
+                                            </div>
+                                        @endforeach
                                 </div>
                                 <button class="swiper-button-next"><i class="fa-regular fa-arrow-right"></i></button>
                                 <button class="swiper-button-prev"><i class="fa-regular fa-arrow-left"></i></button>
@@ -479,8 +538,6 @@
                             </div>
                         </div>
                         <!-- Navigation buttons -->
-                        <button class="swiper-button-next everyday-essentials-next"><i class="fa-regular fa-arrow-right"></i></button>
-                        <button class="swiper-button-prev everyday-essentials-prev"><i class="fa-regular fa-arrow-left"></i></button>
                         
                     </div>
                 </div>
@@ -631,8 +688,6 @@
                             </div>
                         </div>
                         <!-- Navigation buttons -->
-                        <button class="swiper-button-next popular-picks-next"><i class="fa-regular fa-arrow-right"></i></button>
-                        <button class="swiper-button-prev popular-picks-prev"><i class="fa-regular fa-arrow-left"></i></button>
                     </div>
 
                 </div>
@@ -786,11 +841,7 @@
                                                     @endif
                                                 @endforeach
                                             </div>
-                                        </div>
-                                        <!-- Navigation buttons -->
-                                        <button class="swiper-button-next new-arrivals-next"><i class="fa-regular fa-arrow-right"></i></button>
-                                        <button class="swiper-button-prev new-arrivals-prev"><i class="fa-regular fa-arrow-left"></i></button>
-                                        
+                                        </div>                
                                     </div>
                                 </div>
                                 <!-- first tabs area start-->
@@ -860,9 +911,6 @@
                             </div>
                         </div>
                         <!-- Navigation buttons -->
-                        <button class="swiper-button-next shop-by-brand-next"><i class="fa-regular fa-arrow-right"></i></button>
-                        <button class="swiper-button-prev shop-by-brand-prev"><i class="fa-regular fa-arrow-left"></i></button>
-                        <!-- Pagination dots -->
                         <div class="swiper-pagination shop-by-brand-pagination"></div>
                     </div>
                 </div>
@@ -1001,10 +1049,6 @@
                                     @endforeach
                                 </div>
                             </div>
-                            <!-- Navigation buttons -->
-                             <button class="swiper-button-next exclusive-deals-next"><i class="fa-regular fa-arrow-right"></i></button>
-                             <button class="swiper-button-prev exclusive-deals-prev"><i class="fa-regular fa-arrow-left"></i></button>
-                           
                         </div>
                     </div>
                     </div>

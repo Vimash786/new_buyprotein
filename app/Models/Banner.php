@@ -12,6 +12,14 @@ class Banner extends Model
 
     protected $fillable = [
         'name',
+        'title',
+        'subtitle',
+        'description',
+        'button_text',
+        'button_link',
+        'text_color',
+        'position',
+        'show_icon',
         'banner_image',
         'redirect_link',
         'status',
@@ -21,6 +29,7 @@ class Banner extends Model
 
     protected $casts = [
         'status' => 'string',
+        'show_icon' => 'boolean',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'deleted_at' => 'datetime',

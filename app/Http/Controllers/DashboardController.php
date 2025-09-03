@@ -114,9 +114,12 @@ class DashboardController extends Controller
         Log::info('Exclusive Deals Query Result: ' . $offers->count() . ' products found');
             
         $banners = Banner::where('status', 'active')->orderBy('created_at', 'desc')->get();
+        $primaryBanners = Banner::where('status', 'active')->where('position', 'primary')->orderBy('created_at', 'desc')->get();
+        $secondaryBanners = Banner::where('status', 'active')->where('position', 'secondary')->orderBy('created_at', 'desc')->get();
+        $promotionalBanners = Banner::where('status', 'active')->where('position', 'promotional')->orderBy('created_at', 'desc')->get();
         $sellers = Sellers::where('status', 'approved')->limit(4)->get();
 
-        return view('dashboard', compact('categories', 'everyDayEssentials', 'populerProducts', 'latestProducts', 'offers', 'banners', 'sellers'));
+        return view('dashboard', compact('categories', 'everyDayEssentials', 'populerProducts', 'latestProducts', 'offers', 'banners', 'primaryBanners', 'secondaryBanners', 'promotionalBanners', 'sellers'));
     }
 
     public function shop(Request $request, $type = null, $id = null)
