@@ -42,7 +42,8 @@
                                 <p>F-2 AKASH GANGA COMPLEX,NR .BOB BANK, OPP.MCDONALD'S, ALTHAN CHOKDI VIP ROAD SURAT -395017</p>
                                 <p>SHOP 1, SCHOOL, DIPANJALI SHOPPING CENTER, SUBHASH  CHANDRA BOSE MARG, OPP. L P SAVANI, ADAJAN GAM ,SURAT, GUJRAT 395009*</p>
                                 <p>RUXMANI PARK, 23, DINDOLI - KHARVASA RD, NEAR MADHURIMA CIRCLE, NEW DINDOLI  , VRUKSHMANI SOCIETY, DINDOLI, SURAT, KARADVA, GUJARAT 394210</p>
-                                <a href="#" class="number">+91 81285 30460</a>
+                                <p>SHOP NO - 13, SNEHA BUILDING, BASANT COMPLEX, MAHAVEER NAGAR, LINK ROAD, NEAR KANDIVALI METRO STATION, WEST - 400067</p>
+                                <a href="#" class="number">+91 81285 30460, +91 99255 23381</a>
                                 <a href="#" class="email">proteinx.in@gmail.com</a>
                             </div>
                         </div>
@@ -55,6 +56,17 @@
                                 <p>SHIVPUR BYPASS RD, GALAT BAZAR, SHIVPUR, VARANASI, UTTAR PRADESH 221002</p>
                                 <a href="#" class="number">+91 81285 30460</a>
                                 <a href="#" class="email">proteinx.in@gmail.com</a>
+                            </div>
+                            <div class="location-single-card">
+                                <div class="icon">
+                                    <i class="fa-light fa-location-dot"></i>
+                                </div>
+                                <div class="information">
+                                    <h3 class="title">Mumbai-Kandiwali</h3>
+                                    <p>SHOP NO - 13, SNEHA BUILDING, BASANT COMPLEX, MAHAVEER NAGAR, LINK ROAD, NEAR KANDIVALI METRO STATION, WEST - 400067</p>
+                                    <a href="#" class="number">+91 99255 23381</a>
+                                    <a href="#" class="email">proteinx.in@gmail.com</a>
+                                </div>
                             </div>
                         </div>
                     </div>
