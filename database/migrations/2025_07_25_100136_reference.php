@@ -26,7 +26,7 @@ return new class extends Migration
             $table->datetime('starts_at');
             $table->datetime('expires_at');
             $table->enum('status', ['active', 'inactive'])->default('active');
-            $table->json('applicable_to')->default(json_encode(['all']));
+            $table->json('applicable_to');
             $table->json('user_types')->nullable();
             $table->unsignedBigInteger('created_by')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();

@@ -17,12 +17,15 @@ return new class extends Migration
             $table->text('section_category')->change();
         });
         
+        // Normalize any NULL/empty values before JSON conversion
+        DB::statement("UPDATE products SET section_category = 'everyday_essential' WHERE section_category IS NULL OR section_category = ''");
+        
         // Then update existing data to convert enum values to JSON arrays
         DB::statement("UPDATE products SET section_category = CONCAT('[\"', section_category, '\"]')");
         
-        // Finally, change to JSON type with default
+        // Finally, change to JSON type (MySQL cannot have DEFAULT on JSON)
         Schema::table('products', function (Blueprint $table) {
-            $table->json('section_category')->default('["everyday_essential"]')->change();
+            $table->json('section_category')->change();
         });
     }
 

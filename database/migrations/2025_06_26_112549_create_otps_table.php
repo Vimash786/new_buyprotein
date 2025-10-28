@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('otps', function (Blueprint $table) {
             $table->id();
-            $table->string('email');
-            $table->string('otp_code');
+            $table->string('email', 191);
+            $table->string('otp_code', 32);
             $table->timestamp('expires_at');
             $table->boolean('is_verified')->default(false);
             $table->json('user_data')->nullable(); // Store temporary user registration data

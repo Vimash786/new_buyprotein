@@ -11,6 +11,9 @@ class Reference extends Model
 {
     use HasFactory, SoftDeletes;
     protected $table = 'reference'; // Explicitly set the table name
+    protected $attributes = [
+        'applicable_to' => ['all'],
+    ];
     protected $fillable = [
         'code',
         'name',
