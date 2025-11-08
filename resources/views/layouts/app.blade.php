@@ -20,10 +20,53 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
     <style>
-        .single-shopping-card-one .thumbnail-preview img {
-            height: unset;
+        /* Product card: consistent height & aligned CTA */
+        .single-shopping-card-one {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
         }
-       
+        .single-shopping-card-one .image-and-action-area-wrapper {
+            height: 260px; /* desktop default */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .single-shopping-card-one .thumbnail-preview {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .single-shopping-card-one .thumbnail-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+        .single-shopping-card-one .body-content {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+        .single-shopping-card-one .body-content .title {
+            margin-bottom: 6px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2; /* clamp to 2 lines to equalize heights */
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            min-height: 44px; /* fallback for equal height */
+        }
+        .single-shopping-card-one .cart-counter-action {
+            margin-top: auto; /* push controls to bottom */
+        }
+        @media (max-width: 991.98px) {
+            .single-shopping-card-one .image-and-action-area-wrapper { height: 220px; }
+        }
+        @media (max-width: 575.98px) {
+            .single-shopping-card-one .image-and-action-area-wrapper { height: 180px; }
+        }
 
         .brand-card {
             display: flex;
