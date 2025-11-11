@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('weight')->nullable();
             $table->string('category');
             $table->enum('status', ['active', 'inactive'])->default('active');
-            $table->enum('super_status', ['approved', 'not_approved'])->default('not_approved');
+            $table->enum('super_status', ['approved', 'not_approved'])->default('approved');
             $table->timestamps();
         });
     }

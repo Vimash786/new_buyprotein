@@ -1669,6 +1669,15 @@ new class extends Component
                             Add Product
                         @endif
                     </button>
+					<a 
+						href="{{ route('products.import') }}"
+						class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2"
+					>
+						<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v16h16M4 8h10m-6 4h6" />
+						</svg>
+						Import Excel
+					</a>
                 </div>
             </div>
         </div>

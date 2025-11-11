@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class products extends Model
 {
@@ -31,6 +32,8 @@ class products extends Model
         'shop_owner_final_price',
         'stock_quantity',
         'weight',
+		'hsn',
+		'product_type',
         'category',
         'old_category',
         'status',
@@ -57,6 +60,8 @@ class products extends Model
         'stock_quantity' => 'integer',
         'status' => 'string',
         'super_status' => 'string',
+		'hsn' => 'string',
+		'product_type' => 'string',
         'has_variants' => 'boolean',
         'section_category' => 'array',
     ];
@@ -218,5 +223,24 @@ class products extends Model
     public function orderSellerProducts(): HasMany
     {
         return $this->hasMany(OrderSellerProduct::class, 'product_id');
+    }
+
+    /**
+     * Boot the model
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Delete associated images and thumbnail when product is deleted
+        static::deleting(function ($product) {
+            // Delete all product images (files will be deleted by ProductImage model event)
+            $product->images()->delete();
+            
+            // Delete thumbnail image file if it exists
+            if ($product->thumbnail_image && Storage::disk('public')->exists($product->thumbnail_image)) {
+                Storage::disk('public')->delete($product->thumbnail_image);
+            }
+        });
     }
 }
