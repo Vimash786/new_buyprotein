@@ -24,6 +24,7 @@ class ProductsExcelImport implements ToCollection, WithHeadingRow
 	protected int $sellerId;
 	protected ?int $defaultCategoryId;
 	protected ?string $progressKey = null;
+	protected array $importConfig = [];
 
 	/**
 	 * @param int $sellerId Seller who owns the imported products
@@ -35,22 +36,81 @@ class ProductsExcelImport implements ToCollection, WithHeadingRow
 		$this->sellerId = $sellerId;
 		$this->defaultCategoryId = $defaultCategoryId;
 		$this->progressKey = $progressKey ? "import:{$progressKey}" : null;
+		
+		// Load import configuration from cache if available
+		if ($progressKey) {
+			$this->importConfig = Cache::get("import_config:{$progressKey}", [
+				'product_type' => 'variant',
+				'variant_types' => ['Size', 'Flavour', 'Package'],
+				'columns' => [],
+			]);
+		}
 	}
 
 	/**
-	 * Expected columns (case-insensitive, spaces/underscores tolerated):
-	 * - category (or category_type)
-	 * - asin
-	 * - sku
-	 * - tally name
-	 * - ean
-	 * - hsn
-	 * - image1, image2, image3, image4, image5, image6, image7, image8
-	 * - product_type
-	 * - size
-	 * - flavour
-	 * - package
+	 * Check if we're importing variant products
 	 */
+	protected function isVariantImport(): bool
+	{
+		return ($this->importConfig['product_type'] ?? 'variant') === 'variant';
+	}
+
+	/**
+	 * Get configured variant types
+	 */
+	protected function getVariantTypes(): array
+	{
+		return $this->importConfig['variant_types'] ?? ['Size', 'Flavour', 'Package'];
+	}
+
+	/**
+	 * Dynamic column mapping - get value from row with flexible key matching
+	 */
+	protected function getColumnValue(Collection $row, string $columnKey, $default = null)
+	{
+		// Direct key match
+		if ($row->has($columnKey)) {
+			$value = $row->get($columnKey);
+			return $value !== null && $value !== '' ? $value : $default;
+		}
+
+		// Try snake_case version
+		$snakeKey = Str::snake($columnKey);
+		if ($row->has($snakeKey)) {
+			$value = $row->get($snakeKey);
+			return $value !== null && $value !== '' ? $value : $default;
+		}
+
+		// Try without underscores
+		$noUnderscoreKey = str_replace('_', '', $snakeKey);
+		if ($row->has($noUnderscoreKey)) {
+			$value = $row->get($noUnderscoreKey);
+			return $value !== null && $value !== '' ? $value : $default;
+		}
+
+		// Try common variations
+		$variations = [
+			'tally_name' => ['tallyname', 'tally_name', 'name', 'product_name', 'productname'],
+			'category' => ['category', 'category_type', 'categorytype'],
+			'product_type' => ['product_type', 'producttype', 'type'],
+			'gym_owner_price' => ['gym_owner_price', 'gymownerprice', 'gym_price'],
+			'regular_user_price' => ['regular_user_price', 'regularuserprice', 'regular_price', 'price'],
+			'shop_owner_price' => ['shop_owner_price', 'shopownerprice', 'shop_price', 'wholesale_price'],
+			'stock_quantity' => ['stock_quantity', 'stockquantity', 'stock', 'quantity'],
+		];
+
+		if (isset($variations[$columnKey])) {
+			foreach ($variations[$columnKey] as $variation) {
+				if ($row->has($variation)) {
+					$value = $row->get($variation);
+					return $value !== null && $value !== '' ? $value : $default;
+				}
+			}
+		}
+
+		return $default;
+	}
+
 	public function collection(Collection $rows)
 	{
 		if ($rows->isEmpty()) {
@@ -67,16 +127,32 @@ class ProductsExcelImport implements ToCollection, WithHeadingRow
 			return collect($mapped);
 		});
 
+		if ($this->isVariantImport()) {
+			$this->importVariantProducts($normalized);
+		} else {
+			$this->importSimpleProducts($normalized);
+		}
+	}
+
+	/**
+	 * Import products with variants (grouped by ASIN or product identifier)
+	 */
+	protected function importVariantProducts(Collection $normalized): void
+	{
 		// Group by ASIN if present, else by Tally Name to form products with variants
 		$grouped = $normalized->groupBy(function ($row) {
-			return $row->get('asin') ?: $row->get('tally_name') ?: Str::uuid()->toString();
+			return $this->getColumnValue($row, 'asin') 
+				?: $this->getColumnValue($row, 'tally_name') 
+				?: Str::uuid()->toString();
 		});
 
 		$total = $grouped->count();
 		$processed = 0;
 		$this->setProgress('running', $total, $processed);
 
-		Log::info('Products import started', ['total_groups' => $total]);
+		Log::info('Variant products import started', ['total_groups' => $total]);
+
+		$variantTypes = $this->getVariantTypes();
 
 		foreach ($grouped as $asin => $items) {
 			try {
@@ -87,14 +163,14 @@ class ProductsExcelImport implements ToCollection, WithHeadingRow
 					'total' => $total,
 				]);
 
-				// Run each group atomically to avoid one failure blocking others
-				DB::transaction(function () use ($asin, $items) {
-				// Validate required product-level fields
+				DB::transaction(function () use ($asin, $items, $variantTypes) {
 					$first = $items->first();
-					$productType = $first->get('product_type') ?? $first->get('producttype');
-					$categoryName = $first->get('category') ?? $first->get('category_type');
-					$tallyName = $first->get('tally_name') ?? $first->get('tallyname') ?? $first->get('name');
-					$hsn = $first->get('hsn');
+					
+					$productType = $this->getColumnValue($first, 'product_type');
+					$categoryName = $this->getColumnValue($first, 'category');
+					$tallyName = $this->getColumnValue($first, 'tally_name');
+					$hsn = $this->getColumnValue($first, 'hsn');
+					$description = $this->getColumnValue($first, 'description', $tallyName);
 
 					if (empty($categoryName) || empty($productType) || empty($tallyName)) {
 						Log::warning('Skipping group; missing required product fields', ['asin' => $asin]);
@@ -120,7 +196,7 @@ class ProductsExcelImport implements ToCollection, WithHeadingRow
 						'category_id' => $category->id,
 						'sub_category_id' => null,
 						'name' => $tallyName,
-						'description' => $tallyName, // as requested: tally name contains description too
+						'description' => $description,
 						'gym_owner_price' => 0,
 						'regular_user_price' => 0,
 						'shop_owner_price' => 0,
@@ -139,33 +215,20 @@ class ProductsExcelImport implements ToCollection, WithHeadingRow
 						'product_type' => $productType,
 					]);
 
-					// Prepare variants: Size, Flavour, Package (all required)
-					$sizeVariant = ProductVariant::create([
-						'product_id' => $product->id,
-						'name' => 'Size',
-						'display_name' => 'Size',
-						'sort_order' => 0,
-						'is_required' => true,
-					]);
-					$flavourVariant = ProductVariant::create([
-						'product_id' => $product->id,
-						'name' => 'Flavour',
-						'display_name' => 'Flavour',
-						'sort_order' => 1,
-						'is_required' => true,
-					]);
-					$packageVariant = ProductVariant::create([
-						'product_id' => $product->id,
-						'name' => 'Package',
-						'display_name' => 'Package',
-						'sort_order' => 2,
-						'is_required' => true,
-					]);
-
-					// Create options maps to avoid duplicates
-					$sizeOptions = [];
-					$flavourOptions = [];
-					$packageOptions = [];
+					// Create variant types dynamically
+					$variants = [];
+					$optionsCaches = [];
+					
+					foreach ($variantTypes as $index => $variantType) {
+						$variants[$variantType] = ProductVariant::create([
+							'product_id' => $product->id,
+							'name' => $variantType,
+							'display_name' => $variantType,
+							'sort_order' => $index,
+							'is_required' => true,
+						]);
+						$optionsCaches[$variantType] = [];
+					}
 
 					$ensureOption = function (ProductVariant $variant, string $value, array &$cache) {
 						$key = mb_strtolower(trim($value));
@@ -188,60 +251,68 @@ class ProductsExcelImport implements ToCollection, WithHeadingRow
 
 					// Create combinations for each row
 					foreach ($items as $row) {
-						$size = $row->get('size');
-						$flavour = $row->get('flavour') ?? $row->get('flavor');
-						$package = $row->get('package');
-						$sku = $row->get('sku');
+						$variantOptionIds = [];
+						$hasAllVariants = true;
+						
+						foreach ($variantTypes as $variantType) {
+							$variantKey = strtolower(str_replace(' ', '_', $variantType));
+							$value = $this->getColumnValue($row, $variantKey);
+							
+							if (empty($value)) {
+								Log::warning('Skipping row; missing variant value', [
+									'variant_type' => $variantType,
+									'asin' => $asin
+								]);
+								$hasAllVariants = false;
+								break;
+							}
+							
+							$option = $ensureOption($variants[$variantType], (string)$value, $optionsCaches[$variantType]);
+							if (!$option) {
+								$hasAllVariants = false;
+								break;
+							}
+							$variantOptionIds[] = $option->id;
+						}
 
-						// Required fields check
-						if (empty($size) || empty($flavour) || empty($package)) {
-							Log::warning('Skipping row; missing size/flavour/package', ['sku' => $sku, 'asin' => $asin]);
+						if (!$hasAllVariants) {
 							continue;
 						}
 
-						$sizeOpt = $ensureOption($sizeVariant, (string)$size, $sizeOptions);
-						$flavourOpt = $ensureOption($flavourVariant, (string)$flavour, $flavourOptions);
-						$packageOpt = $ensureOption($packageVariant, (string)$package, $packageOptions);
-						if (!$sizeOpt || !$flavourOpt || !$packageOpt) {
-							continue;
-						}
+						$sku = $this->getColumnValue($row, 'sku');
+						$gymOwnerPrice = floatval($this->getColumnValue($row, 'gym_owner_price', 0));
+						$regularUserPrice = floatval($this->getColumnValue($row, 'regular_user_price', 0));
+						$shopOwnerPrice = floatval($this->getColumnValue($row, 'shop_owner_price', 0));
+						$gymOwnerDiscount = floatval($this->getColumnValue($row, 'gym_owner_discount', 0));
+						$regularUserDiscount = floatval($this->getColumnValue($row, 'regular_user_discount', 0));
+						$shopOwnerDiscount = floatval($this->getColumnValue($row, 'shop_owner_discount', 0));
+						$stockQuantity = intval($this->getColumnValue($row, 'stock_quantity', 0));
+
+						// Calculate final prices
+						$gymOwnerFinalPrice = $gymOwnerPrice * (1 - $gymOwnerDiscount / 100);
+						$regularUserFinalPrice = $regularUserPrice * (1 - $regularUserDiscount / 100);
+						$shopOwnerFinalPrice = $shopOwnerPrice * (1 - $shopOwnerDiscount / 100);
 
 						ProductVariantCombination::create([
 							'product_id' => $product->id,
-							'variant_options' => [$sizeOpt->id, $flavourOpt->id, $packageOpt->id],
+							'variant_options' => $variantOptionIds,
 							'sku' => $sku ?: null,
-							'gym_owner_price' => 0,
-							'regular_user_price' => 0,
-							'shop_owner_price' => 0,
-							'gym_owner_discount' => 0,
-							'regular_user_discount' => 0,
-							'shop_owner_discount' => 0,
-							'gym_owner_final_price' => 0,
-							'regular_user_final_price' => 0,
-							'shop_owner_final_price' => 0,
-							'stock_quantity' => 0,
+							'gym_owner_price' => $gymOwnerPrice,
+							'regular_user_price' => $regularUserPrice,
+							'shop_owner_price' => $shopOwnerPrice,
+							'gym_owner_discount' => $gymOwnerDiscount,
+							'regular_user_discount' => $regularUserDiscount,
+							'shop_owner_discount' => $shopOwnerDiscount,
+							'gym_owner_final_price' => $gymOwnerFinalPrice,
+							'regular_user_final_price' => $regularUserFinalPrice,
+							'shop_owner_final_price' => $shopOwnerFinalPrice,
+							'stock_quantity' => $stockQuantity,
 							'is_active' => true,
 						]);
 					}
 
-					// Handle images (download and attach)
-					$firstRow = $items->first();
-					$imageUrls = [];
-					for ($i = 1; $i <= 10; $i++) {
-						// Support both Image1 and Image-1 / Image 1 (normalized to image_1)
-						$keysToCheck = ['image' . $i, 'image_' . $i];
-						foreach ($keysToCheck as $col) {
-							if ($firstRow->has($col) && !empty($firstRow->get($col))) {
-								$imageUrls[] = $firstRow->get($col);
-								break;
-							}
-						}
-					}
-
-					Log::info('Image URLs collected', ['asin_or_key' => $asin, 'count' => count($imageUrls)]);
-					if (!empty($imageUrls)) {
-						$this->downloadAndAttachImages($product, $imageUrls);
-					}
+					// Handle images
+					$this->processImages($product, $items->first());
 				});
 
 				Log::info('Product group processed', ['asin_or_key' => $asin]);
@@ -250,7 +321,6 @@ class ProductsExcelImport implements ToCollection, WithHeadingRow
 					'asin_or_key' => $asin,
 					'error' => $e->getMessage(),
 				]);
-				// continue with next group
 			} finally {
 				$processed++;
 				$this->setProgress('running', $total, $processed);
@@ -261,23 +331,138 @@ class ProductsExcelImport implements ToCollection, WithHeadingRow
 	}
 
 	/**
+	 * Import simple products (one row per product, no variants)
+	 */
+	protected function importSimpleProducts(Collection $normalized): void
+	{
+		$total = $normalized->count();
+		$processed = 0;
+		$this->setProgress('running', $total, $processed);
+
+		Log::info('Simple products import started', ['total_products' => $total]);
+
+		foreach ($normalized as $row) {
+			try {
+				DB::transaction(function () use ($row) {
+					$categoryName = $this->getColumnValue($row, 'category');
+					$productName = $this->getColumnValue($row, 'name') ?: $this->getColumnValue($row, 'tally_name');
+					$productType = $this->getColumnValue($row, 'product_type');
+					$description = $this->getColumnValue($row, 'description', $productName);
+					$hsn = $this->getColumnValue($row, 'hsn');
+					$sku = $this->getColumnValue($row, 'sku');
+					$weight = $this->getColumnValue($row, 'weight');
+
+					if (empty($categoryName) || empty($productName)) {
+						Log::warning('Skipping row; missing required fields', [
+							'category' => $categoryName,
+							'name' => $productName
+						]);
+						return;
+					}
+
+					// Find or create category
+					$category = Category::whereRaw('LOWER(name) = ?', [mb_strtolower($categoryName)])->first();
+					if (!$category) {
+						$category = Category::create([
+							'name' => $categoryName,
+							'slug' => Str::slug($categoryName),
+							'description' => null,
+							'image' => null,
+							'is_active' => true,
+							'sort_order' => 0,
+						]);
+					}
+
+					// Get pricing
+					$gymOwnerPrice = floatval($this->getColumnValue($row, 'gym_owner_price', 0));
+					$regularUserPrice = floatval($this->getColumnValue($row, 'regular_user_price', 0));
+					$shopOwnerPrice = floatval($this->getColumnValue($row, 'shop_owner_price', 0));
+					$gymOwnerDiscount = floatval($this->getColumnValue($row, 'gym_owner_discount', 0));
+					$regularUserDiscount = floatval($this->getColumnValue($row, 'regular_user_discount', 0));
+					$shopOwnerDiscount = floatval($this->getColumnValue($row, 'shop_owner_discount', 0));
+					$stockQuantity = intval($this->getColumnValue($row, 'stock_quantity', 0));
+
+					// Calculate final prices
+					$gymOwnerFinalPrice = $gymOwnerPrice * (1 - $gymOwnerDiscount / 100);
+					$regularUserFinalPrice = $regularUserPrice * (1 - $regularUserDiscount / 100);
+					$shopOwnerFinalPrice = $shopOwnerPrice * (1 - $shopOwnerDiscount / 100);
+
+					// Create product
+					$product = products::create([
+						'seller_id' => $this->sellerId,
+						'category_id' => $category->id,
+						'sub_category_id' => null,
+						'name' => $productName,
+						'description' => $description,
+						'gym_owner_price' => $gymOwnerPrice,
+						'regular_user_price' => $regularUserPrice,
+						'shop_owner_price' => $shopOwnerPrice,
+						'gym_owner_discount' => $gymOwnerDiscount,
+						'regular_user_discount' => $regularUserDiscount,
+						'shop_owner_discount' => $shopOwnerDiscount,
+						'gym_owner_final_price' => $gymOwnerFinalPrice,
+						'regular_user_final_price' => $regularUserFinalPrice,
+						'shop_owner_final_price' => $shopOwnerFinalPrice,
+						'stock_quantity' => $stockQuantity,
+						'weight' => $weight,
+						'status' => 'active',
+						'section_category' => ['everyday_essential'],
+						'has_variants' => false,
+						'hsn' => $hsn,
+						'product_type' => $productType,
+					]);
+
+					// Handle images
+					$this->processImages($product, $row);
+
+					Log::info('Simple product created', ['product_id' => $product->id, 'name' => $productName]);
+				});
+			} catch (\Throwable $e) {
+				Log::error('Failed processing simple product', [
+					'error' => $e->getMessage(),
+				]);
+			} finally {
+				$processed++;
+				$this->setProgress('running', $total, $processed);
+			}
+		}
+
+		$this->setProgress('completed', $total, $processed);
+	}
+
+	/**
+	 * Process and attach images to product
+	 */
+	protected function processImages(products $product, Collection $row): void
+	{
+		$imageUrls = [];
+		for ($i = 1; $i <= 10; $i++) {
+			$keysToCheck = ['image' . $i, 'image_' . $i];
+			foreach ($keysToCheck as $col) {
+				if ($row->has($col) && !empty($row->get($col))) {
+					$imageUrls[] = $row->get($col);
+					break;
+				}
+			}
+		}
+
+		Log::info('Image URLs collected', ['product_id' => $product->id, 'count' => count($imageUrls)]);
+		if (!empty($imageUrls)) {
+			$this->downloadAndAttachImages($product, $imageUrls);
+		}
+	}
+
+	/**
 	 * Download images and attach to product. First image used as thumbnail.
-	 *
-	 * @param products $product
-	 * @param array<int,string> $urls
 	 */
 	protected function downloadAndAttachImages(products $product, array $urls): void
 	{
-		// Download in parallel
 		$responses = Http::timeout(20)
 			->connectTimeout(10)
 			->pool(function (Pool $pool) use ($urls) {
 				return collect($urls)->map(function ($url) use ($pool) {
 					return $pool->as((string)$url)
-						->withOptions([
-							// In case some sources have bad SSL. Adjust as needed.
-							'verify' => false,
-						])
+						->withOptions(['verify' => false])
 						->get((string)$url);
 				})->all();
 			});
@@ -308,11 +493,9 @@ class ProductsExcelImport implements ToCollection, WithHeadingRow
 			Storage::disk('public')->put($filename, $response->body());
 
 			if ($index === 0) {
-				// Set product thumbnail
 				$product->thumbnail_image = $filename;
 				$product->save();
 			} else {
-				// Additional images
 				ProductImage::create([
 					'product_id' => $product->id,
 					'image_path' => $filename,
