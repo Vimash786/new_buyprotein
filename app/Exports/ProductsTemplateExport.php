@@ -179,9 +179,9 @@ class ProductsTemplateExport implements FromArray, WithHeadings, WithStyles, Wit
             ['key' => 'shop_owner_discount', 'label' => 'Shop Owner Discount %', 'required' => false, 'example' => '15', 'description' => 'Discount percentage'],
             ['key' => 'stock_quantity', 'label' => 'Stock Quantity', 'required' => true, 'example' => '100', 'description' => 'Available stock'],
             ['key' => 'weight', 'label' => 'Weight', 'required' => false, 'example' => '1kg', 'description' => 'Product weight'],
-            ['key' => 'image1', 'label' => 'Image 1 (Thumbnail)', 'required' => false, 'example' => 'https://example.com/image1.jpg', 'description' => 'Main product image URL'],
-            ['key' => 'image2', 'label' => 'Image 2', 'required' => false, 'example' => 'https://example.com/image2.jpg', 'description' => 'Additional image URL'],
-            ['key' => 'image3', 'label' => 'Image 3', 'required' => false, 'example' => 'https://example.com/image3.jpg', 'description' => 'Additional image URL'],
+            ['key' => 'image1', 'label' => 'Image1', 'required' => false, 'example' => 'https://example.com/image1.jpg', 'description' => 'Main product image URL (Thumbnail)'],
+            ['key' => 'image2', 'label' => 'Image2', 'required' => false, 'example' => 'https://example.com/image2.jpg', 'description' => 'Additional image URL'],
+            ['key' => 'image3', 'label' => 'Image3', 'required' => false, 'example' => 'https://example.com/image3.jpg', 'description' => 'Additional image URL'],
         ];
     }
 
@@ -219,9 +219,9 @@ class ProductsTemplateExport implements FromArray, WithHeadings, WithStyles, Wit
             ['key' => 'regular_user_discount', 'label' => 'Regular User Discount %', 'required' => false, 'example' => '5', 'description' => 'Discount percentage'],
             ['key' => 'shop_owner_discount', 'label' => 'Shop Owner Discount %', 'required' => false, 'example' => '15', 'description' => 'Discount percentage'],
             ['key' => 'stock_quantity', 'label' => 'Stock Quantity', 'required' => false, 'example' => '50', 'description' => 'Available stock for this variant'],
-            ['key' => 'image1', 'label' => 'Image 1 (Thumbnail)', 'required' => false, 'example' => 'https://example.com/image1.jpg', 'description' => 'Main product image URL'],
-            ['key' => 'image2', 'label' => 'Image 2', 'required' => false, 'example' => 'https://example.com/image2.jpg', 'description' => 'Additional image URL'],
-            ['key' => 'image3', 'label' => 'Image 3', 'required' => false, 'example' => 'https://example.com/image3.jpg', 'description' => 'Additional image URL'],
+            ['key' => 'image1', 'label' => 'Image1', 'required' => false, 'example' => 'https://example.com/image1.jpg', 'description' => 'Main product image URL (Thumbnail)'],
+            ['key' => 'image2', 'label' => 'Image2', 'required' => false, 'example' => 'https://example.com/image2.jpg', 'description' => 'Additional image URL'],
+            ['key' => 'image3', 'label' => 'Image3', 'required' => false, 'example' => 'https://example.com/image3.jpg', 'description' => 'Additional image URL'],
         ]);
 
         return $columns;

@@ -436,17 +436,50 @@ class ProductsExcelImport implements ToCollection, WithHeadingRow
 	protected function processImages(products $product, Collection $row): void
 	{
 		$imageUrls = [];
+		
+		// Log all keys in row for debugging
+		Log::info('Row keys for image processing', ['keys' => $row->keys()->toArray()]);
+		
 		for ($i = 1; $i <= 10; $i++) {
-			$keysToCheck = ['image' . $i, 'image_' . $i];
+			// Check various possible column name formats
+			$keysToCheck = [
+				'image' . $i,
+				'image_' . $i,
+				'image' . $i . '_(thumbnail)',
+				'image_' . $i . '_(thumbnail)',
+				'image_' . $i . '_thumbnail',
+				'image' . $i . '_thumbnail',
+			];
+			
+			$found = false;
 			foreach ($keysToCheck as $col) {
 				if ($row->has($col) && !empty($row->get($col))) {
-					$imageUrls[] = $row->get($col);
-					break;
+					$url = trim($row->get($col));
+					if (!empty($url) && filter_var($url, FILTER_VALIDATE_URL)) {
+						$imageUrls[] = $url;
+						Log::info('Found image URL', ['column' => $col, 'url' => $url]);
+						$found = true;
+						break;
+					}
+				}
+			}
+			
+			// Also try to find by partial match if not found
+			if (!$found) {
+				foreach ($row->keys() as $key) {
+					if (preg_match('/^image[_]?' . $i . '/i', $key)) {
+						$url = trim($row->get($key));
+						if (!empty($url) && filter_var($url, FILTER_VALIDATE_URL)) {
+							$imageUrls[] = $url;
+							Log::info('Found image URL by regex', ['column' => $key, 'url' => $url]);
+							break;
+						}
+					}
 				}
 			}
 		}
 
-		Log::info('Image URLs collected', ['product_id' => $product->id, 'count' => count($imageUrls)]);
+		Log::info('Image URLs collected', ['product_id' => $product->id, 'count' => count($imageUrls), 'urls' => $imageUrls]);
 		if (!empty($imageUrls)) {
 			$this->downloadAndAttachImages($product, $imageUrls);
 		}

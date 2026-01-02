@@ -51,11 +51,11 @@ new class extends Component
 		['key' => 'stock_quantity', 'label' => 'Stock Quantity', 'group' => 'stock'],
 		['key' => 'weight', 'label' => 'Weight', 'group' => 'stock'],
 		// Image columns
-		['key' => 'image1', 'label' => 'Image 1 (Thumbnail)', 'group' => 'images'],
-		['key' => 'image2', 'label' => 'Image 2', 'group' => 'images'],
-		['key' => 'image3', 'label' => 'Image 3', 'group' => 'images'],
-		['key' => 'image4', 'label' => 'Image 4', 'group' => 'images'],
-		['key' => 'image5', 'label' => 'Image 5', 'group' => 'images'],
+		['key' => 'image1', 'label' => 'Image1', 'group' => 'images'],
+		['key' => 'image2', 'label' => 'Image2', 'group' => 'images'],
+		['key' => 'image3', 'label' => 'Image3', 'group' => 'images'],
+		['key' => 'image4', 'label' => 'Image4', 'group' => 'images'],
+		['key' => 'image5', 'label' => 'Image5', 'group' => 'images'],
 	];
 
 	public function mount()
