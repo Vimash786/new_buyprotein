@@ -5,7 +5,7 @@
             <!-- single service area start -->
             <div class="single-short-service-area-start">
             <div class="icon-area">
-                <img src="assets/images/service/05.svg" alt="service" style="max-width: 80%; max-height: 80%;">
+                <img src="{{ asset('assets/images/service/05.svg') }}" alt="service" style="max-width: 80%; max-height: 80%;">
             </div>
             <div class="information">
                 <h4 class="title">Best Prices on Supplements</h4>
@@ -20,7 +20,7 @@
             <!-- single service area start -->
             <div class="single-short-service-area-start">
             <div class="icon-area">
-               <img src="assets/images/service/04.svg" alt="service" style="max-width: 80%; max-height: 80%;">
+               <img src="{{ asset('assets/images/service/04.svg') }}" alt="service" style="max-width: 80%; max-height: 80%;">
             </div>
             <div class="information">
                 <h4 class="title">100% Authentic Products</h4>
@@ -71,7 +71,7 @@
             <!-- single service area start -->
             <div class="single-short-service-area-start">
             <div class="icon-area">
-                  <img src="assets/images/service/03.svg" alt="service" style="max-width: 80%; max-height: 80%;">
+                  <img src="{{ asset('assets/images/service/03.svg') }}" alt="service" style="max-width: 80%; max-height: 80%;">
             </div>
             <div class="information">
                 <h4 class="title">Fast & Free Delivery</h4>

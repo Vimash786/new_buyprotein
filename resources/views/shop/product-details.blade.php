@@ -34,7 +34,7 @@
 
     <div class="rts-chop-details-area rts-section-gap bg_light-1">
         <div class="container">
-            <div class="shopdetails-style-1-wrapper">
+            <div class="shopdetails-style-1-wrapper" style="width: 100%; max-width: 100%; overflow-x: hidden;">
                 <div class="d-flex justify-content-between d-lg-none" style="text-align: center;">
                      <h2 class="product-title mt-0">{{ $product->name }}</h2>
                      <div class="rating-stars-group mb-4">
@@ -42,13 +42,13 @@
                     </div>
                 </div>
                 
-                <div class="row g-5">
+                <div class="row g-3 g-md-5">
                     <div class="col-lg-12">
                         <div class="product-details-popup-wrapper in-shopdetails">
                             <div
                                 class="rts-product-details-section rts-product-details-section2 product-details-popup-section">
                                 <div class="product-details-popup">
-                                    <div class="details-product-area">
+                                    <div class="details-product-area" style="width: 100%; max-width: 100%;">
                                         @php
                                             $classNames = [
                                                 'one',
@@ -64,46 +64,6 @@
                                             ];
                                         @endphp
 
-                                        {{-- <div class="show-product-area-details">
-                                            <div id="default-images" class="product-thumb-filter-group left">
-                                                @foreach ($defaultImages as $index => $img)
-                                                    <div class="thumb-filter filter-btn {{ $index === 0 ? 'active' : '' }}"
-                                                        data-show=".{{ $classNames[$index] }}">
-                                                        <img src="{{ asset('storage/' . $img) }}" class="product-image" />
-                                                    </div>
-                                                @endforeach
-                                            </div>
-                                            <div id="variant-images" class="product-thumb-filter-group left"
-                                                style="display: none;">
-                                                @foreach ($variantImages as $combinationId => $images)
-                                                    <div class="variant-image-group thumb-filter filter-btn {{ $index === 0 ? 'active' : '' }}"
-                                                        data-combination-id="{{ $combinationId }}"
-                                                        data-show=".{{ $classNames[$index] }}" style="display: none;">
-                                                        @foreach ($images as $img)
-                                                            <img src="{{ asset('storage/' . $img) }}"
-                                                                class="product-image" />
-                                                        @endforeach
-                                                    </div>
-                                                @endforeach
-                                            </div>
-                                            
-                                            <div class="product-thumb-area">
-                                                <div class="cursor"></div>
-                                                
-                                                @foreach ($defaultImages as $index => $image)
-                                                    @php $classNames["default-$index"] = "default-image-$index"; @endphp
-                                                    <div
-                                                        class="thumb-wrapper {{ $classNames["default-$index"] }} filterd-items {{ $index === 0 ? '' : 'hide' }}">
-                                                        <div class="product-thumb zoom" onmousemove="zoom(event)"
-                                                            onmouseleave="resetZoom(event)"
-                                                            style="background-image: url('{{ asset('storage/' . $image) }}'); background-size: 200%; background-repeat: no-repeat; background-position: center;">
-                                                            <img src="{{ asset('storage/' . $image) }}"
-                                                                alt="product-thumb">
-                                                        </div>
-                                                    </div>
-                                                @endforeach
-                                            </div>
-                                        </div> --}}
 
                                         <div class="show-product-area-details">
                                             {{-- Default Thumbnail Images --}}
@@ -192,8 +152,8 @@
                                                     <span>{{ isset($totalReviews) ? $totalReviews : '' }} Reviews</span>
                                                 </div>
                                             </div>
-                                            <h2 class="product-title">{{ $product->name }}</h2>
-                                            <div class="mt--20 mb--20  d-md-block d-sm-none">
+                                            <h2 class="product-title" style="word-wrap: break-word; overflow-wrap: break-word; white-space: normal;">{{ $product->name }}</h2>
+                                            <div class="mt--20 mb--20  d-md-block d-sm-none" style="word-break: break-word; overflow-wrap: break-word;">
                                                 {!! $product->description !!}
                                             </div>
                                             <span class="product-price mb--15 d-block"
@@ -215,37 +175,36 @@
                                                                 class="fal fa-plus plus"></i></button>
                                                     </div>
                                                 </div>
-                                                <div class="d-flex">
-                                                <a href="javascript:void(0);"
-                                                    class="rts-btn btn-primary radious-sm with-icon add-to-cart-btn my-2 mx-2"
-                                                    data-product-id="{{ $product->id }}">
-                                                    <div class="btn-text">
-                                                        Add To Cart
-                                                    </div>
-                                                    <div class="arrow-icon">
-                                                        <i class="fa-regular fa-cart-shopping"></i>
-                                                    </div>
-                                                    <div class="arrow-icon">
-                                                        <i class="fa-regular fa-cart-shopping"></i>
-                                                    </div>
-                                                </a>
-                                                <a href="javascript:void(0);" data-wish-product-id="{{ $product->id }}"
-                                                    class="rts-btn btn-primary radious-sm with-icon add-to-wishlist my-2 mx-2"
-                                                    >
-                                                    <div class="btn-text">
-                                                        Add To Wishlist
-                                                    </div>
-                                                    <div class="arrow-icon">
-                                                        <i
-                                                        class="fa-light fa-heart"></i>
-                                                    </div>
-                                                    <div class="arrow-icon">
-                                                        <i
-                                                        class="fa-light fa-heart"></i>
-                                                    </div>
-                                                </a>
+                                                <div class="d-flex flex-wrap gap-2">
+                                                    <a href="javascript:void(0);"
+                                                        class="rts-btn btn-primary radious-sm with-icon add-to-cart-btn my-2 w-100 w-md-auto"
+                                                        data-product-id="{{ $product->id }}">
+                                                        <div class="btn-text">
+                                                            Add To Cart
+                                                        </div>
+                                                        <div class="arrow-icon">
+                                                            <i class="fa-regular fa-cart-shopping"></i>
+                                                        </div>
+                                                        <div class="arrow-icon">
+                                                            <i class="fa-regular fa-cart-shopping"></i>
+                                                        </div>
+                                                    </a>
+                                                    <a href="javascript:void(0);" data-wish-product-id="{{ $product->id }}"
+                                                        class="rts-btn btn-primary radious-sm with-icon add-to-wishlist my-2 w-100 w-md-auto"
+                                                        >
+                                                        <div class="btn-text">
+                                                            Add To Wishlist
+                                                        </div>
+                                                        <div class="arrow-icon">
+                                                            <i
+                                                            class="fa-light fa-heart"></i>
+                                                        </div>
+                                                        <div class="arrow-icon">
+                                                            <i
+                                                            class="fa-light fa-heart"></i>
+                                                        </div>
+                                                    </a>
                                                 </div>
-                                                
                                             </div>
 
                                             @if ($product->variants && $product->variants->count() > 0)
@@ -352,9 +311,9 @@
                                     aria-labelledby="home-tab" tabindex="0">
                                     <div class="single-tab-content-shop-details">
                                         <div class="details-row-2">
-                                            <div class="right">
+                                            <div class="container">
                                                 <h4 class="title">{{ $product->name }}</h4>
-                                                <p class="mb--25">
+                                                <p class="mb--25" style="word-break: break-word; overflow-wrap: break-word;">
                                                     {!! $product->description !!}
                                                 </p>
                                             </div>
@@ -364,7 +323,7 @@
                                 <div class="tab-pane fade" id="profile-tab-pane" role="tabpanel"
                                     aria-labelledby="profile-tab" tabindex="0">
                                     <div class="single-tab-content-shop-details">
-                                        <p class="disc">
+                                        <p class="disc" style="word-break: break-word; overflow-wrap: break-word;">
                                             {!! $product->description !!}
                                         </p>
                                         <div class="table-responsive table-shop-details-pd">
