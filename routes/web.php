@@ -85,6 +85,7 @@ Route::middleware(['auth'])->group(function () {
     Volt::route('sellers', 'sellers.manage')->name('sellers.manage');
     Volt::route('sellers/requests', 'sellers.requests')->name('sellers.requests');
     Volt::route('products', 'products.manage')->middleware('seller.approved')->name('products.manage');
+	Volt::route('products/import', 'products.import')->middleware('seller.approved')->name('products.import');
     Volt::route('products/requests', 'products.requests')->name('products.requests');
     Volt::route('orders', 'orders.manage')->middleware('seller.approved')->name('orders.manage');
     Volt::route('bulk-orders-seller', 'bulk-orders.manage')->middleware('seller.approved')->name('bulk-orders.seller');

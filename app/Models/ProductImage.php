@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Storage;
 
 class ProductImage extends Model
 {
@@ -109,5 +110,20 @@ class ProductImage extends Model
     public function scopeVariantThumbnailOnly($query)
     {
         return $query->where('image_type', 'variant_thumbnail')->whereNotNull('variant_combination_id');
+    }
+
+    /**
+     * Boot the model
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Delete the image file when the ProductImage record is deleted
+        static::deleting(function ($productImage) {
+            if ($productImage->image_path && Storage::disk('public')->exists($productImage->image_path)) {
+                Storage::disk('public')->delete($productImage->image_path);
+            }
+        });
     }
 }

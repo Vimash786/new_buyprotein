@@ -477,15 +477,15 @@
                                                             );
                                                         @endphp
 
-                                                        @if ($everyDayProduct->variants->count() > 0)
-                                                            @if ($variantThumbnail)
-                                                                <img src="{{ asset('storage/' . $variantThumbnail->image_path) }}"
-                                                                    alt="product">
-                                                            @endif
-                                                        @else
-                                                            <img src="{{ asset('storage/' . $everyDayProduct->thumbnail_image) }}"
-                                                                alt="product">
-                                                        @endif
+														@if ($everyDayProduct->variants->count() > 0)
+															@if ($variantThumbnail)
+																<img src="{{ asset('storage/' . $variantThumbnail->image_path) }}" alt="product">
+															@else
+																<img src="{{ asset('storage/' . $everyDayProduct->thumbnail_image) }}" alt="product">
+															@endif
+														@else
+															<img src="{{ asset('storage/' . $everyDayProduct->thumbnail_image) }}" alt="product">
+														@endif
                                                         {{-- <img src="assets/images/grocery/01.jpg" alt="grocery"> --}}
                                                     </a>
                                                 </div>
@@ -632,15 +632,15 @@
                                                             );
                                                         @endphp
 
-                                                        @if ($populerProduct->variants->count() > 0)
-                                                            @if ($variantThumbnail)
-                                                                <img src="{{ asset('storage/' . $variantThumbnail->image_path) }}"
-                                                                    alt="product">
-                                                            @endif
-                                                        @else
-                                                            <img src="{{ asset('storage/' . $populerProduct->thumbnail_image) }}"
-                                                                alt="product">
-                                                        @endif
+														@if ($populerProduct->variants->count() > 0)
+															@if ($variantThumbnail)
+																<img src="{{ asset('storage/' . $variantThumbnail->image_path) }}" alt="product">
+															@else
+																<img src="{{ asset('storage/' . $populerProduct->thumbnail_image) }}" alt="product">
+															@endif
+														@else
+															<img src="{{ asset('storage/' . $populerProduct->thumbnail_image) }}" alt="product">
+														@endif
                                                     </a>
                                                 </div>
 
@@ -792,15 +792,15 @@
                                                                             );
                                                                         @endphp
 
-                                                                        @if ($lat_pro->variants->count() > 0)
-                                                                            @if ($variantThumbnail)
-                                                                                <img src="{{ asset('storage/' . $variantThumbnail->image_path) }}"
-                                                                                    alt="product">
-                                                                            @endif
-                                                                        @else
-                                                                            <img src="{{ asset('storage/' . $lat_pro->thumbnail_image) }}"
-                                                                                alt="product">
-                                                                        @endif
+																		@if ($lat_pro->variants->count() > 0)
+																			@if ($variantThumbnail)
+																				<img src="{{ asset('storage/' . $variantThumbnail->image_path) }}" alt="product">
+																			@else
+																				<img src="{{ asset('storage/' . $lat_pro->thumbnail_image) }}" alt="product">
+																			@endif
+																		@else
+																			<img src="{{ asset('storage/' . $lat_pro->thumbnail_image) }}" alt="product">
+																		@endif
                                                                         {{-- <img src="{{ asset('storage/' . $lat_pro->thumbnail_image) }}"
                                                             alt="product"> --}}
                                                                     </a>
@@ -1013,15 +1013,15 @@
                                                             });
                                                         @endphp
 
-                                                        @if ($offer->variants->count() > 0)
-                                                            @if ($variantThumbnail)
-                                                                <img src="{{ asset('storage/' . $variantThumbnail->image_path) }}"
-                                                                    alt="product">
-                                                            @endif
-                                                        @else
-                                                            <img src="{{ asset('storage/' . $offer->thumbnail_image) }}"
-                                                                alt="product">
-                                                        @endif
+														@if ($offer->variants->count() > 0)
+															@if ($variantThumbnail)
+																<img src="{{ asset('storage/' . $variantThumbnail->image_path) }}" alt="product">
+															@else
+																<img src="{{ asset('storage/' . $offer->thumbnail_image) }}" alt="product">
+															@endif
+														@else
+															<img src="{{ asset('storage/' . $offer->thumbnail_image) }}" alt="product">
+														@endif
                                                         {{-- <img src="{{ asset('storage/' . $offer->thumbnail_image) }}" alt="product"> --}}
                                                     </a>
                                                 </div>
