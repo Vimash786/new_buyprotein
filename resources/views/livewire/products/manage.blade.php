@@ -106,12 +106,12 @@ new class extends Component
             'section_category' => 'required|array|min:1',
             'section_category.*' => 'required|in:everyday_essential,popular_pick,exclusive_deal',
             'has_variants' => 'boolean',
-            'thumbnail_image' => 'nullable|image|mimes:jpeg,jpg,png,gif,webp,avif|max:400', // Maximum 400KB
+            'thumbnail_image' => 'nullable|image|mimes:jpeg,jpg,png,gif,webp,avif|max:1024', // Maximum 1MB
             'product_images' => 'nullable|array|max:3', // Maximum 3 images
-            'product_images.*' => 'nullable|image|mimes:jpeg,jpg,png,gif,webp,avif|max:400', // Maximum 400KB
+            'product_images.*' => 'nullable|image|mimes:jpeg,jpg,png,gif,webp,avif|max:1024', // Maximum 1MB
             'variant_images.*' => 'nullable|array|max:3', // Maximum 3 images per variant
-            'variant_images.*.*' => 'nullable|image|mimes:jpeg,jpg,png,gif,webp,avif|max:400', // Maximum 400KB
-            'variant_thumbnails.*' => 'nullable|image|mimes:jpeg,jpg,png,gif,webp,avif|max:400', // Maximum 400KB
+            'variant_images.*.*' => 'nullable|image|mimes:jpeg,jpg,png,gif,webp,avif|max:1024', // Maximum 1MB
+            'variant_thumbnails.*' => 'nullable|image|mimes:jpeg,jpg,png,gif,webp,avif|max:1024', // Maximum 1MB
         ];
 
         // Add variant validation when has_variants is true
@@ -153,13 +153,13 @@ new class extends Component
         
         // Image validation messages
         'thumbnail_image.mimes' => 'The thumbnail image must be a file of type: JPEG, JPG, PNG, GIF, WebP, or AVIF.',
-        'thumbnail_image.max' => 'The thumbnail image may not be greater than 400 KB.',
+        'thumbnail_image.max' => 'The thumbnail image may not be greater than 1 MB.',
         'product_images.*.mimes' => 'Each product image must be a file of type: JPEG, JPG, PNG, GIF, WebP, or AVIF.',
-        'product_images.*.max' => 'Each product image may not be greater than 400 KB.',
+        'product_images.*.max' => 'Each product image may not be greater than 1 MB.',
         'variant_images.*.*.mimes' => 'Each variant image must be a file of type: JPEG, JPG, PNG, GIF, WebP, or AVIF.',
-        'variant_images.*.*.max' => 'Each variant image may not be greater than 400 KB.',
+        'variant_images.*.*.max' => 'Each variant image may not be greater than 1 MB.',
         'variant_thumbnails.*.mimes' => 'Each variant thumbnail must be a file of type: JPEG, JPG, PNG, GIF, WebP, or AVIF.',
-        'variant_thumbnails.*.max' => 'Each variant thumbnail may not be greater than 400 KB.',
+        'variant_thumbnails.*.max' => 'Each variant thumbnail may not be greater than 1 MB.',
     ];
 
     public function with()
@@ -323,7 +323,9 @@ new class extends Component
 
     public function calculateFinalPrices()
     {
+        // Auto calculation disabled
         // Calculate gym owner final price
+        /*
         if ($this->gym_owner_price && $this->gym_owner_discount > 0) {
             $this->gym_owner_final_price = $this->gym_owner_price * (1 - ($this->gym_owner_discount / 100));
         } else {
@@ -343,36 +345,37 @@ new class extends Component
         } else {
             $this->shop_owner_final_price = $this->shop_owner_price;
         }
+        */
     }
 
     public function updatedGymOwnerDiscount()
     {
-        $this->calculateFinalPrices();
+        // $this->calculateFinalPrices();
     }
 
     public function updatedRegularUserDiscount()
     {
-        $this->calculateFinalPrices();
+        // $this->calculateFinalPrices();
     }
 
     public function updatedShopOwnerDiscount()
     {
-        $this->calculateFinalPrices();
+        // $this->calculateFinalPrices();
     }
 
     public function updatedGymOwnerPrice()
     {
-        $this->calculateFinalPrices();
+        // $this->calculateFinalPrices();
     }
 
     public function updatedRegularUserPrice()
     {
-        $this->calculateFinalPrices();
+        // $this->calculateFinalPrices();
     }
 
     public function updatedShopOwnerPrice()
     {
-        $this->calculateFinalPrices();
+        // $this->calculateFinalPrices();
     }
 
     public function save()
@@ -389,7 +392,7 @@ new class extends Component
         }
 
         // Calculate final prices based on discounts
-        $this->calculateFinalPrices();
+        // $this->calculateFinalPrices();
 
         // Set default values for empty numeric fields
         $numericFields = [
@@ -1139,9 +1142,9 @@ new class extends Component
                 'gym_owner_discount' => '',
                 'regular_user_discount' => '',
                 'shop_owner_discount' => '',
-                'gym_owner_final_price' => $this->gym_owner_price ?: 0,
-                'regular_user_final_price' => $this->regular_user_price ?: 0,
-                'shop_owner_final_price' => $this->shop_owner_price ?: 0,
+                'gym_owner_final_price' => 0,
+                'regular_user_final_price' => 0,
+                'shop_owner_final_price' => 0,
                 'stock_quantity' => 0,
                 'is_active' => true
             ];
@@ -1196,6 +1199,7 @@ new class extends Component
     public function updatedVariantCombinations($value, $key)
     {
         // Check if any discount percentage was updated
+        /*
         if (strpos($key, '.gym_owner_discount') !== false || 
             strpos($key, '.regular_user_discount') !== false || 
             strpos($key, '.shop_owner_discount') !== false) {
@@ -1233,6 +1237,7 @@ new class extends Component
                 $this->variant_combinations[$index]['shop_owner_final_price'] = $shopOwnerPrice;
             }
         }
+        */
     }
 
     public function viewVariantPrices($productId)
@@ -1423,7 +1428,7 @@ new class extends Component
     {
         if (!$file) return false;
         
-        $maxSize = 400 * 1024; // 400KB in bytes
+        $maxSize = 1024 * 1024; // 1MB in bytes
         $fileSize = $file->getSize();
         
         return $fileSize <= $maxSize;
@@ -1435,7 +1440,7 @@ new class extends Component
     private function storeImageWithValidation($file, $path)
     {
         if (!$this->validateImageSize($file)) {
-            throw new \Exception('Image size must be maximum 400KB. Current size: ' . $this->formatFileSize($file->getSize()));
+            throw new \Exception('Image size must be maximum 1MB. Current size: ' . $this->formatFileSize($file->getSize()));
         }
         
         return $file->store($path, 'public');

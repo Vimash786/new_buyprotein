@@ -164,9 +164,8 @@
                             type="number" 
                             step="0.01"
                             wire:model="gym_owner_final_price"
-                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-100 dark:bg-zinc-600 text-gray-700 dark:text-gray-300"
-                            placeholder="Auto calculated"
-                            readonly
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
+                            placeholder="0.00"
                         >
                         @error('gym_owner_final_price') <span class="text-red-500 text-sm">{{ $errors->first('gym_owner_final_price') }}</span> @enderror
                     </div>
@@ -177,9 +176,8 @@
                             type="number" 
                             step="0.01"
                             wire:model="regular_user_final_price"
-                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-100 dark:bg-zinc-600 text-gray-700 dark:text-gray-300"
-                            placeholder="Auto calculated"
-                            readonly
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
+                            placeholder="0.00"
                         >
                         @error('regular_user_final_price') <span class="text-red-500 text-sm">{{ $errors->first('regular_user_final_price') }}</span> @enderror
                     </div>
@@ -190,9 +188,8 @@
                             type="number" 
                             step="0.01"
                             wire:model="shop_owner_final_price"
-                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-100 dark:bg-zinc-600 text-gray-700 dark:text-gray-300"
-                            placeholder="Auto calculated"
-                            readonly
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
+                            placeholder="0.00"
                         >
                         @error('shop_owner_final_price') <span class="text-red-500 text-sm">{{ $errors->first('shop_owner_final_price') }}</span> @enderror
                     </div>
@@ -300,7 +297,7 @@
             <div class="md:col-span-2">
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Thumbnail Image
-                    <span class="text-xs text-gray-500">(Maximum Size Allow - 400kb each)</span>
+                    <span class="text-xs text-gray-500">(Maximum Size Allow - 1MB each)</span>
                 </label>
                 <input 
                     type="file" 
@@ -320,7 +317,7 @@
             <div class="md:col-span-2">
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Additional Images (maximum 3 images)
-                    <span class="text-xs text-gray-500">(Maximum Size Allow - 400kb each)</span>
+                    <span class="text-xs text-gray-500">(Maximum Size Allow - 1MB each)</span>
                 </label>
                 <input 
                     type="file" 
@@ -579,9 +576,8 @@
                                                     type="number" 
                                                     step="0.01"
                                                     wire:model="variant_combinations.{{ $combIndex }}.gym_owner_final_price"
-                                                    placeholder="Auto calculated"
-                                                    class="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-gray-100 dark:bg-zinc-600 text-gray-700 dark:text-gray-300"
-                                                    readonly
+                                                    placeholder="0.00"
+                                                    class="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
                                                 >
                                             </div>
                                             <div>
@@ -590,9 +586,8 @@
                                                     type="number" 
                                                     step="0.01"
                                                     wire:model="variant_combinations.{{ $combIndex }}.regular_user_final_price"
-                                                    placeholder="Auto calculated"
-                                                    class="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-gray-100 dark:bg-zinc-600 text-gray-700 dark:text-gray-300"
-                                                    readonly
+                                                    placeholder="0.00"
+                                                    class="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
                                                 >
                                             </div>
                                             <div>
@@ -601,9 +596,8 @@
                                                     type="number" 
                                                     step="0.01"
                                                     wire:model="variant_combinations.{{ $combIndex }}.shop_owner_final_price"
-                                                    placeholder="Auto calculated"
-                                                    class="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-gray-100 dark:bg-zinc-600 text-gray-700 dark:text-gray-300"
-                                                    readonly
+                                                    placeholder="0.00"
+                                                    class="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
                                                 >
                                             </div>
                                             <div>
@@ -623,7 +617,7 @@
                                             <div class="flex items-center justify-between mb-2">
                                                 <label class="text-xs font-medium text-gray-700 dark:text-gray-300">
                                                     Variant Thumbnail Image
-                                                    <span class="text-xs text-gray-500">(Maximum Size Allow - 400kb each)</span>
+                                                    <span class="text-xs text-gray-500">(Maximum Size Allow - 1MB each)</span>
                                                 </label>
                                             </div>
                                             <input 
@@ -673,7 +667,7 @@
                                             <div class="flex items-center justify-between mb-2">
                                                 <label class="text-xs font-medium text-gray-700 dark:text-gray-300">
                                                     Variant Images (maximum 3 images)
-                                                    <span class="text-xs text-gray-500">(Maximum Size Allow - 400kb each)</span>
+                                                    <span class="text-xs text-gray-500">(Maximum Size Allow - 1MB each)</span>
                                                 </label>
                                             </div>
                                             <input 
