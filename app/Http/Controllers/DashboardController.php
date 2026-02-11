@@ -267,7 +267,8 @@ class DashboardController extends Controller
             $product = products::with(['subCategory', 'category', 'seller', 'images', 'variants', 'variantCombinations'])->findOrFail($id);
             
             // Enhanced related products logic with fallback
-            $relatedProducts = products::where('category_id', $product->category_id)
+            $relatedProducts = products::with(['variantCombinations.thumbnailImage'])
+                ->where('category_id', $product->category_id)
                 ->where('id', '!=', $id)
                 ->where('super_status', 'approved')
                 ->inRandomOrder() // Add randomization
@@ -276,7 +277,8 @@ class DashboardController extends Controller
 
             // Fallback: If no products in same category, try subcategory or brand
             if ($relatedProducts->isEmpty()) {
-                $relatedProducts = products::where(function($query) use ($product) {
+                $relatedProducts = products::with(['variantCombinations.thumbnailImage'])
+                ->where(function($query) use ($product) {
                     if ($product->sub_category_id) {
                         $query->where('sub_category_id', $product->sub_category_id);
                     }
@@ -293,7 +295,8 @@ class DashboardController extends Controller
 
             // Second fallback: If still empty, get latest products
             if ($relatedProducts->isEmpty()) {
-                $relatedProducts = products::where('id', '!=', $id)
+                $relatedProducts = products::with(['variantCombinations.thumbnailImage'])
+                    ->where('id', '!=', $id)
                     ->where('super_status', 'approved')
                     ->orderBy('created_at', 'desc')
                     ->limit(10)

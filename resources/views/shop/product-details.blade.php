@@ -679,13 +679,24 @@
                                                     class="thumbnail-preview">
                                                     @if ($product->discount_percentage > 0)
                                                         <div class="badge">
-                                                            <span>{{ $product->discount_percentage }}% <br>
+                                                            <span>
+                                                                {{ rtrim(rtrim(number_format($product->discount_percentage, 2), '0'), '.') }}% <br>
                                                                 Off
                                                             </span>
+
                                                             <i class="fa-solid fa-bookmark"></i>
                                                         </div>
                                                     @endif
-                                                    <img src="{{ asset('storage/' . $product->thumbnail_image) }}"
+                                                    @php
+                                                        $productImage = $product->thumbnail_image;
+                                                        if (empty($productImage) && $product->has_variants) {
+                                                            $variant = $product->variantCombinations->sortByDesc('is_active')->first();
+                                                            if ($variant && $variant->thumbnailImage) {
+                                                                $productImage = $variant->thumbnailImage->image_path;
+                                                            }
+                                                        }
+                                                    @endphp
+                                                    <img src="{{ asset('storage/' . $productImage) }}"
                                                         alt="product">
                                                 </a>
                                             </div>
