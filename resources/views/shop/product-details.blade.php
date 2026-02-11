@@ -6,6 +6,73 @@
             <hr class="section-seperator">
         </div>
     </div>
+    @push('styles')
+    <style>
+        .variant-container {
+            margin-top: 1.5rem;
+            width: 100%;
+        }
+        .variant-group {
+            margin-bottom: 1.5rem;
+        }
+        .variant-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 0.75rem;
+            margin-left: 0.25rem;
+        }
+        .variant-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+        .variant-option-label {
+            cursor: pointer;
+            position: relative;
+            margin-bottom: 0;
+        }
+        /* Completely hide the radio input */
+        .variant-radio-input {
+            display: none !important;
+            visibility: hidden;
+            opacity: 0;
+            position: absolute;
+            z-index: -1;
+        }
+        .variant-chip {
+            padding: 0.75rem 1.5rem; /* Increased padding */
+            border-radius: 0.5rem;   /* Slightly more rounded */
+            border: 2px solid #e5e7eb; /* Thicker border for better visibility */
+            background-color: #fff;
+            color: #4b5563;
+            font-size: 1rem;         /* Increased font size */
+            font-weight: 600;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            display: inline-block;
+            min-width: 3.5rem;       /* Ensure minimum width */
+            text-align: center;
+        }
+        /* Hover effect */
+        .variant-option-label:hover .variant-chip {
+            border-color: #009ec9;
+            color: #009ec9;
+            background-color: #f0f9ff;
+        }
+        /* Checked state */
+        .variant-radio-input:checked + .variant-chip {
+            border-color: #009ec9;
+            background-color: #009ec9; /* Solid background for checked state often looks better/stronger */
+            color: #ffffff; /* White text on selected */
+            box-shadow: 0 4px 6px -1px rgba(0, 158, 201, 0.4), 0 2px 4px -1px rgba(0, 158, 201, 0.2);
+        }
+        .no-variants-text {
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+    </style>
+    @endpush
 
     {{-- @php
         $imagesArray = [$product->thumbnail_image];
@@ -208,12 +275,11 @@
                                             </div>
 
                                             @if ($product->variants && $product->variants->count() > 0)
-                                                <div class="col-lg-3  rts-item">
-                                                    <div class="">
-                                                        <div class="shop-sidevbar">
-                                                            <h6 class="title">Varients</h6>
-                                                            @foreach ($product->variants as $variant)
-                                                                <h4>{{ $variant->name }}</h4>
+                                                <div class="variant-container">
+                                                    <div class="shop-sidebar">
+                                                        @foreach ($product->variants as $variant)
+                                                            <div class="variant-group">
+                                                                <h6 class="variant-title">{{ $variant->name }}</h6>
 
                                                                 @php
                                                                     $allData = isset($product->variantCombinations)
@@ -256,25 +322,31 @@
                                                                 @endphp
 
                                                                 @if (!empty($uniqueOptions) && $uniqueOptions->count())
-                                                                    @foreach ($uniqueOptions as $index => $option)
-                                                                        <label class="variant-radio mb-2 mx-2">
-                                                                            <input type="radio"
-                                                                                name="variant_{{ $variant->id }}"
-                                                                                value="{{ $option->id }}"
-                                                                                data-product-id="{{ $product->id }}"
-                                                                                {{ $loop->first ? 'checked' : '' }}>
-                                                                            {{ $option->value }}
-                                                                        </label>
-                                                                    @endforeach
+                                                                    <div class="variant-options">
+                                                                        @foreach ($uniqueOptions as $index => $option)
+                                                                            <label class="variant-option-label">
+                                                                                <input type="radio"
+                                                                                    name="variant_{{ $variant->id }}"
+                                                                                    value="{{ $option->id }}"
+                                                                                    data-product-id="{{ $product->id }}"
+                                                                                    class="variant-radio-input"
+                                                                                    {{ $loop->first ? 'checked' : '' }}>
+                                                                                <div class="variant-chip">
+                                                                                    {{ $option->value }}
+                                                                                </div>
+                                                                            </label>
+                                                                        @endforeach
+                                                                    </div>
                                                                 @else
-                                                                    <p>No combinations available</p>
+                                                                    <p class="no-variants-text">No combinations available</p>
                                                                 @endif
-                                                            @endforeach
+                                                            </div>
+                                                        @endforeach
 
-                                                        </div>
                                                     </div>
                                                 </div>
                                             @endif
+
                                         </div>
                                     </div>
                                 </div>
@@ -550,50 +622,58 @@
                         </div>
                         @if ($product->variants && $product->variants->count() > 0)
                             <div class="rts-item p-4">
-                                <div class="shop-sidevbar">
-                                    <h6 class="title">Varients</h6>
+                                <div class="shop-sidebar">
                                     @foreach ($product->variants as $variant)
-                                        <h4>{{ $variant->name }}</h4>
-                                        @php
-                                            $allData = isset($product->variantCombinations)
-                                                ? $product->variantCombinations
-                                                : collect();
-                                            $allOptions = collect();
+                                        <div class="variant-group">
+                                            <h6 class="variant-title">{{ $variant->name }}</h6>
+                                            @php
+                                                $allData = isset($product->variantCombinations)
+                                                    ? $product->variantCombinations
+                                                    : collect();
+                                                $allOptions = collect();
 
-                                            if (
-                                                $product->variantCombinations &&
-                                                $product->variantCombinations->count()
-                                            ) {
-                                                foreach ($product->variantCombinations as $combination) {
-                                                    $optionIds = is_array($combination->variant_options)
-                                                        ? $combination->variant_options
-                                                        : json_decode($combination->variant_options, true);
+                                                if (
+                                                    $product->variantCombinations &&
+                                                    $product->variantCombinations->count()
+                                                ) {
+                                                    foreach ($product->variantCombinations as $combination) {
+                                                        $optionIds = is_array($combination->variant_options)
+                                                            ? $combination->variant_options
+                                                            : json_decode($combination->variant_options, true);
 
-                                                    $options = \App\Models\ProductVariantOption::whereIn(
-                                                        'id',
-                                                        $optionIds,
-                                                    )
-                                                        ->where('product_variant_id', $variant->id)
-                                                        ->get();
+                                                        $options = \App\Models\ProductVariantOption::whereIn(
+                                                            'id',
+                                                            $optionIds,
+                                                        )
+                                                            ->where('product_variant_id', $variant->id)
+                                                            ->get();
 
-                                                    $allOptions = $allOptions->merge($options);
+                                                        $allOptions = $allOptions->merge($options);
+                                                    }
+
+                                                    $uniqueOptions = $allOptions->unique('id');
                                                 }
+                                            @endphp
 
-                                                $uniqueOptions = $allOptions->unique('id');
-                                            }
-                                        @endphp
-
-                                        @if (!empty($uniqueOptions) && $uniqueOptions->count())
-                                            @foreach ($uniqueOptions as $index => $option)
-                                                <label class="variant-radio mb-2">
-                                                    <input type="radio" name="variant_{{ $variant->id }}"
-                                                        value="{{ $option->id }}" {{ $loop->first ? 'checked' : '' }}>
-                                                    {{ $option->value }}
-                                                </label>
-                                            @endforeach
-                                        @else
-                                            <p>No combinations available</p>
-                                        @endif
+                                            @if (!empty($uniqueOptions) && $uniqueOptions->count())
+                                                <div class="variant-options">
+                                                    @foreach ($uniqueOptions as $index => $option)
+                                                        <label class="variant-option-label">
+                                                            <input type="radio" 
+                                                                name="variant_{{ $variant->id }}"
+                                                                value="{{ $option->id }}" 
+                                                                class="variant-radio-input"
+                                                                {{ $loop->first ? 'checked' : '' }}>
+                                                            <div class="variant-chip" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">
+                                                                {{ $option->value }}
+                                                            </div>
+                                                        </label>
+                                                    @endforeach
+                                                </div>
+                                            @else
+                                                <p class="no-variants-text">No combinations available</p>
+                                            @endif
+                                        </div>
                                     @endforeach
                                 </div>
                             </div>
