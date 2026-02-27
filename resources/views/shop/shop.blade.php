@@ -57,6 +57,30 @@
         .no-products-found .fa-magnifying-glass {
             opacity: 0.5;
         }
+        
+        .category-scrollable {
+            max-height: 210px; /* Approximately 5 items max */
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+        
+        .category-scrollable::-webkit-scrollbar {
+            width: 4px;
+        }
+        
+        .category-scrollable::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        
+        .category-scrollable::-webkit-scrollbar-thumb {
+            background: #d1d1d1;
+            border-radius: 4px;
+        }
+        
+        .category-scrollable::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
     </style>
     <!-- shop[ grid sidebar wrapper -->
 
@@ -84,14 +108,18 @@
             <div class="row g-0">
                 <div class="col-xl-3 col-lg-12 pr--70 pr_lg--10 pr_sm--10 pr_md--5 rts-sticky-column-item filters">
                     <div class="sidebar-filter-main theiaStickySidebar">
-                        <div class="single-filter-box">
-                            <h5 class="title">Price Filter</h5>
-                            <div class="filterbox-body">
-                                <form method="GET" action="{{ url()->current() }}" class="price-input-area">
-                                    <input type="hidden" name="type" value="{{ request('type') }}">
-                                    <input type="hidden" name="id" value="{{ request('id') }}">
+                        <form method="GET" action="{{ url()->current() }}" id="filter-form">
+                            <input type="hidden" name="type" value="{{ request('type') }}">
+                            <input type="hidden" name="id" value="{{ request('id') }}">
+                            @if(request('search'))
+                                <input type="hidden" name="search" value="{{ request('search') }}">
+                            @endif
 
-                                    <div class="half-input-wrapper">
+                            <div class="single-filter-box">
+                                <h5 class="title">Price Filter</h5>
+                                <div class="filterbox-body">
+                                    <div class="price-input-area">
+                                        <div class="half-input-wrapper">
                                         <div class="single">
                                             <label for="min">Min price</label>
                                             <input id="min" name="min_price" type="number"
@@ -104,23 +132,22 @@
                                         </div>
                                     </div>
 
-                                    <div class="filter-value-min-max">
-                                        <button type="submit" class="rts-btn btn-primary mt-5 mx-auto">Filter</button>
+                                        <div class="filter-value-min-max">
+                                            <button type="submit" class="rts-btn btn-primary mt-5 mx-auto">Filter</button>
+                                        </div>
                                     </div>
-                                </form>
-
+                                </div>
                             </div>
-                        </div>
                         <div class="single-filter-box">
                             <h5 class="title">Product Categories</h5>
                             <div class="filterbox-body">
-                                <div class="category-wrapper">
+                                <div class="category-wrapper @if(isset($categories) && count($categories) > 5) category-scrollable @endif">
                                     @foreach ($categories as $cat)
                                         <div class="single-category">
-                                            <input type="checkbox" id="cat{{ $cat->id }}" name="category"
+                                            <input type="checkbox" id="cat{{ $cat->id }}" name="categories[]"
                                                 value="{{ $cat->id }}"
-                                                {{ request()->route('type') === 'category' && request()->route('id') == $cat->id ? 'checked' : '' }}
-                                                onchange="window.location.href='{{ url('/shop/category') }}/{{ Crypt::encrypt($cat->id) }}'">
+                                                {{ in_array($cat->id, $selectedCategories ?? []) ? 'checked' : '' }}
+                                                onchange="document.getElementById('filter-form').submit();">
                                             <label for="cat{{ $cat->id }}">{{ $cat->name }}</label>
                                         </div>
                                     @endforeach
@@ -133,16 +160,17 @@
                                 <div class="category-wrapper">
                                     @foreach ($brands as $brand)
                                         <div class="single-category">
-                                            <input type="checkbox" id="brand{{ $brand->id }}" name="brand"
+                                            <input type="checkbox" id="brand{{ $brand->id }}" name="brands[]"
                                                 value="{{ $brand->id }}"
-                                                {{ request()->route('type') === 'brand' && request()->route('id') == $brand->id ? 'checked' : '' }}
-                                                onchange="window.location.href='{{ url('/shop/brand') }}/{{ Crypt::encrypt($brand->id) }}'">
+                                                {{ in_array($brand->id, $selectedBrands ?? []) ? 'checked' : '' }}
+                                                onchange="document.getElementById('filter-form').submit();">
                                             <label for="brand{{ $brand->id }}">{{ $brand->brand }}</label>
                                         </div>
                                     @endforeach
                                 </div>
                             </div>
-                        </div>
+                            </div>
+                        </form>
                     </div>
                 </div>
                 <div class="col-xl-9 col-lg-12">
@@ -223,7 +251,9 @@
                                             <i class="fa-light fa-magnifying-glass fa-4x text-muted mb-3"></i>
                                             <h3 class="text-muted">No Products Found</h3>
                                             <p class="text-muted">Sorry, we couldn't find any products matching your criteria.</p>
-                                            <a href="{{ route('shop') }}" class="rts-btn btn-primary mt-3">Browse All Products</a>
+                                            <div class="d-flex justify-content-center mt-3">
+                                                <a href="{{ route('shop') }}" class="rts-btn btn-primary">Browse All Products</a>
+                                            </div>
                                         </div>
                                     </div>
                                 @endif
@@ -234,7 +264,9 @@
                                             <i class="fa-light fa-magnifying-glass fa-4x text-muted mb-3"></i>
                                             <h3 class="text-muted">No Products Found</h3>
                                             <p class="text-muted">Sorry, we couldn't find any products matching your criteria.</p>
-                                            <a href="{{ route('shop') }}" class="rts-btn btn-primary mt-3">Browse All Products</a>
+                                            <div class="d-flex justify-content-center mt-3">
+                                                <a href="{{ route('shop') }}" class="rts-btn btn-primary">Browse All Products</a>
+                                            </div>
                                         </div>
                                     </div>
                                 @endif

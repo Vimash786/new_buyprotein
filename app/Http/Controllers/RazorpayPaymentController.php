@@ -182,6 +182,7 @@ class RazorpayPaymentController extends Controller
                 'total_before_discount' => $priceBreakdown['total_before_discount'] ?? $amount,
                 'payment_method' => 'razorpay',
                 'payment_status' => 'completed',
+                'razorpay_payment_id' => $request->razorpay_payment_id,
             ]);
         } else {
 
@@ -220,6 +221,7 @@ class RazorpayPaymentController extends Controller
                 'total_before_discount' => $priceBreakdown['total_before_discount'] ?? $amount,
                 'payment_method' => 'razorpay',
                 'payment_status' => 'completed',
+                'razorpay_payment_id' => $request->razorpay_payment_id,
             ]);
         }
 
@@ -339,7 +341,23 @@ class RazorpayPaymentController extends Controller
 
         $payment = $api->payment->fetch($request->razorpay_payment_id);
 
-        if ($payment->capture(['amount' => $payment['amount']])) {
+        $captured = false;
+        if ($payment->status === 'captured') {
+            $captured = true;
+        } else if ($payment->status === 'authorized') {
+            try {
+                $response = $payment->capture(['amount' => $payment['amount']]);
+                $captured = true;
+            } catch (\Exception $e) {
+                if (strpos($e->getMessage(), 'already been captured') !== false) {
+                    $captured = true;
+                } else {
+                    throw $e;
+                }
+            }
+        }
+
+        if ($captured) {
             // Store order details in session for thank you page
             session()->flash('order_details', [
                 'order_number' => $orderNumber,
