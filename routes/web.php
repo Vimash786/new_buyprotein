@@ -44,6 +44,7 @@ Route::get('/thank-you-test', function() {
 // Payment routes (accessible to both guest and authenticated users)
 Route::get('razorpay', [RazorpayPaymentController::class, 'index'])->name('razorpay.index');
 Route::post('/razorpay-payment', [RazorpayPaymentController::class, 'payment'])->name('razorpay.payment');
+Route::post('/razorpay-webhook', [RazorpayPaymentController::class, 'webhook'])->name('razorpay.webhook')->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class]);
 Route::post('/cod-payment', [RazorpayPaymentController::class, 'codPayment'])->name('cod.payment');
 Route::post('/test-payment', function(Request $request) {
     Log::info('Test payment route hit', ['method' => $request->method(), 'data' => $request->all()]);
