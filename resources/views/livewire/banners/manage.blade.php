@@ -6,6 +6,8 @@ use Livewire\WithFileUploads;
 use Livewire\Volt\Component;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
 
 new class extends Component
 {
@@ -37,6 +39,12 @@ new class extends Component
     public $banner_image_file = null;
     public $redirect_link = '';
     public $status = 'active';
+    
+    // Resize warning
+    public $showResizeAlert = false;
+    public $confirmResize = false;
+    public $tempImageWidth = null;
+    public $tempImageHeight = null;
 
     protected $rules = [
         'name' => 'required|string|max:255',
@@ -140,11 +148,20 @@ new class extends Component
         $this->status = 'active';
         $this->bannerId = null;
         $this->editMode = false;
+        
+        $this->showResizeAlert = false;
+        $this->confirmResize = false;
+        $this->tempImageWidth = null;
+        $this->tempImageHeight = null;
     }    
     
     public function save()
     {
         $this->validate();
+        
+        if ($this->showResizeAlert) {
+            return;
+        }
 
         // Debug: Log the show_icon value
         logger('=== BANNER SAVE DEBUG ===');
@@ -176,16 +193,33 @@ new class extends Component
             }
             
             try {
-                $fileName = time() . '_' . $this->banner_image_file->getClientOriginalName();
-                $filePath = $this->banner_image_file->storeAs('banners', $fileName, 'public');
+                // Initialize ImageManager with GD driver
+                $manager = new ImageManager(new Driver());
                 
-                if (!$filePath) {
+                // Read image from file
+                $image = $manager->read($this->banner_image_file->getRealPath());
+                
+                // Pad the image to exactly 1900x400 without cutting content
+                $image->pad(1900, 400, 'transparent');
+                
+                // Generate a safe unique WebP filename
+                $baseName = Str::slug(pathinfo($this->banner_image_file->getClientOriginalName(), PATHINFO_FILENAME));
+                $fileName = time() . '_' . $baseName . '.webp';
+                $filePath = 'banners/' . $fileName;
+                
+                // Encode the image as WebP format with 80% quality
+                $encoded = $image->toWebp(80);
+                
+                // Save it via Laravel Storage
+                $success = Storage::disk('public')->put($filePath, $encoded->toString());
+                
+                if (!$success) {
                     throw new \Exception('Failed to store banner image');
                 }
                 
                 $data['banner_image'] = $filePath;
             } catch (\Exception $e) {
-                $this->addError('banner_image_file', 'Failed to upload banner image. Please try again.');
+                $this->addError('banner_image_file', 'Failed to upload/process banner image. Please try again. Error: ' . $e->getMessage());
                 return;
             }
         }
@@ -254,6 +288,42 @@ new class extends Component
         session()->flash('message', 'Banner status updated successfully!');
         
         $this->closeStatusModal();
+    }
+
+    public function updatedBannerImageFile()
+    {
+        $this->showResizeAlert = false;
+        $this->confirmResize = false;
+        
+        if ($this->banner_image_file) {
+            try {
+                $manager = new ImageManager(new Driver());
+                $image = $manager->read($this->banner_image_file->getRealPath());
+                $this->tempImageWidth = $image->width();
+                $this->tempImageHeight = $image->height();
+                
+                if ($this->tempImageWidth != 1900 || $this->tempImageHeight != 400) {
+                    $this->showResizeAlert = true;
+                } else {
+                    $this->confirmResize = true;
+                }
+            } catch (\Exception $e) {
+                // Ignore, validation will catch non-images
+            }
+        }
+    }
+
+    public function acceptResize()
+    {
+        $this->confirmResize = true;
+        $this->showResizeAlert = false;
+    }
+
+    public function cancelResize()
+    {
+        $this->banner_image_file = null;
+        $this->showResizeAlert = false;
+        $this->confirmResize = false;
     }
 
     public function updatingSearch()
@@ -644,7 +714,9 @@ new class extends Component
 
                         <!-- Banner Image -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Banner Image</label>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Banner Image <span class="text-xs text-gray-500 font-normal ml-1">(Optimum size: 1900x400. Images will be padded to fit without cutting content)</span>
+                            </label>
                             
                             @if($editMode && $banner_image)
                                 <div class="mb-3 p-3 bg-gray-50 dark:bg-zinc-800 rounded-lg">
@@ -675,7 +747,7 @@ new class extends Component
                             
                             @error('banner_image_file') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                             
-                            @if($banner_image_file)
+                            @if($banner_image_file && !$showResizeAlert)
                                 <div class="mt-2">
                                     <div class="flex items-center space-x-3">
                                         <img src="{{ $banner_image_file->temporaryUrl() }}" alt="Preview" class="w-32 h-20 rounded object-cover">
@@ -684,6 +756,39 @@ new class extends Component
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                                             </svg>
                                             <span class="text-sm">Ready to save</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+
+                            @if($showResizeAlert)
+                                <div class="mt-3 p-4 bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                                    <div class="flex">
+                                        <svg class="h-5 w-5 text-yellow-400 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                        </svg>
+                                        <div>
+                                            <h3 class="text-sm font-medium text-yellow-800 dark:text-yellow-300">Invalid Image Dimensions ({{ $tempImageWidth }}x{{ $tempImageHeight }})</h3>
+                                            <p class="mt-1 text-sm text-yellow-700 dark:text-yellow-400">The required banner size is 1900x400. If you proceed, the image will be auto-resized which may cut or alter the content outside the safe zone.</p>
+                                            
+                                            @php
+                                                $exampleBanner = \App\Models\Banner::find(2);
+                                            @endphp
+                                            @if($exampleBanner && $exampleBanner->banner_image)
+                                                <div class="mt-4 mb-2">
+                                                    <p class="text-xs font-semibold text-yellow-800 dark:text-yellow-300 mb-2">Perfect Example (Keep main content between the red safe-zone lines):</p>
+                                                    <div class="relative inline-block border border-gray-300 dark:border-gray-600 rounded overflow-hidden w-full max-w-2xl bg-black">
+                                                        <img src="{{ Storage::url($exampleBanner->banner_image) }}" alt="Example Banner" class="w-full h-auto object-cover opacity-80">
+                                                        <!-- Safe Zone Red Lines Overlay (~15% from left and right) -->
+                                                        <div class="absolute top-0 bottom-0 left-[15%] right-[15%] border-x-2 border-red-500 pointer-events-none"></div>
+                                                    </div>
+                                                </div>
+                                            @endif
+                                            
+                                            <div class="mt-4 flex gap-2">
+                                                <button type="button" wire:click="acceptResize" class="px-3 py-1.5 bg-yellow-600 text-white rounded text-sm font-medium hover:bg-yellow-700">Auto Resize</button>
+                                                <button type="button" wire:click="cancelResize" class="px-3 py-1.5 bg-white dark:bg-zinc-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded text-sm font-medium hover:bg-gray-50 dark:hover:bg-zinc-700">Cancel</button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -725,12 +830,14 @@ new class extends Component
                             >
                                 Cancel
                             </button>
-                            <button 
-                                type="submit"
-                                class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
-                            >
-                                {{ $editMode ? 'Update Banner' : 'Create Banner' }}
-                            </button>
+                            @if(!$showResizeAlert)
+                                <button 
+                                    type="submit"
+                                    class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+                                >
+                                    {{ $editMode ? 'Update Banner' : 'Create Banner' }}
+                                </button>
+                            @endif
                         </div>
                     </form>
                 </div>
