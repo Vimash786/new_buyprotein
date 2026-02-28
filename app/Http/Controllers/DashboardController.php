@@ -39,7 +39,7 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $categories = Category::where('is_active', 1)->limit(10)->get();
+        $categories = Category::where('is_active', 1)->limit(20)->get();
         // $productCounts = orders::select('product_id', DB::raw('count(*) as total'))->groupBy('product_id')->orderBy('product_id')->get();
         // $productIds = $productCounts->pluck('product_id');
         // $products = products::with(['subCategory', 'category'])->whereIn('id', $productIds)->get();

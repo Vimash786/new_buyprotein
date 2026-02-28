@@ -41,6 +41,18 @@
                             <li>
                                 <a href="{{ route('contact') }}" class="main">Contact Us</a>
                             </li>
+                            @auth
+                            <li>
+                                <a href="{{ route('user.account') }}" class="main">Account</a>
+                            </li>
+                            <li>
+                                <a href="{{ route('logout') }}" class="main" 
+                                   onclick="event.preventDefault(); document.getElementById('sidebar-logout-form').submit();">Logout</a>
+                                <form id="sidebar-logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
+                                    @csrf
+                                </form>
+                            </li>
+                            @endauth
                         </ul>
                     </nav>
                 </div>
@@ -75,6 +87,14 @@
             <div class="buton-area-bottom">
                 <a href="{{ route('login') }}" class="rts-btn btn-primary">Sign In</a>
                 <a href="{{ route('register') }}" class="rts-btn btn-primary">Sign Up</a>
+            </div>
+        @else
+            <div class="buton-area-bottom">
+                <a href="{{ route('user.account') }}" class="rts-btn btn-primary">Account</a>
+                <a href="{{ route('logout') }}" class="rts-btn btn-primary" onclick="event.preventDefault(); document.getElementById('sidebar-logout-form-btn').submit();">Logout</a>
+                <form id="sidebar-logout-form-btn" action="{{ route('logout') }}" method="POST" style="display: none;">
+                    @csrf
+                </form>
             </div>
         @endif
     </div>
