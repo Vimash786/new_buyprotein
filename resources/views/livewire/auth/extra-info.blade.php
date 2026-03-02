@@ -154,6 +154,22 @@ new #[Layout('components.layouts.auth')] class extends Component {
                 }
                 $user->update(['business_images' => json_encode($businessImagePaths)]);
             }
+
+            // Gym Owner/Trainer/Influencer/Dietitian needs admin approval
+            if ($this->role === 'Gym Owner/Trainer/Influencer/Dietitian') {
+                $user->update(['approval_status' => 'pending']);
+
+                // Send welcome email
+                try {
+                    Mail::to($user->email)->send(new WelcomeMail($user));
+                } catch (\Exception $e) {
+                    Log::error('Failed to send welcome email: ' . $e->getMessage());
+                }
+
+                // Redirect to pending approval page
+                $this->redirect(route('approval.pending', absolute: false), navigate: true);
+                return;
+            }
             
             // Send welcome email for non-seller users
             try {

@@ -21,6 +21,7 @@
                     <flux:navlist.group expandable :heading="__('Sellers')" class="grid">
                         <flux:navlist.item icon="users" :href="route('sellers.manage')" :current="request()->routeIs('sellers.manage')" wire:navigate>{{ __('All Sellers') }}</flux:navlist.item>
                         <flux:navlist.item icon="user-plus" :href="route('sellers.requests')" :current="request()->routeIs('sellers.requests')" wire:navigate>{{ __('New Seller Requests') }}</flux:navlist.item>
+                        <flux:navlist.item icon="check-badge" :href="route('approval.requests')" :current="request()->routeIs('approval.requests')" wire:navigate>{{ __('Account Approval Requests') }}</flux:navlist.item>
                     </flux:navlist.group>
                     @endif
                     

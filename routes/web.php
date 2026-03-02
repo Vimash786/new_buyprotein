@@ -74,6 +74,11 @@ Volt::route('dashboard', 'admindash')
     ->middleware(['auth', 'verified', 'super.seller.only'])
     ->name('dashboard');
 
+// Approval pending page (for Gym Owner/Trainer/Influencer/Dietitian awaiting admin review)
+Volt::route('approval-pending', 'auth.approval-pending')
+    ->middleware(['auth'])
+    ->name('approval.pending');
+
 Route::middleware(['auth'])->group(function () {
     Route::redirect('settings', 'settings/profile');
 
@@ -94,6 +99,7 @@ Route::middleware(['auth'])->group(function () {
     Volt::route('categories', 'categories.manage')->name('categories.manage');
     Volt::route('banners', 'banners.manage')->name('banners.manage');
     Volt::route('blogs', 'blogs.manage')->name('blogs.manage');
+    Volt::route('approval-requests', 'users.approval-requests')->name('approval.requests');
     Route::get('coupons', \App\Livewire\Coupons\ManageCoupons::class)->name('coupons.manage');
     Route::get('commission', \App\Livewire\Settings\GlobalCommissionSettings::class)->name('settings.commission');
     Volt::route('payouts', 'payouts.manage')->name('payouts.sellers');
