@@ -35,15 +35,40 @@
                                 <span class="m-3">Categories</span>
                                 @php
                                     use App\Models\Category;
-                                    $catData = Category::where('is_active', 1)->limit(10)->get();
+                                    $catData = Category::where('is_active', 1)
+                                        ->with(['activeSubCategories'])
+                                        ->limit(10)->get();
                                 @endphp
-                                <ul class="category-sub-menu" id="category-active-four">
+
+                                <ul class="category-sub-menu bp-mega-menu" id="category-active-four">
                                     @foreach ($catData as $cat)
-                                        <li>
+                                        @php $hasSubs = $cat->activeSubCategories->count() > 0; @endphp
+                                        <li class="bp-cat-item {{ $hasSubs ? 'has-subs' : '' }}">
                                             <a href="{{ route('shop', ['type' => 'category', 'id' => Crypt::encrypt($cat->id)]) }}"
-                                                class="menu-item">
+                                               class="menu-item bp-cat-link">
                                                 <span>{{ $cat->name }}</span>
+                                                @if($hasSubs)
+                                                    <i class="fa-regular fa-chevron-right bp-arrow"></i>
+                                                @endif
                                             </a>
+                                            @if($hasSubs)
+                                                <div class="bp-sub-panel">
+                                                    <p class="bp-sub-heading">{{ $cat->name }}</p>
+                                                    <ul class="bp-sub-list">
+                                                        @foreach($cat->activeSubCategories as $sub)
+                                                            <li>
+                                                                <a href="{{ route('shop', ['type' => 'category', 'id' => Crypt::encrypt($sub->id)]) }}"
+                                                                   class="bp-sub-link">
+                                                                    @if($sub->image)
+                                                                        <img src="{{ asset('storage/' . $sub->image) }}" alt="{{ $sub->name }}" class="bp-sub-img">
+                                                                    @endif
+                                                                    <span>{{ $sub->name }}</span>
+                                                                </a>
+                                                            </li>
+                                                        @endforeach
+                                                    </ul>
+                                                </div>
+                                            @endif
                                         </li>
                                     @endforeach
                                 </ul>
