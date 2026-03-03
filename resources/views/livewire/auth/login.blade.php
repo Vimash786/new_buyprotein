@@ -37,10 +37,20 @@ new #[Layout('components.layouts.auth')] class extends Component {
             ]);
         }
 
+        $user = Auth::user();
+
+        if ($user->profile_completed && in_array($user->role, ['Seller', 'Gym Owner/Trainer/Influencer/Dietitian']) && $user->approval_status !== 'approved') {
+            Auth::logout();
+
+            throw ValidationException::withMessages([
+                'email' => __('Your account is pending admin approval.'),
+            ]);
+        }
+
         RateLimiter::clear($this->throttleKey());
         Session::regenerate();
-        $profile_completed = Auth::user()->profile_completed;
-        $user_role = Auth::user()->role;
+        $profile_completed = $user->profile_completed;
+        $user_role = $user->role;
         if ($profile_completed) {
             if ($user_role == 'Super') {
                 // Clear any intended URL and redirect directly to dashboard
