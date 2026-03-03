@@ -185,7 +185,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
                 $user->update(['business_images' => json_encode($businessImagePaths)]);
             }
 
-            if ($this->role === 'Gym Owner/Trainer/Influencer/Dietitian') {
+            if (in_array($this->role, ['Gym Owner/Trainer/Influencer/Dietitian', 'Shop Owner'])) {
                 $user->update(['approval_status' => 'pending']);
                 try {
                     Mail::to($user->email)->send(new WelcomeMail($user));
@@ -231,13 +231,19 @@ new #[Layout('components.layouts.auth')] class extends Component {
                 'brand_certificate'=> $validated['brand_certificate']->store('seller_certificates', 'public'),
             ]);
             
-            $user->update(['profile_completed' => true]);
+            $user->update([
+                'profile_completed' => true,
+                'approval_status' => 'pending',
+            ]);
             
             try {
                 Mail::to($user->email)->send(new WelcomeMail($user));
             } catch (\Exception $e) {
                 Log::error('Failed to send welcome email: ' . $e->getMessage());
             }
+
+            $this->redirect(route('approval.pending', absolute: false), navigate: true);
+            return;
         }
 
         $user->refresh();

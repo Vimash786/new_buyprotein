@@ -39,7 +39,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
 
         $user = Auth::user();
 
-        if ($user->profile_completed && in_array($user->role, ['Seller', 'Gym Owner/Trainer/Influencer/Dietitian']) && $user->approval_status !== 'approved') {
+        if ($user->profile_completed && in_array($user->role, ['Seller', 'Gym Owner/Trainer/Influencer/Dietitian', 'Shop Owner']) && $user->approval_status !== 'approved') {
             Auth::logout();
 
             throw ValidationException::withMessages([

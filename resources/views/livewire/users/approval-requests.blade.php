@@ -4,6 +4,7 @@ use App\Models\User;
 use Livewire\WithPagination;
 use Livewire\Volt\Component;
 use Illuminate\Support\Facades\Storage;
+use App\Models\Sellers;
 
 new class extends Component
 {
@@ -20,7 +21,9 @@ new class extends Component
 
     public function with()
     {
-        $query = User::where('role', 'Gym Owner/Trainer/Influencer/Dietitian')
+        $approvalRoles = ['Seller', 'Gym Owner/Trainer/Influencer/Dietitian', 'Shop Owner'];
+
+        $query = User::whereIn('role', $approvalRoles)
             ->whereNotNull('approval_status');
 
         if ($this->search) {
@@ -36,10 +39,10 @@ new class extends Component
 
         return [
             'users'         => $query->latest()->paginate(10),
-            'totalRequests' => User::where('role', 'Gym Owner/Trainer/Influencer/Dietitian')->whereNotNull('approval_status')->count(),
-            'pendingCount'  => User::where('role', 'Gym Owner/Trainer/Influencer/Dietitian')->where('approval_status', 'pending')->count(),
-            'approvedCount' => User::where('role', 'Gym Owner/Trainer/Influencer/Dietitian')->where('approval_status', 'approved')->count(),
-            'rejectedCount' => User::where('role', 'Gym Owner/Trainer/Influencer/Dietitian')->where('approval_status', 'rejected')->count(),
+            'totalRequests' => User::whereIn('role', $approvalRoles)->whereNotNull('approval_status')->count(),
+            'pendingCount'  => User::whereIn('role', $approvalRoles)->where('approval_status', 'pending')->count(),
+            'approvedCount' => User::whereIn('role', $approvalRoles)->where('approval_status', 'approved')->count(),
+            'rejectedCount' => 0,
         ];
     }
 
@@ -75,19 +78,49 @@ new class extends Component
     {
         if (!$this->userToUpdate || !$this->newStatus) return;
 
-        $this->userToUpdate->update(['approval_status' => $this->newStatus]);
+        if ($this->newStatus === 'approved') {
+            $this->userToUpdate->update(['approval_status' => 'approved']);
 
-        // Send notification email
-        try {
-            if ($this->newStatus === 'approved') {
+            // Send approval notification email
+            try {
                 \Mail::to($this->userToUpdate->email)->send(new \App\Mail\WelcomeMail($this->userToUpdate));
+            } catch (\Exception $e) {
+                \Log::error('Failed to send approval email: ' . $e->getMessage());
             }
-        } catch (\Exception $e) {
-            \Log::error('Failed to send approval email: ' . $e->getMessage());
-        }
 
-        $label = $this->newStatus === 'approved' ? 'approved' : 'rejected';
-        session()->flash('message', "User account has been {$label} successfully!");
+            session()->flash('message', "User account has been approved successfully!");
+        } else {
+            // Rejection: delete the user and associated data
+            $user = $this->userToUpdate;
+
+            // Delete seller record if exists
+            $seller = Sellers::where('user_id', $user->id)->first();
+            if ($seller) {
+                // Clean up seller uploaded files
+                if ($seller->brand_logo) {
+                    Storage::disk('public')->delete($seller->brand_logo);
+                }
+                if ($seller->brand_certificate) {
+                    Storage::disk('public')->delete($seller->brand_certificate);
+                }
+                $seller->delete();
+            }
+
+            // Clean up user uploaded files
+            if ($user->document_proof) {
+                Storage::disk('public')->delete($user->document_proof);
+            }
+            if ($user->business_images) {
+                $images = json_decode($user->business_images, true) ?? [];
+                foreach ($images as $img) {
+                    Storage::disk('public')->delete($img);
+                }
+            }
+
+            $user->delete();
+
+            session()->flash('message', "User account has been rejected and deleted successfully!");
+        }
 
         $this->closeStatusModal();
     }
@@ -109,11 +142,11 @@ new class extends Component
         <!-- Header -->
         <div class="mb-8">
             <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Account Approval Requests</h1>
-            <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">Review and manage Gym Owner / Trainer / Influencer / Dietitian account requests</p>
+            <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">Review and manage Seller, Shop Owner & Gym Owner / Trainer / Influencer / Dietitian account requests</p>
         </div>
 
         <!-- Stats -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
             <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-5 flex items-center gap-4">
                 <div class="w-10 h-10 bg-blue-100 dark:bg-blue-900/50 rounded-lg flex items-center justify-center">
                     <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
@@ -141,15 +174,6 @@ new class extends Component
                     <p class="text-2xl font-bold text-green-600">{{ $approvedCount }}</p>
                 </div>
             </div>
-            <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-5 flex items-center gap-4">
-                <div class="w-10 h-10 bg-red-100 dark:bg-red-900/50 rounded-lg flex items-center justify-center">
-                    <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                </div>
-                <div>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">Rejected</p>
-                    <p class="text-2xl font-bold text-red-600">{{ $rejectedCount }}</p>
-                </div>
-            </div>
         </div>
 
         <!-- Filters -->
@@ -167,7 +191,6 @@ new class extends Component
                     <option value="">All Status</option>
                     <option value="pending">Pending</option>
                     <option value="approved">Approved</option>
-                    <option value="rejected">Rejected</option>
                 </select>
             </div>
         </div>
@@ -376,9 +399,9 @@ new class extends Component
                         <div class="w-14 h-14 bg-red-100 dark:bg-red-900/50 rounded-full flex items-center justify-center mx-auto mb-3">
                             <svg class="w-7 h-7 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         </div>
-                        <h3 class="text-lg font-bold text-gray-900 dark:text-white">Reject Account?</h3>
+                        <h3 class="text-lg font-bold text-gray-900 dark:text-white">Reject & Delete Account?</h3>
                         <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                            This will reject <strong>{{ $userToUpdate->name }}</strong>'s account request.
+                            This will <strong>permanently delete</strong> <strong>{{ $userToUpdate->name }}</strong>'s account and all associated data. This action cannot be undone.
                         </p>
                     @endif
                 </div>
