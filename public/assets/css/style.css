@@ -29072,6 +29072,32 @@ header.header-three .sub-dropdown .submenu.third-lvl.base {
     opacity: 0;
     transform: translateZ(0) translateY(30px);
     transition: all 0.2s !important;
+    max-height: 265px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Scrollbar styles for mega menu and sub menu */
+.bp-mega-menu::-webkit-scrollbar,
+.bp-sub-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.bp-mega-menu::-webkit-scrollbar-track,
+.bp-sub-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.bp-mega-menu::-webkit-scrollbar-thumb,
+.bp-sub-list::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 3px;
+}
+
+.bp-mega-menu::-webkit-scrollbar-thumb:hover,
+.bp-sub-list::-webkit-scrollbar-thumb:hover {
+    background: #aaa;
 }
 
 /* Show mega menu on parent hover — same as existing */
@@ -29171,6 +29197,9 @@ header.header-three .sub-dropdown .submenu.third-lvl.base {
     list-style: none;
     padding: 0;
     margin: 0;
+    max-height: 240px;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 /* Sub-item links — identical to .category-hover-header .category-sub-menu li a */
@@ -29260,4 +29289,3 @@ header.header-three .sub-dropdown .submenu.third-lvl.base {
     transform: translateZ(0) translateX(0);
     pointer-events: auto;
 }
-

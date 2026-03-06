@@ -56,7 +56,7 @@ new class extends Component
         'text_color' => 'nullable|string|max:7',
         'position' => 'required|in:primary,secondary,promotional',
         'show_icon' => 'nullable|boolean',
-        'banner_image_file' => 'nullable|image|mimes:jpg,jpeg,png,gif,webp|max:5120', // 5MB max
+        'banner_image_file' => 'nullable|image|mimes:jpg,jpeg,png,gif,webp|max:20480', // 20MB max
         'redirect_link' => 'nullable|url|max:500',
         'status' => 'required|in:active,inactive',
     ];
@@ -199,16 +199,16 @@ new class extends Component
                 // Read image from file
                 $image = $manager->read($this->banner_image_file->getRealPath());
                 
-                // Pad the image to exactly 1476x373 without cutting content
-                $image->pad(1476, 373, 'transparent');
+                // Pad the image to exactly 1900x400 without cutting content
+                $image->pad(1900, 400, 'transparent');
                 
                 // Generate a safe unique WebP filename
                 $baseName = Str::slug(pathinfo($this->banner_image_file->getClientOriginalName(), PATHINFO_FILENAME));
                 $fileName = time() . '_' . $baseName . '.webp';
                 $filePath = 'banners/' . $fileName;
                 
-                // Encode the image as WebP format with 80% quality
-                $encoded = $image->toWebp(80);
+                // Encode the image as WebP format with 60% quality (compressed)
+                $encoded = $image->toWebp(60);
                 
                 // Save it via Laravel Storage
                 $success = Storage::disk('public')->put($filePath, $encoded->toString());
@@ -302,7 +302,7 @@ new class extends Component
                 $this->tempImageWidth = $image->width();
                 $this->tempImageHeight = $image->height();
                 
-                if ($this->tempImageWidth != 1476 || $this->tempImageHeight != 373) {
+                if ($this->tempImageWidth != 1900 || $this->tempImageHeight != 400) {
                     $this->showResizeAlert = true;
                 } else {
                     $this->confirmResize = true;
@@ -715,7 +715,7 @@ new class extends Component
                         <!-- Banner Image -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Banner Image <span class="text-xs text-gray-500 font-normal ml-1">(Optimum size: 1476x373. Images will be padded to fit without cutting content)</span>
+                                Banner Image <span class="text-xs text-gray-500 font-normal ml-1">(Optimum size: 1900x400. Images will be padded to fit without cutting content)</span>
                             </label>
                             
                             @if($editMode && $banner_image)
@@ -769,7 +769,7 @@ new class extends Component
                                         </svg>
                                         <div>
                                             <h3 class="text-sm font-medium text-yellow-800 dark:text-yellow-300">Invalid Image Dimensions ({{ $tempImageWidth }}x{{ $tempImageHeight }})</h3>
-                                            <p class="mt-1 text-sm text-yellow-700 dark:text-yellow-400">The required banner size is 1476x373. If you proceed, the image will be auto-resized which may cut or alter the content outside the safe zone.</p>
+                                            <p class="mt-1 text-sm text-yellow-700 dark:text-yellow-400">The required banner size is 1900x400. If you proceed, the image will be auto-resized which may cut or alter the content outside the safe zone.</p>
                                             
                                             @php
                                                 $exampleBanner = \App\Models\Banner::find(2);
