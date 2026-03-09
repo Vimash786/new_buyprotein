@@ -96,6 +96,9 @@
                     
                     <!-- Users (only for Super users) -->
                     <flux:navlist.item icon="users" :href="route('users.manage')" :current="request()->routeIs('users.manage')" wire:navigate>{{ __('Users') }}</flux:navlist.item>
+                    
+                    <!-- Contacts -->
+                    <flux:navlist.item icon="envelope" :href="route('contacts.manage')" :current="request()->routeIs('contacts.manage')" wire:navigate>{{ __('Contacts') }}</flux:navlist.item>
                     @endif
                 </flux:navlist.group>
             </flux:navlist>

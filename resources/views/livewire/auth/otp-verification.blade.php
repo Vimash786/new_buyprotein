@@ -265,14 +265,14 @@ new #[Layout('components.layouts.auth')] class extends Component {
 
         {{-- Verify Button --}}
         <button
-            type="submit"
-            @if(!$pendingOtp || $timeRemaining <= 0) disabled @endif
-            class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold
-                   transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
-                   {{ (!$pendingOtp || $timeRemaining <= 0)
-                       ? 'bg-gray-200 dark:bg-zinc-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
-                       : 'bg-blue-600 hover:bg-blue-700 text-white' }}"
-        >
+                type="submit"
+                @disabled(!$pendingOtp || $timeRemaining <= 0)
+                @class([
+                    'w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2',
+                    'bg-gray-200 dark:bg-zinc-700 text-gray-400 dark:text-gray-500 cursor-not-allowed' => !$pendingOtp || $timeRemaining <= 0,
+                    'bg-blue-600 hover:bg-blue-700 text-white' => $pendingOtp && $timeRemaining > 0,
+                ])
+            >
             <span wire:loading.remove wire:target="verifyOtp">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             </span>

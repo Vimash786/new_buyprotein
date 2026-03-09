@@ -96,6 +96,7 @@ Route::middleware(['auth'])->group(function () {
     Volt::route('orders', 'orders.manage')->middleware('seller.approved')->name('orders.manage');
     Volt::route('bulk-orders-seller', 'bulk-orders.manage')->middleware('seller.approved')->name('bulk-orders.seller');
     Volt::route('users', 'users.manage')->name('users.manage');
+    Volt::route('contacts', 'contacts.manage')->name('contacts.manage');
     Volt::route('categories', 'categories.manage')->name('categories.manage');
     Volt::route('banners', 'banners.manage')->name('banners.manage');
     Volt::route('blogs', 'blogs.manage')->name('blogs.manage');
