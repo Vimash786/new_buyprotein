@@ -25,7 +25,7 @@ class EnsureSellerApproved
         }
         
         // If user is not a seller, allow access (admins, etc.)
-        if ($user->role !== 'Seller') {
+        if (strtolower($user->role) !== 'seller') {
             return $next($request);
         }
         

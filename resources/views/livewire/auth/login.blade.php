@@ -39,7 +39,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
 
         $user = Auth::user();
 
-        if ($user->profile_completed && in_array($user->role, ['Seller', 'Gym Owner/Trainer/Influencer/Dietitian', 'Shop Owner']) && $user->approval_status !== 'approved') {
+        if ($user->profile_completed && in_array($user->role, ['Seller', 'seller', 'Gym Owner/Trainer/Influencer/Dietitian', 'Shop Owner']) && $user->approval_status !== 'approved') {
             Auth::logout();
 
             throw ValidationException::withMessages([
@@ -56,7 +56,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
                 // Clear any intended URL and redirect directly to dashboard
                 session()->forget('url.intended');
                 $this->redirect(route('dashboard', absolute: false), navigate: true);
-            } elseif ($user_role == 'Seller') {
+            } elseif (strtolower($user_role) == 'seller') {
                 // Clear any intended URL and redirect directly to dashboard
                 session()->forget('url.intended');
                 $this->redirect(route('dashboard', absolute: false), navigate: true);

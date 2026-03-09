@@ -24,7 +24,7 @@ class RestrictToSuperAndSeller
         }
         
         // Check if user role is Super or Seller
-        if (!in_array($user->role, ['Super', 'Seller'])) {
+        if (!in_array(strtolower($user->role), ['super', 'seller'])) {
             // Redirect non-Super/Seller users to home page with error message
             return redirect()->route('home')->with('error', 'Access denied. Only Super administrators and Sellers can access the dashboard.');
         }

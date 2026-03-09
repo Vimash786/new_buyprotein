@@ -31,7 +31,7 @@
                         $seller = null;
                         $isApprovedSeller = false;
                         
-                        if ($user && $user->role === 'Seller') {
+                        if ($user && strtolower($user->role) === 'seller') {
                             $seller = \App\Models\Sellers::where('user_id', $user->id)->first();
                             $isApprovedSeller = $seller && $seller->status === 'approved';
                         }
@@ -52,14 +52,14 @@
                     @if($user->role === 'Super' || $isApprovedSeller)
                     <flux:navlist.group expandable :heading="__('Orders')" class="grid">
                         <flux:navlist.item icon="shopping-bag" :href="route('orders.manage')" :current="request()->routeIs('orders.manage')" wire:navigate>{{ __('All Orders') }}</flux:navlist.item>
-                        @if($isApprovedSeller && $user->role === 'Seller')
+                        @if($isApprovedSeller && strtolower($user->role) === 'seller')
                         <flux:navlist.item icon="shopping-cart" :href="route('bulk-orders.seller')" :current="request()->routeIs('bulk-orders.seller')" wire:navigate>{{ __('Bulk Orders') }}</flux:navlist.item>
                         @endif
                     </flux:navlist.group>
                     @endif
                     
                     <!-- Payouts for Sellers -->
-                    @if($isApprovedSeller && $user->role === 'Seller')  
+                    @if($isApprovedSeller && strtolower($user->role) === 'seller')  
                     <flux:navlist.group expandable :heading="__('Payouts')" class="grid">
                         <flux:navlist.item icon="banknotes" :href="route('payouts.sellers')" :current="request()->routeIs('payouts.sellers')" wire:navigate>{{ __('My Payouts') }}</flux:navlist.item>
                     </flux:navlist.group>
