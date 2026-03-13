@@ -1,5 +1,7 @@
 <?php
 
+namespace App\Examples;
+
 // Example usage of the new order system
 
 use App\Services\OrderService;
