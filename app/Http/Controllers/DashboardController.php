@@ -39,7 +39,7 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $categories = Category::where('is_active', 1)->limit(10)->get();
+        $categories = Category::where('is_active', 1)->ordered()->get();
         // $productCounts = orders::select('product_id', DB::raw('count(*) as total'))->groupBy('product_id')->orderBy('product_id')->get();
         // $productIds = $productCounts->pluck('product_id');
         // $products = products::with(['subCategory', 'category'])->whereIn('id', $productIds)->get();
@@ -126,7 +126,7 @@ class DashboardController extends Controller
     {
         try {
             $id = $id ? Crypt::decrypt($id) : null;
-            $categories = Category::limit(10)->where('is_active', 1)->get();
+            $categories = Category::where('is_active', 1)->ordered()->get();
             $brands = Sellers::where('status', 'approved')->limit(10)->get();
 
             $productsQuery = products::query()->with('seller')->where('super_status', 'approved');
@@ -135,13 +135,23 @@ class DashboardController extends Controller
             $pageTitle = 'Shop';
             $pageDescription = 'Browse our wide selection of products';
 
-            if ($type == 'category' && $id) {
-                $productsQuery->where('category_id', $id);
+            $selectedCategories = $request->input('categories', []);
+            if (!is_array($selectedCategories)) {
+                $selectedCategories = [$selectedCategories];
+            }
+            
+            $selectedBrands = $request->input('brands', []);
+            if (!is_array($selectedBrands)) {
+                $selectedBrands = [$selectedBrands];
+            }
+
+            if ($type == 'category' && $id && !in_array($id, $selectedCategories)) {
+                $selectedCategories[] = $id;
                 $category = Category::find($id);
                 $pageTitle = $category ? $category->name : 'Category Products';
                 $pageDescription = $category ? "Browse products in {$category->name} category" : 'Browse category products';
-            } elseif ($type == 'brand' && $id) {
-                $productsQuery->where('seller_id', $id);
+            } elseif ($type == 'brand' && $id && !in_array($id, $selectedBrands)) {
+                $selectedBrands[] = $id;
                 $brand = Sellers::find($id);
                 $pageTitle = $brand ? $brand->brand : 'Brand Products';
                 $pageDescription = $brand ? "Browse products from {$brand->brand}" : 'Browse brand products';
@@ -185,6 +195,14 @@ class DashboardController extends Controller
                 });
             }
             
+            if (!empty($selectedCategories)) {
+                $productsQuery->whereIn('category_id', $selectedCategories);
+            }
+            
+            if (!empty($selectedBrands)) {
+                $productsQuery->whereIn('seller_id', $selectedBrands);
+            }
+            
             $allProducts = $productsQuery->get();
 
             $filteredProducts = $allProducts->filter(function ($product) use ($request) {
@@ -218,7 +236,9 @@ class DashboardController extends Controller
                 'products' => $paginated,
                 'pageTitle' => $pageTitle,
                 'pageDescription' => $pageDescription,
-                'currentType' => $type
+                'currentType' => $type,
+                'selectedCategories' => $selectedCategories,
+                'selectedBrands' => $selectedBrands,
             ]);
         } catch (Exception $e) {
             Log::error('Shop route error: ' . $e->getMessage());
@@ -267,7 +287,8 @@ class DashboardController extends Controller
             $product = products::with(['subCategory', 'category', 'seller', 'images', 'variants', 'variantCombinations'])->findOrFail($id);
             
             // Enhanced related products logic with fallback
-            $relatedProducts = products::where('category_id', $product->category_id)
+            $relatedProducts = products::with(['variantCombinations.thumbnailImage'])
+                ->where('category_id', $product->category_id)
                 ->where('id', '!=', $id)
                 ->where('super_status', 'approved')
                 ->inRandomOrder() // Add randomization
@@ -276,7 +297,8 @@ class DashboardController extends Controller
 
             // Fallback: If no products in same category, try subcategory or brand
             if ($relatedProducts->isEmpty()) {
-                $relatedProducts = products::where(function($query) use ($product) {
+                $relatedProducts = products::with(['variantCombinations.thumbnailImage'])
+                ->where(function($query) use ($product) {
                     if ($product->sub_category_id) {
                         $query->where('sub_category_id', $product->sub_category_id);
                     }
@@ -293,7 +315,8 @@ class DashboardController extends Controller
 
             // Second fallback: If still empty, get latest products
             if ($relatedProducts->isEmpty()) {
-                $relatedProducts = products::where('id', '!=', $id)
+                $relatedProducts = products::with(['variantCombinations.thumbnailImage'])
+                    ->where('id', '!=', $id)
                     ->where('super_status', 'approved')
                     ->orderBy('created_at', 'desc')
                     ->limit(10)
@@ -1122,8 +1145,13 @@ class DashboardController extends Controller
                 return response()->json(['success' => false, 'message' => 'Item not found in wishlist.']);
             }
 
+            $product = products::find($wishlistItem->product_id);
+            if (!$product) {
+                return response()->json(['success' => false, 'message' => 'Product not found.']);
+            }
+
             // Recalculate price using current user role and variant
-            $recalculatedPrice = $this->calculatePrice($wishlistItem->product_id, $wishlistItem->variant_option_ids);
+            $recalculatedPrice = $this->calculatePrice($product, $wishlistItem->variant_option_ids);
 
             $cartItem = Cart::create([
                 'user_id' => Auth::user()->id,
@@ -1144,8 +1172,13 @@ class DashboardController extends Controller
             
             $wishlistItem = $wishlist[$itemId];
             
+            $product = products::find($wishlistItem['product_id']);
+            if (!$product) {
+                return response()->json(['success' => false, 'message' => 'Product not found.']);
+            }
+            
             // Recalculate price for guest user
-            $recalculatedPrice = $this->calculatePrice($wishlistItem['product_id'], $wishlistItem['variant_option_ids']);
+            $recalculatedPrice = $this->calculatePrice($product, $wishlistItem['variant_option_ids']);
             
             // Add to cart session
             $cart = session()->get('cart', []);

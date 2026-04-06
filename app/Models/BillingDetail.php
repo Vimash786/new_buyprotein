@@ -32,6 +32,7 @@ class BillingDetail extends Model
         'total_before_discount',
         'payment_method',
         'payment_status',
+        'razorpay_payment_id',
     ];
 
     protected $casts = [

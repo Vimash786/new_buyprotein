@@ -1,0 +1,16 @@
+[11-Nov-2025 05:02:43 UTC] PHP Warning:  require(/home/daqduqnguh/buyprotein.in/vendor/composer/../../app/Helpers/helpers.php): Failed to open stream: No such file or directory in /home/daqduqnguh/buyprotein.in/vendor/composer/autoload_real.php on line 39
+[11-Nov-2025 05:02:43 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/daqduqnguh/buyprotein.in/vendor/composer/../../app/Helpers/helpers.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/daqduqnguh/buyprotein.in/vendor/composer/autoload_real.php:39
+Stack trace:
+#0 /home/daqduqnguh/buyprotein.in/vendor/composer/autoload_real.php(43): {closure}()
+#1 /home/daqduqnguh/buyprotein.in/vendor/autoload.php(25): ComposerAutoloaderInitdd526cfbff93d4bdc80752f139176fd2::getLoader()
+#2 /home/daqduqnguh/buyprotein.in/artisan(10): require('/home/daqduqngu...')
+#3 {main}
+  thrown in /home/daqduqnguh/buyprotein.in/vendor/composer/autoload_real.php on line 39
+[11-Nov-2025 05:03:26 UTC] PHP Warning:  require(/home/daqduqnguh/buyprotein.in/vendor/composer/../../app/Helpers/helpers.php): Failed to open stream: No such file or directory in /home/daqduqnguh/buyprotein.in/vendor/composer/autoload_real.php on line 39
+[11-Nov-2025 05:03:26 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/daqduqnguh/buyprotein.in/vendor/composer/../../app/Helpers/helpers.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/daqduqnguh/buyprotein.in/vendor/composer/autoload_real.php:39
+Stack trace:
+#0 /home/daqduqnguh/buyprotein.in/vendor/composer/autoload_real.php(43): {closure}()
+#1 /home/daqduqnguh/buyprotein.in/vendor/autoload.php(25): ComposerAutoloaderInitdd526cfbff93d4bdc80752f139176fd2::getLoader()
+#2 /home/daqduqnguh/buyprotein.in/artisan(10): require('/home/daqduqngu...')
+#3 {main}
+  thrown in /home/daqduqnguh/buyprotein.in/vendor/composer/autoload_real.php on line 39

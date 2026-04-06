@@ -131,7 +131,7 @@ new class extends Component
         } elseif ($this->role === 'Shop Owner') {
             $rules['business_images'] = ['required', 'array', 'min:1'];
             $rules['business_images.*'] = ['file', 'image', 'max:10240'];
-        } elseif ($this->role === 'Seller') {
+        } elseif (strtolower($this->role) === 'seller') {
             $rules['company_name'] = 'required|string|max:255';
             $rules['gst_number'] = 'required|string|max:255';
             $rules['product_category'] = 'required|string|max:255';
@@ -185,7 +185,7 @@ new class extends Component
             $user->update($userData);
             
             // Handle seller data if role is Seller
-            if ($this->role === 'Seller') {
+            if (strtolower($this->role) === 'seller') {
                 $sellerData = [
                     'company_name' => $this->company_name,
                     'gst_number' => $this->gst_number,
@@ -215,7 +215,7 @@ new class extends Component
             $user = User::create($userData);
             
             // Create seller record if role is Seller
-            if ($this->role === 'Seller') {
+            if (strtolower($this->role) === 'seller') {
                 $sellerData = [
                     'user_id' => $user->id,
                     'company_name' => $this->company_name,
@@ -254,7 +254,7 @@ new class extends Component
         $this->business_images = $user->business_images ? json_decode($user->business_images, true) : [];
         
         // Load seller data if user is a seller
-        if ($user->role === 'Seller') {
+        if (strtolower($user->role) === 'seller') {
             $seller = Sellers::where('user_id', $user->id)->first();
             if ($seller) {
                 $this->company_name = $seller->company_name;
@@ -277,7 +277,7 @@ new class extends Component
         $user = User::findOrFail($id);
         
         // Delete seller record if exists
-        if ($user->role === 'Seller') {
+        if (strtolower($user->role) === 'seller') {
             Sellers::where('user_id', $user->id)->delete();
         }
         
@@ -301,7 +301,7 @@ new class extends Component
     {
         $user = User::findOrFail($id);
         
-        if ($user->role === 'Seller') {
+        if (strtolower($user->role) === 'seller') {
             $seller = Sellers::where('user_id', $user->id)->first();
             if ($seller) {
                 $seller->update([
@@ -467,7 +467,7 @@ new class extends Component
                                     <div>
                                         <div class="text-sm font-medium text-gray-900 dark:text-white dark:text-white">{{ $user->name }}</div>
                                         <div class="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400">{{ $user->email }}</div>
-                                        @if($user->role === 'Seller')
+                                        @if(strtolower($user->role) === 'seller')
                                             @php $seller = \App\Models\Sellers::where('user_id', $user->id)->first(); @endphp
                                             @if($seller)
                                                 <div class="text-xs text-gray-400">{{ $seller->company_name }}</div>
@@ -477,7 +477,7 @@ new class extends Component
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                           {{ $user->role === 'Seller' ? 'bg-purple-100 text-purple-800' :
+                                           {{ strtolower($user->role) === 'seller' ? 'bg-purple-100 text-purple-800' :
                                               ($user->role === 'Gym Owner/Trainer/Influencer/Dietitian' ? 'bg-green-100 text-green-800' :
                                                ($user->role === 'Shop Owner' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800')) }}">
                                         {{ $user->role }}
@@ -537,7 +537,7 @@ new class extends Component
                                     </div>
                                 @endif
                             @endif
-                                        @elseif($user->role === 'Seller')
+                                        @elseif(strtolower($user->role) === 'seller')
                                             @php $seller = \App\Models\Sellers::where('user_id', $user->id)->first(); @endphp
                                             @if($seller && $seller->brand_certificate)
                                                 <div>
@@ -555,7 +555,7 @@ new class extends Component
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    @if($user->role === 'Seller')
+                                    @if(strtolower($user->role) === 'seller')
                                         @php $seller = \App\Models\Sellers::where('user_id', $user->id)->first(); @endphp
                                         @if($seller)
                                             <button 

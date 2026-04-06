@@ -100,6 +100,9 @@
             max-width: 100%;
             object-fit: contain;
         }
+        .single-shopping-card-one .thumbnail-preview .badge {
+            left: 5;
+        }
         
     </style>
     @stack('styles')

@@ -27,6 +27,7 @@ class User extends Authenticatable
         'document_proof',
         'social_media_link',
         'business_images',
+        'approval_status',
     ];
 
     /**

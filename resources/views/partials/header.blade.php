@@ -35,15 +35,37 @@
                                 <span class="m-3">Categories</span>
                                 @php
                                     use App\Models\Category;
-                                    $catData = Category::where('is_active', 1)->limit(10)->get();
+                                    $catData = Category::where('is_active', 1)
+                                        ->with(['activeSubCategories'])
+                                        ->get();
                                 @endphp
-                                <ul class="category-sub-menu" id="category-active-four">
+
+                                <ul class="category-sub-menu bp-mega-menu" id="category-active-four">
                                     @foreach ($catData as $cat)
-                                        <li>
+                                        @php $hasSubs = $cat->activeSubCategories->count() > 0; @endphp
+                                        <li class="bp-cat-item {{ $hasSubs ? 'has-subs' : '' }}">
                                             <a href="{{ route('shop', ['type' => 'category', 'id' => Crypt::encrypt($cat->id)]) }}"
-                                                class="menu-item">
+                                               class="menu-item bp-cat-link">
                                                 <span>{{ $cat->name }}</span>
+                                                @if($hasSubs)
+                                                    <i class="fa-regular fa-chevron-right bp-arrow"></i>
+                                                @endif
                                             </a>
+                                            @if($hasSubs)
+                                                <div class="bp-sub-panel">
+                                                    <p class="bp-sub-heading">{{ $cat->name }}</p>
+                                                    <ul class="bp-sub-list">
+                                                        @foreach($cat->activeSubCategories as $sub)
+                                                            <li>
+                                                                <a href="{{ route('shop', ['type' => 'category', 'id' => Crypt::encrypt($sub->id)]) }}"
+                                                                   class="bp-sub-link">
+                                                                    <span>{{ $sub->name }}</span>
+                                                                </a>
+                                                            </li>
+                                                        @endforeach
+                                                    </ul>
+                                                </div>
+                                            @endif
                                         </li>
                                     @endforeach
                                 </ul>
@@ -383,3 +405,117 @@
 <!-- rts header area end -->
 <!-- rts header area end -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function() {
+        // Move sub-panels to body so they can break out of overflow
+        $('.bp-cat-item.has-subs').each(function() {
+            var $item = $(this);
+            var $panel = $item.find('.bp-sub-panel');
+            var panelId = 'panel-' + Math.random().toString(36).substr(2, 9);
+            
+            $item.attr('data-panel-id', panelId);
+            $panel.attr('id', panelId);
+            
+            // Apply positioning overrides so it acts as a standalone fixed flyout
+            $panel.css({
+                'position': 'fixed',
+                'z-index': 999999,
+                'visibility': 'hidden',
+                'opacity': 0,
+                'transform': 'none',
+                'margin': 0
+            });
+            
+            $('body').append($panel);
+        });
+
+        var hideTimeout;
+        var $activePanel = null;
+
+        function showPanel($item) {
+            clearTimeout(hideTimeout);
+            
+            if ($activePanel && $activePanel.attr('id') !== $item.attr('data-panel-id')) {
+                $activePanel.css({ 'visibility': 'hidden', 'opacity': 0, 'pointer-events': 'none' });
+            }
+            
+            var panelId = $item.attr('data-panel-id');
+            $activePanel = $('#' + panelId);
+            
+            if ($activePanel.length) {
+                var rect = $item[0].getBoundingClientRect();
+                
+                $activePanel.css({
+                    'top': rect.top + 'px',
+                    'left': rect.right + 'px',
+                    'visibility': 'visible',
+                    'opacity': 1,
+                    'pointer-events': 'auto'
+                });
+            }
+        }
+
+        function queueHide() {
+            hideTimeout = setTimeout(function() {
+                if ($activePanel) {
+                    $activePanel.css({ 'visibility': 'hidden', 'opacity': 0, 'pointer-events': 'none' });
+                    $activePanel = null;
+                }
+            }, 100); 
+        }
+
+        // Show on Hover
+        $('.bp-cat-item.has-subs').on('mouseenter', function() {
+            showPanel($(this));
+        }).on('mouseleave', function() {
+            queueHide();
+        });
+
+        // Show on Arrow Click (Mobile/Touch helper)
+        $('.bp-arrow').on('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var $item = $(this).closest('.bp-cat-item.has-subs');
+            showPanel($item);
+        });
+
+        // Keep open when hovering the panel itself
+        $('body').on('mouseenter', '.bp-sub-panel', function() {
+            clearTimeout(hideTimeout);
+        }).on('mouseleave', '.bp-sub-panel', function() {
+            queueHide();
+        });
+
+        // Hide panels when scrolling the main mega menu
+        $('.bp-mega-menu').on('scroll', function() {
+            if ($activePanel) {
+                var panelId = $activePanel.attr('id');
+                var $item = $('.bp-cat-item.has-subs[data-panel-id="'+panelId+'"]');
+                
+                if ($item.length) {
+                    var rect = $item[0].getBoundingClientRect();
+                    var menuRect = $('.bp-mega-menu')[0].getBoundingClientRect();
+                    
+                    // Hide if scrolled completely out of view
+                    if (rect.top < menuRect.top || rect.bottom > menuRect.bottom) {
+                        $activePanel.css({ 'visibility': 'hidden', 'opacity': 0, 'pointer-events': 'none' });
+                    } else {
+                        // Keep attached normally
+                        $activePanel.css({
+                            'top': rect.top + 'px',
+                            'left': rect.right + 'px'
+                        });
+                    }
+                }
+            }
+        });
+        
+        // Hide panel when scrolling the window
+        $(window).on('scroll', function() {
+            if ($activePanel) {
+                $activePanel.css({ 'visibility': 'hidden', 'opacity': 0, 'pointer-events': 'none' });
+                $activePanel = null;
+            }
+        });
+    });
+</script>

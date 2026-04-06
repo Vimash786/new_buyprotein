@@ -1,5 +1,7 @@
 <?php
 
+namespace Tests;
+
 // Test the new order system functionality
 // This file demonstrates how the new order system works
 

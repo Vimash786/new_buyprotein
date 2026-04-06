@@ -12,6 +12,7 @@ use App\Models\CouponUsage;
 use App\Models\orders;
 use App\Models\OrderSellerProduct;
 use App\Models\products;
+use App\Models\RazorpayWebhookLog;
 use App\Models\Reference;
 use App\Models\Sellers;
 use App\Models\ShippingAddress;
@@ -182,6 +183,7 @@ class RazorpayPaymentController extends Controller
                 'total_before_discount' => $priceBreakdown['total_before_discount'] ?? $amount,
                 'payment_method' => 'razorpay',
                 'payment_status' => 'completed',
+                'razorpay_payment_id' => $request->razorpay_payment_id,
             ]);
         } else {
 
@@ -220,6 +222,7 @@ class RazorpayPaymentController extends Controller
                 'total_before_discount' => $priceBreakdown['total_before_discount'] ?? $amount,
                 'payment_method' => 'razorpay',
                 'payment_status' => 'completed',
+                'razorpay_payment_id' => $request->razorpay_payment_id,
             ]);
         }
 
@@ -339,7 +342,23 @@ class RazorpayPaymentController extends Controller
 
         $payment = $api->payment->fetch($request->razorpay_payment_id);
 
-        if ($payment->capture(['amount' => $payment['amount']])) {
+        $captured = false;
+        if ($payment->status === 'captured') {
+            $captured = true;
+        } else if ($payment->status === 'authorized') {
+            try {
+                $response = $payment->capture(['amount' => $payment['amount']]);
+                $captured = true;
+            } catch (\Exception $e) {
+                if (strpos($e->getMessage(), 'already been captured') !== false) {
+                    $captured = true;
+                } else {
+                    throw $e;
+                }
+            }
+        }
+
+        if ($captured) {
             // Store order details in session for thank you page
             session()->flash('order_details', [
                 'order_number' => $orderNumber,
@@ -707,5 +726,68 @@ class RazorpayPaymentController extends Controller
                 'message' => 'COD Order processing failed: ' . $e->getMessage()
             ], 500);
         }
+    }
+    public function webhook(Request $request)
+    {
+        $webhookSecret = env('RAZORPAY_WEBHOOK_SECRET');
+        $signature = $request->header('X-Razorpay-Signature');
+        
+        $payload = $request->getContent();
+        
+        Log::info('Razorpay Webhook Hit');
+
+        if ($webhookSecret && $signature) {
+            try {
+                $api = new Api(config('services.razorpay.key'), config('services.razorpay.secret'));
+                $api->utility->verifyWebhookSignature($payload, $signature, $webhookSecret);
+            } catch (\Exception $e) {
+                Log::error('Razorpay Webhook Signature Verification Failed', ['error' => $e->getMessage()]);
+                return response()->json(['error' => 'Invalid signature'], 400);
+            }
+        }
+
+        $data = json_decode($payload, true);
+        
+        $event = $data['event'] ?? 'unknown';
+        $paymentEntity = $data['payload']['payment']['entity'] ?? null;
+        
+        if (!$paymentEntity) {
+            return response()->json(['status' => 'ignored']);
+        }
+
+        $paymentId = $paymentEntity['id'] ?? null;
+        $email = $paymentEntity['email'] ?? null;
+        $contact = $paymentEntity['contact'] ?? null;
+        $errorDescription = $paymentEntity['error_description'] ?? null;
+        $errorCode = $paymentEntity['error_code'] ?? null;
+
+        RazorpayWebhookLog::create([
+            'payment_id' => $paymentId,
+            'event' => $event,
+            'email' => $email,
+            'contact' => $contact,
+            'error_description' => $errorDescription,
+            'error_code' => $errorCode,
+            'payload' => $data,
+        ]);
+
+        if ($paymentId) {
+            $billingDetail = BillingDetail::where('razorpay_payment_id', $paymentId)->first();
+            if ($billingDetail) {
+                if ($event === 'payment.failed') {
+                    $billingDetail->update(['payment_status' => 'failed']);
+                    if ($billingDetail->order) {
+                        $billingDetail->order->update(['overall_status' => 'cancelled']);
+                    }
+                } 
+                elseif ($event === 'payment.authorized' || $event === 'payment.captured') {
+                    if ($billingDetail->payment_status !== 'completed') {
+                        $billingDetail->update(['payment_status' => 'completed']);
+                    }
+                }
+            }
+        }
+
+        return response()->json(['status' => 'success']);
     }
 }

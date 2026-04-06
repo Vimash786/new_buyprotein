@@ -5,7 +5,7 @@
             <!-- single service area start -->
             <div class="single-short-service-area-start">
             <div class="icon-area">
-                <img src="assets/images/service/05.svg" alt="service" style="max-width: 80%; max-height: 80%;">
+                <img src="{{ asset('assets/images/service/05.svg') }}" alt="service" style="max-width: 80%; max-height: 80%;">
             </div>
             <div class="information">
                 <h4 class="title">Best Prices on Supplements</h4>
@@ -20,7 +20,7 @@
             <!-- single service area start -->
             <div class="single-short-service-area-start">
             <div class="icon-area">
-               <img src="assets/images/service/04.svg" alt="service" style="max-width: 80%; max-height: 80%;">
+               <img src="{{ asset('assets/images/service/04.svg') }}" alt="service" style="max-width: 80%; max-height: 80%;">
             </div>
             <div class="information">
                 <h4 class="title">100% Authentic Products</h4>
@@ -71,7 +71,7 @@
             <!-- single service area start -->
             <div class="single-short-service-area-start">
             <div class="icon-area">
-                  <img src="assets/images/service/03.svg" alt="service" style="max-width: 80%; max-height: 80%;">
+                  <img src="{{ asset('assets/images/service/03.svg') }}" alt="service" style="max-width: 80%; max-height: 80%;">
             </div>
             <div class="information">
                 <h4 class="title">Fast & Free Delivery</h4>
@@ -122,24 +122,6 @@
   
                     <!-- single footer area wrapper -->
                     <div class="single-footer-wized">
-                        <h3 class="footer-title">Shop Categories</h3>
-                        @php
-                            $allCat = \App\Models\Category::where('is_active', 1)->limit(5)->get();
-                        @endphp
-                        <div class="footer-nav">
-                            <ul>
-                                @foreach ($allCat as $cat)
-                                    <li><a
-                                            href="{{ route('shop', ['type' => 'category', 'id' => Crypt::encrypt($cat->id)]) }}">{{ $cat->name }}</a>
-                                    </li>
-                                @endforeach
-                            </ul>
-                        </div>
-                    </div>
-                    <!-- single footer area wrapper -->
-
-                    <!-- single footer area wrapper -->
-                    <div class="single-footer-wized">
                         <h3 class="footer-title">Useful Links</h3>
                         <div class="footer-nav">
                             <ul>
@@ -153,24 +135,22 @@
                         </div>
                     </div>
                     <!-- single footer area wrapper -->
+
                     <!-- single footer area wrapper -->
                     <div class="single-footer-wized">
-                       
+                        <h3 class="footer-title">Follow Us</h3>
+                        <div class="social-one-wrapper">
+                            <ul>
+                                <li><a href="https://www.facebook.com/share/16YivBxrm4/"><i
+                                            class="fa-brands fa-facebook-f"></i></a></li>
+                                <li><a href="https://www.instagram.com/buyproteins?igsh=bGowMXp2cW5ybWM4"><i
+                                            class="fa-brands fa-instagram"></i></a></li>
+                                <li><a href="https://youtube.com/@buyproteins?si=AnzFjw8hA3XZvcdC"><i
+                                            class="fa-brands fa-youtube"></i></a></li>
+                            </ul>
+                        </div>
                     </div>
                     <!-- single footer area wrapper -->
-                </div>
-                <div class="social-and-payment-area-wrapper">
-                    <div class="social-one-wrapper">
-                        <span>Follow Us:</span>
-                        <ul>
-                            <li><a href="https://www.facebook.com/share/16YivBxrm4/"><i
-                                        class="fa-brands fa-facebook-f"></i></a></li>
-                            <li><a href="https://www.instagram.com/buyproteins?igsh=bGowMXp2cW5ybWM4"><i
-                                        class="fa-brands fa-instagram"></i></a></li>
-                            <li><a href="https://youtube.com/@buyproteins?si=AnzFjw8hA3XZvcdC"><i
-                                        class="fa-brands fa-youtube"></i></a></li>
-                        </ul>
-                    </div>
                 </div>
             </div>
         </div>
