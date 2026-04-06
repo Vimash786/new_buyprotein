@@ -4,8 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Schema;
 
 class Sellers extends Model
 {
@@ -43,6 +43,10 @@ class Sellers extends Model
                 $seller->commission = GlobalCommission::getActiveCommissionRate();
             }
         });
+
+        static::created(function ($seller) {
+            $seller->syncUserStatusFromSeller();
+        });
         
         static::updated(function ($seller) {
             // When a seller is approved, set their next payout date if not already set
@@ -50,7 +54,29 @@ class Sellers extends Model
                 $seller->next_payout_date = now()->addDays(15);
                 $seller->saveQuietly(); // Save without triggering events again
             }
+
+            if ($seller->isDirty('status')) {
+                $seller->syncUserStatusFromSeller();
+            }
         });
+    }
+
+    /**
+     * Mirror seller approval to users.status when that column exists.
+     */
+    public function syncUserStatusFromSeller(): void
+    {
+        if (!Schema::hasColumn('users', 'status')) {
+            return;
+        }
+
+        if (!$this->user_id) {
+            return;
+        }
+
+        $status = $this->status === 'approved' ? 'approved' : 'not_approved';
+
+        User::where('id', $this->user_id)->update(['status' => $status]);
     }
 
     /**
