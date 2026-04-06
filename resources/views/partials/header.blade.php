@@ -57,7 +57,7 @@
                                                     <ul class="bp-sub-list">
                                                         @foreach($cat->activeSubCategories as $sub)
                                                             <li>
-                                                                <a href="{{ route('shop', ['type' => 'category', 'id' => Crypt::encrypt($sub->id)]) }}"
+                                                                <a href="{{ route('shop', ['type' => 'subcategory', 'id' => Crypt::encrypt($sub->id)]) }}"
                                                                    class="bp-sub-link">
                                                                     <span>{{ $sub->name }}</span>
                                                                 </a>

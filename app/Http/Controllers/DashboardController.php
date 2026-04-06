@@ -24,6 +24,7 @@ use App\Models\ReferenceAssign;
 use App\Models\ReferenceUsage;
 use App\Models\Review;
 use App\Models\Sellers;
+use App\Models\SubCategory;
 use App\Models\User;
 use App\Models\Wishlist;
 use Carbon\Carbon;
@@ -127,7 +128,7 @@ class DashboardController extends Controller
         try {
             $id = $id ? Crypt::decrypt($id) : null;
             $categories = Category::where('is_active', 1)->ordered()->get();
-            $brands = Sellers::where('status', 'approved')->limit(10)->get();
+            $brands = Sellers::where('status', 'approved')->orderBy('brand')->get();
 
             $productsQuery = products::query()->with('seller')->where('super_status', 'approved');
             
@@ -145,11 +146,30 @@ class DashboardController extends Controller
                 $selectedBrands = [$selectedBrands];
             }
 
+            $selectedSubCategories = [];
+
             if ($type == 'category' && $id && !in_array($id, $selectedCategories)) {
-                $selectedCategories[] = $id;
                 $category = Category::find($id);
-                $pageTitle = $category ? $category->name : 'Category Products';
-                $pageDescription = $category ? "Browse products in {$category->name} category" : 'Browse category products';
+
+                if ($category) {
+                    $selectedCategories[] = $id;
+                    $pageTitle = $category->name;
+                    $pageDescription = "Browse products in {$category->name} category";
+                } else {
+                    $subCategory = SubCategory::find($id);
+                    if ($subCategory) {
+                        $selectedSubCategories[] = $subCategory->id;
+                        $pageTitle = $subCategory->name;
+                        $pageDescription = "Browse products in {$subCategory->name} category";
+                    }
+                }
+            } elseif ($type == 'subcategory' && $id) {
+                $subCategory = SubCategory::find($id);
+                if ($subCategory) {
+                    $selectedSubCategories[] = $subCategory->id;
+                    $pageTitle = $subCategory->name;
+                    $pageDescription = "Browse products in {$subCategory->name} category";
+                }
             } elseif ($type == 'brand' && $id && !in_array($id, $selectedBrands)) {
                 $selectedBrands[] = $id;
                 $brand = Sellers::find($id);
@@ -197,6 +217,10 @@ class DashboardController extends Controller
             
             if (!empty($selectedCategories)) {
                 $productsQuery->whereIn('category_id', $selectedCategories);
+            }
+
+            if (!empty($selectedSubCategories)) {
+                $productsQuery->whereIn('sub_category_id', $selectedSubCategories);
             }
             
             if (!empty($selectedBrands)) {
